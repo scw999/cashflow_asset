@@ -1255,62 +1255,77 @@
         }
 
         function getMarketHTML() {
-            return `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-                <div class="card p-4 rounded-xl border border-blue-500/30"><h4 class="font-bold text-blue-400 mb-3">🏠 부동산</h4>
-                    <div class="space-y-2 text-sm">
-                        <button onclick="buyInvestment('realEstate','원룸건물',15000,50)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">원룸건물 ₩15,000만 (월₩50만)</button>
-                        <button onclick="buyInvestment('realEstate','상가',30000,100)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">상가 ₩30,000만 (월₩100만)</button>
-                        <button onclick="buyInvestment('realEstate','아파트갭투자',5000,30)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">아파트 갭투자 ₩5,000만</button>
-                        <button onclick="buyInvestment('realEstate','오피스텔',8000,40)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">오피스텔 ₩8,000만</button>
-                    </div></div>
-                <div class="card p-4 rounded-xl border border-purple-500/30"><h4 class="font-bold text-purple-400 mb-3">📊 주식 (클릭하여 차트)</h4>
-                    <div class="space-y-2 text-sm">
-                        ${['삼성전자', 'SK하이닉스', '네이버', '애플', '테슬라', '엔비디아'].map(name => {
-                            const price = marketPrices[name];
-                            const history = priceHistory[name];
-                            const prevPrice = history[history.length - 2] || price;
-                            const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
-                            return `<div class="flex items-center gap-1">
-                                <button onclick="buyStock('${name}',${price},0.01)" class="flex-1 p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">
-                                    ${name} ₩${fmt(price)}만/주 <span class="${change >= 0 ? 'text-emerald-400' : 'text-red-400'}">${change >= 0 ? '+' : ''}${change}%</span>
-                                </button>
-                                <button onclick="showAssetChart('${name}')" class="p-2 bg-gray-600 hover:bg-gray-500 rounded">📈</button>
-                            </div>`;
-                        }).join('')}
-                    </div></div>
-                <div class="card p-4 rounded-xl border border-emerald-500/30"><h4 class="font-bold text-emerald-400 mb-3">📈 ETF (클릭하여 차트)</h4>
-                    <div class="space-y-2 text-sm">
-                        ${['S&P500 ETF', '나스닥100 ETF', '고배당 ETF', '리츠 ETF', '채권 ETF'].map(name => {
-                            const price = marketPrices[name];
-                            const history = priceHistory[name];
-                            const prevPrice = history[history.length - 2] || price;
-                            const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
-                            return `<div class="flex items-center gap-1">
-                                <button onclick="buyStock('${name}',${price},0.02)" class="flex-1 p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">
-                                    ${name} ₩${fmt(price)}만/주 <span class="${change >= 0 ? 'text-emerald-400' : 'text-red-400'}">${change >= 0 ? '+' : ''}${change}%</span>
-                                </button>
-                                <button onclick="showAssetChart('${name}')" class="p-2 bg-gray-600 hover:bg-gray-500 rounded">📈</button>
-                            </div>`;
-                        }).join('')}
-                    </div></div>
-                <div class="card p-4 rounded-xl border border-yellow-500/30"><h4 class="font-bold text-yellow-400 mb-3">💎 가상자산 (클릭하여 차트)</h4>
-                    <div class="space-y-2 text-sm">
-                        ${['비트코인', '이더리움', '솔라나'].map(name => {
-                            const price = marketPrices[name];
-                            const history = priceHistory[name];
-                            const prevPrice = history[history.length - 2] || price;
-                            const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
-                            return `<div class="flex items-center gap-1">
-                                <button onclick="buyInvestment('crypto','${name}',${price},0)" class="flex-1 p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">
-                                    ${name} ₩${fmt(price)}만 <span class="${change >= 0 ? 'text-emerald-400' : 'text-red-400'}">${change >= 0 ? '+' : ''}${change}%</span>
-                                </button>
-                                <button onclick="showAssetChart('${name}')" class="p-2 bg-gray-600 hover:bg-gray-500 rounded">📈</button>
-                            </div>`;
-                        }).join('')}
-                        <button onclick="buyInvestment('crypto','스테이블예치',1000,5)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">💵 스테이블 예치 (월₩5만)</button>
-                    </div></div>
-            </div>`;
-        }
+    return `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
+        <div class="card p-4 rounded-xl border border-blue-500/30"><h4 class="font-bold text-blue-400 mb-3">🏠 부동산</h4>
+            <div class="space-y-2 text-sm">
+                <button onclick="buyInvestment('realEstate','원룸건물',15000,50)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">원룸건물 ₩15,000만 (월₩50만)</button>
+                <button onclick="buyInvestment('realEstate','상가',30000,100)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">상가 ₩30,000만 (월₩100만)</button>
+                <button onclick="buyInvestment('realEstate','아파트갭투자',5000,30)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">아파트 갭투자 ₩5,000만</button>
+                <button onclick="buyInvestment('realEstate','오피스텔',8000,40)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">오피스텔 ₩8,000만</button>
+            </div></div>
+        <div class="card p-4 rounded-xl border border-purple-500/30"><h4 class="font-bold text-purple-400 mb-3">📊 주식</h4>
+            <div class="space-y-2 text-sm">
+                ${['삼성전자', 'SK하이닉스', '네이버', '애플', '테슬라', '엔비디아'].map(name => {
+                    const price = marketPrices[name];
+                    const history = priceHistory[name] || [price];
+                    const prevPrice = history.length > 1 ? history[history.length - 2] : price;
+                    const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
+                    return `<div class="flex items-center gap-1">
+                        <button onclick="buyStock('${name}',${price},0.01)" class="flex-1 p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">
+                            ${name} ₩${fmt(price)}만/주 <span class="${change >= 0 ? 'text-emerald-400' : 'text-red-400'}">${change >= 0 ? '+' : ''}${change}%</span>
+                        </button>
+                        <button onclick="showAssetChart('${name}')" class="p-2 bg-gray-600 hover:bg-gray-500 rounded">📈</button>
+                    </div>`;
+                }).join('')}
+            </div></div>
+        <div class="card p-4 rounded-xl border border-emerald-500/30"><h4 class="font-bold text-emerald-400 mb-3">📈 ETF</h4>
+            <div class="space-y-2 text-sm">
+                ${['S&P500 ETF', '나스닥100 ETF', '고배당 ETF', '리츠 ETF', '채권 ETF'].map(name => {
+                    const price = marketPrices[name];
+                    const history = priceHistory[name] || [price];
+                    const prevPrice = history.length > 1 ? history[history.length - 2] : price;
+                    const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
+                    return `<div class="flex items-center gap-1">
+                        <button onclick="buyStock('${name}',${price},0.02)" class="flex-1 p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">
+                            ${name} ₩${fmt(price)}만/주 <span class="${change >= 0 ? 'text-emerald-400' : 'text-red-400'}">${change >= 0 ? '+' : ''}${change}%</span>
+                        </button>
+                        <button onclick="showAssetChart('${name}')" class="p-2 bg-gray-600 hover:bg-gray-500 rounded">📈</button>
+                    </div>`;
+                }).join('')}
+            </div></div>
+        <div class="card p-4 rounded-xl border border-yellow-500/30"><h4 class="font-bold text-yellow-400 mb-3">🥇 원자재</h4>
+            <div class="space-y-2 text-sm">
+                ${['금 ETF', '은 ETF', '원유 ETF', '농산물 ETF'].map(name => {
+                    const price = marketPrices[name];
+                    const history = priceHistory[name] || [price];
+                    const prevPrice = history.length > 1 ? history[history.length - 2] : price;
+                    const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
+                    return `<div class="flex items-center gap-1">
+                        <button onclick="buyStock('${name}',${price},0)" class="flex-1 p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">
+                            ${name} ₩${fmt(price)}만/주 <span class="${change >= 0 ? 'text-emerald-400' : 'text-red-400'}">${change >= 0 ? '+' : ''}${change}%</span>
+                        </button>
+                        <button onclick="showAssetChart('${name}')" class="p-2 bg-gray-600 hover:bg-gray-500 rounded">📈</button>
+                    </div>`;
+                }).join('')}
+            </div></div>
+        <div class="card p-4 rounded-xl border border-orange-500/30"><h4 class="font-bold text-orange-400 mb-3">💎 가상자산</h4>
+            <div class="space-y-2 text-sm">
+                ${['비트코인', '이더리움', '솔라나'].map(name => {
+                    const price = marketPrices[name];
+                    const history = priceHistory[name] || [price];
+                    const prevPrice = history.length > 1 ? history[history.length - 2] : price;
+                    const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
+                    return `<div class="flex items-center gap-1">
+                        <button onclick="buyInvestment('crypto','${name}',${Math.round(price)},0)" class="flex-1 p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">
+                            ${name} ₩${fmt(price)}만 <span class="${change >= 0 ? 'text-emerald-400' : 'text-red-400'}">${change >= 0 ? '+' : ''}${change}%</span>
+                        </button>
+                        <button onclick="showAssetChart('${name}')" class="p-2 bg-gray-600 hover:bg-gray-500 rounded">📈</button>
+                    </div>`;
+                }).join('')}
+                <button onclick="buyInvestment('crypto','스테이블예치',1000,5)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">💵 스테이블 예치 (월₩5만)</button>
+            </div></div>
+    </div>`;
+}
 
         function buyInvestment(type, name, cost, monthlyIncome) {
             if (gameState.assets.cash < cost) { alert('현금이 부족합니다!'); return; }
