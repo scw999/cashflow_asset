@@ -216,6 +216,10 @@ function handleSpaceLanding(space) {
             handleDream(space);
             break;
 
+        case 'business':
+            handleBusiness(space);
+            break;
+
         default:
             nextTurn();
             updateUI();
@@ -241,12 +245,32 @@ function handlePayday() {
         </div>`;
     }
 
+    // Fast track passive income check
+    let fastTrackInfo = '';
+    if (gameState.inFastTrack) {
+        const passiveIncome = getPassiveIncome();
+        const progress = Math.min(100, (passiveIncome / FAST_TRACK_WIN_PASSIVE) * 100).toFixed(1);
+        fastTrackInfo = `
+            <div class="mt-3 p-3 bg-purple-900/30 rounded-lg">
+                <div class="text-sm text-purple-400">🏆 승리 조건 진행도</div>
+                <div class="flex justify-between mt-1">
+                    <span>월 패시브 소득</span>
+                    <span class="text-emerald-400">₩${fmt(passiveIncome)}만 / ₩${fmt(FAST_TRACK_WIN_PASSIVE)}만</span>
+                </div>
+                <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                    <div class="h-full bg-gradient-to-r from-purple-500 to-yellow-400 rounded-full" style="width: ${progress}%"></div>
+                </div>
+            </div>
+        `;
+    }
+
     showEventModal(
         '💰 월급날!',
         `<p class="text-lg">캐시플로우: <span class="${cashflow >= 0 ? 'text-emerald-400' : 'text-red-400'} font-bold">₩${fmt(cashflow)}만</span></p>
          <p class="mt-2 text-gray-400">현금: ₩${fmt(gameState.assets.cash)}만</p>
-         ${stakingMessage}`,
-        [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
+         ${stakingMessage}
+         ${fastTrackInfo}`,
+        [{ text: '확인', action: 'hideEventModal(); checkFastTrackVictory(); nextTurn(); updateUI();', primary: true }]
     );
 }
 
@@ -262,39 +286,54 @@ function handleOpportunity(space) {
             `<p>투자 기회가 찾아왔습니다!</p>
              <p class="mt-2 text-gray-400">투자 탭에서 주식, ETF, 가상자산을 매매할 수 있습니다.</p>`,
             [
-                { text: '투자하러 가기', action: 'hideEventModal(); showTab("market");', primary: true },
+                { text: '투자하러 가기', action: 'goToMarketTab();', primary: true },
                 { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
             ]
         );
     }
 }
 
-// Market handler - 실제로 시장 가격 변동 적용
+// Go to market tab function
+function goToMarketTab() {
+    hideEventModal();
+    showTab('market');
+    nextTurn();
+    updateUI();
+}
+
+// Market handler - 실제로 시장 가격 변동 적용 (자산별 다른 비율)
 function handleMarket(space) {
     const isUp = space.name.includes('상승');
 
-    // Apply market event to prices
+    // Apply market event to prices (now with different rates per asset)
     const changes = applyMarketEvent(isUp);
 
-    // Create affected assets summary
-    const topChanges = changes.slice(0, 5);
-    const affectedSummary = topChanges.map(c =>
-        `<div class="flex justify-between text-sm">
+    // Sort changes by absolute change percent (most dramatic first)
+    changes.sort((a, b) => Math.abs(parseFloat(b.changePercent)) - Math.abs(parseFloat(a.changePercent)));
+
+    // Create affected assets summary with individual percentages
+    const topChanges = changes.slice(0, 7);
+    const affectedSummary = topChanges.map(c => {
+        const pct = parseFloat(c.changePercent);
+        const colorClass = pct >= 0 ? 'text-emerald-400' : 'text-red-400';
+        const sign = pct >= 0 ? '+' : '';
+        return `<div class="flex justify-between text-sm">
             <span>${c.name}</span>
-            <span class="${isUp ? 'text-emerald-400' : 'text-red-400'}">${isUp ? '+' : ''}${c.changePercent}%</span>
-        </div>`
-    ).join('');
+            <span class="${colorClass}">${sign}${c.changePercent}%</span>
+        </div>`;
+    }).join('');
 
     showEventModal(
         space.name,
         `<p class="text-lg mb-3">시장이 ${isUp ? '상승' : '하락'}했습니다!</p>
+         <p class="text-xs text-gray-400 mb-2">자산별로 서로 다른 비율로 변동합니다.</p>
          <div class="p-3 bg-gray-800 rounded-lg mb-3">
             <div class="text-xs text-gray-400 mb-2">영향받은 자산 (${changes.length}개)</div>
             ${affectedSummary}
-            ${changes.length > 5 ? `<div class="text-xs text-gray-500 mt-2">외 ${changes.length - 5}개...</div>` : ''}
+            ${changes.length > 7 ? `<div class="text-xs text-gray-500 mt-2">외 ${changes.length - 7}개...</div>` : ''}
          </div>
-         <p class="text-sm ${isUp ? 'text-emerald-400' : 'text-red-400'}">
-            보유 자산 가치가 ${isUp ? '상승' : '하락'}했습니다.
+         <p class="text-sm text-gray-400">
+            보유 자산 가치가 자산 특성에 따라 변동되었습니다.
          </p>`,
         [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
     );
@@ -380,6 +419,86 @@ function handleCharity() {
             { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
         ]
     );
+}
+
+// Business handler (Fast Track) - 사업 투자
+function handleBusiness(space) {
+    const cost = space.cost;
+    const monthlyIncome = space.monthlyIncome;
+
+    if (gameState.assets.cash < cost) {
+        showEventModal(
+            `${space.name} 투자 기회`,
+            `<p class="text-lg">${space.name}</p>
+             <p class="text-gray-400 mt-2">월 수익: ₩${fmt(monthlyIncome)}만</p>
+             <p class="text-red-400 mt-3 font-bold">자금이 부족합니다!</p>
+             <p class="text-yellow-400">필요: ₩${fmt(cost)}만</p>
+             <p class="text-gray-400">보유: ₩${fmt(gameState.assets.cash)}만</p>`,
+            [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
+        );
+        return;
+    }
+
+    showEventModal(
+        `${space.name} 투자 기회`,
+        `<p class="text-lg font-bold text-emerald-400">${space.name}</p>
+         <p class="text-gray-400 mt-2">사업에 투자하여 월 패시브 소득을 올리세요!</p>
+         <div class="mt-3 p-3 bg-gray-800 rounded-lg">
+            <div class="flex justify-between text-sm"><span>투자 비용</span><span class="text-yellow-400">₩${fmt(cost)}만</span></div>
+            <div class="flex justify-between text-sm"><span>월 수익</span><span class="text-emerald-400">+₩${fmt(monthlyIncome)}만</span></div>
+         </div>
+         <p class="mt-3 text-sm text-gray-400">보유 현금: ₩${fmt(gameState.assets.cash)}만</p>`,
+        [
+            { text: '투자하기', action: `investBusiness('${space.name}', ${cost}, ${monthlyIncome});`, primary: true },
+            { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
+        ]
+    );
+}
+
+// Invest in business
+function investBusiness(name, cost, monthlyIncome) {
+    if (gameState.assets.cash < cost) {
+        showNotification('현금이 부족합니다!', 'error');
+        return;
+    }
+
+    gameState.assets.cash -= cost;
+    gameState.income.other += monthlyIncome;
+
+    // Add to investments for tracking
+    gameState.investments.push({
+        type: 'business',
+        name: name,
+        cost: cost,
+        monthlyIncome: monthlyIncome
+    });
+
+    hideEventModal();
+
+    showNotification(`${name}에 투자 완료! 월 수익 +₩${fmt(monthlyIncome)}만`, 'success');
+
+    // Check for fast track victory
+    checkFastTrackVictory();
+
+    nextTurn();
+    updateUI();
+}
+
+// Check fast track victory condition (월 패시브 소득 5000만원)
+function checkFastTrackVictory() {
+    if (!gameState.inFastTrack) return;
+
+    const passiveIncome = getPassiveIncome();
+
+    if (passiveIncome >= FAST_TRACK_WIN_PASSIVE) {
+        const player = getPlayer();
+
+        document.getElementById('victoryMessage').textContent =
+            `월 패시브 소득 ₩${fmt(passiveIncome)}만 달성! 진정한 부자가 되었습니다!`;
+        document.getElementById('victoryModal').classList.remove('hidden');
+
+        player.dreamAchieved = true;
+    }
 }
 
 // Dream handler (Fast Track)

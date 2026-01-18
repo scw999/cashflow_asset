@@ -246,10 +246,9 @@ function updateMarketPrices() {
     return changes;
 }
 
-// Apply market event (from market space)
+// Apply market event (from market space) - 자산별 다른 비율로 변동
 function applyMarketEvent(isUp) {
-    const multiplier = isUp ? 1.1 : 0.9;
-    const changePercent = isUp ? 10 : -10;
+    const baseDirection = isUp ? 1 : -1;
 
     // Apply to random subset of assets
     const assetNames = Object.keys(marketPrices);
@@ -261,6 +260,35 @@ function applyMarketEvent(isUp) {
 
     affected.forEach(name => {
         const oldPrice = marketPrices[name];
+        const char = assetCharacteristics[name] || { type: 'stock', volatility: 0.1, beta: 1.0 };
+
+        // 자산 특성에 따른 변동폭 계산
+        // 기본 5~15% 변동에 자산별 특성 적용
+        let changePercent;
+
+        if (char.type === 'crypto') {
+            // 가상자산: 10~30% 변동 (고변동성)
+            changePercent = baseDirection * (10 + Math.random() * 20) * char.beta / 2;
+        } else if (char.type === 'bond') {
+            // 채권: 1~5% 변동 (저변동성, 주식과 역방향)
+            changePercent = -baseDirection * (1 + Math.random() * 4);
+        } else if (char.type === 'commodity') {
+            // 원자재: 5~15% 변동
+            if (char.safeHaven && !isUp) {
+                // 금은 시장 하락시 오히려 상승
+                changePercent = (3 + Math.random() * 7);
+            } else {
+                changePercent = baseDirection * (5 + Math.random() * 10);
+            }
+        } else {
+            // 주식/ETF: 5~20% 변동 (베타값에 따라)
+            changePercent = baseDirection * (5 + Math.random() * 15) * char.beta;
+        }
+
+        // 변동폭 제한 (-40% ~ +50%)
+        changePercent = Math.max(-40, Math.min(50, changePercent));
+
+        const multiplier = 1 + (changePercent / 100);
         marketPrices[name] = Math.round(marketPrices[name] * multiplier * 100) / 100;
 
         priceHistory[name].push(marketPrices[name]);

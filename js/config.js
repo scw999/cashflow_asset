@@ -129,7 +129,7 @@ const presets = {
     },
     '자영업자': {
         job: '카페사장',
-        income: { salary: 0, rental: 0, dividend: 0, other: 450 },
+        income: { salary: 450, rental: 0, dividend: 0, other: 0 },
         expenses: { housing: 80, living: 100, loan: 80, tax: 70 },
         assets: { cash: 1000, realEstate: 0, stocks: 0, crypto: 0 },
         liabilities: { mortgage: 0, credit: 2000, student: 0, other: 3000 },
@@ -153,7 +153,7 @@ const presets = {
     },
     '간호사': {
         job: '간호사',
-        income: { salary: 350, rental: 0, dividend: 0, other: 50 },
+        income: { salary: 400, rental: 0, dividend: 0, other: 0 },
         expenses: { housing: 60, living: 100, loan: 30, tax: 50 },
         assets: { cash: 1200, realEstate: 0, stocks: 0, crypto: 0 },
         liabilities: { mortgage: 0, credit: 500, student: 1500, other: 0 },
@@ -161,7 +161,7 @@ const presets = {
     },
     '프리랜서': {
         job: 'IT프리랜서',
-        income: { salary: 0, rental: 0, dividend: 0, other: 500 },
+        income: { salary: 500, rental: 0, dividend: 0, other: 0 },
         expenses: { housing: 70, living: 110, loan: 50, tax: 80 },
         assets: { cash: 1500, realEstate: 0, stocks: 0, crypto: 0 },
         liabilities: { mortgage: 0, credit: 1000, student: 1000, other: 500 },
@@ -197,19 +197,26 @@ const ratRaceSpaces = [
     { type: 'market', name: '📉시장하락', color: '#dc2626' }
 ];
 
-// Fast Track Spaces (Dreams)
+// Fast Track Spaces (사업 투자 + 꿈)
 const fastTrackSpaces = [
+    { type: 'business', name: '🏢프랜차이즈', cost: 50000, monthlyIncome: 500, color: '#10b981' },
+    { type: 'business', name: '🏭제조공장', cost: 100000, monthlyIncome: 1000, color: '#3b82f6' },
     { type: 'dream', name: '🏝️섬구매', cost: 500000, color: '#fbbf24' },
+    { type: 'business', name: '🏬쇼핑몰', cost: 150000, monthlyIncome: 1500, color: '#8b5cf6' },
     { type: 'dream', name: '🚀우주여행', cost: 300000, color: '#a855f7' },
+    { type: 'business', name: '💻IT스타트업', cost: 80000, monthlyIncome: 800, color: '#06b6d4' },
     { type: 'dream', name: '🏰성구매', cost: 1000000, color: '#f97316' },
+    { type: 'business', name: '🏨호텔체인', cost: 200000, monthlyIncome: 2000, color: '#ec4899' },
     { type: 'dream', name: '🎨예술컬렉션', cost: 200000, color: '#14b8a6' },
+    { type: 'business', name: '⚡에너지사업', cost: 120000, monthlyIncome: 1200, color: '#eab308' },
     { type: 'dream', name: '🏎️슈퍼카', cost: 150000, color: '#ef4444' },
-    { type: 'dream', name: '🌍세계여행', cost: 100000, color: '#3b82f6' },
-    { type: 'dream', name: '🏥자선재단', cost: 500000, color: '#ec4899' },
-    { type: 'dream', name: '🎯꿈달성!', cost: 0, color: '#10b981' }
+    { type: 'dream', name: '🌍세계여행', cost: 100000, color: '#3b82f6' }
 ];
 
-// Dreams list for selection
+// 패스트트랙 승리 조건: 월 패시브 소득 5000만원
+const FAST_TRACK_WIN_PASSIVE = 5000;
+
+// Dreams list for selection (경제적 자유 제거 - 이미 탈출 조건)
 const dreams = [
     { id: 'island', name: '🏝️ 개인 섬', cost: 500000, desc: '나만의 열대 섬 구매' },
     { id: 'space', name: '🚀 우주여행', cost: 300000, desc: '우주 관광 체험' },
@@ -217,8 +224,7 @@ const dreams = [
     { id: 'art', name: '🎨 예술 컬렉션', cost: 200000, desc: '명화 컬렉션 수집' },
     { id: 'supercar', name: '🏎️ 슈퍼카', cost: 150000, desc: '드림카 구매' },
     { id: 'worldtrip', name: '🌍 세계여행', cost: 100000, desc: '1년간 세계 일주' },
-    { id: 'charity', name: '🏥 자선재단', cost: 500000, desc: '나만의 재단 설립' },
-    { id: 'freedom', name: '🎯 경제적 자유', cost: 0, desc: '패시브 소득 달성' }
+    { id: 'charity', name: '🏥 자선재단', cost: 500000, desc: '나만의 재단 설립' }
 ];
 
 // Real Estate Opportunities (기회 칸에서만 등장)
