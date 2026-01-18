@@ -982,6 +982,12 @@
             
             drawBoard();
             updatePlayerTabs();
+    const activeTab = document.querySelector('.tab-btn.bg-gray-700');
+    if (activeTab) {
+        const tabName = activeTab.getAttribute('data-tab');
+        showTab(tabName);
+    }
+            
         }
 
         // Update summary lists under balance sheet
