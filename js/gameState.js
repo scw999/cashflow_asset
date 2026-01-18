@@ -376,7 +376,14 @@ function nextTurn() {
 
 // Check if player can escape rat race
 function checkEscape() {
-    if (!gameState.inFastTrack && getPassiveIncome() >= getTotalExpenses()) {
+    // Only check if game has started (player has income/expenses set)
+    const totalExpenses = getTotalExpenses();
+    const passiveIncome = getPassiveIncome();
+
+    // Don't trigger if no expenses set (game not started) or no passive income yet
+    if (totalExpenses <= 0 || passiveIncome <= 0) return;
+
+    if (!gameState.inFastTrack && passiveIncome >= totalExpenses) {
         document.getElementById('celebrateModal').classList.remove('hidden');
     }
 }

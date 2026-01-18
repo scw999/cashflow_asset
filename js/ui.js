@@ -408,25 +408,68 @@ function showDetailModal(type) {
             </div>
         `;
     } else if (type === 'liabilities') {
-        title.textContent = '📉 부채 상세';
+        title.textContent = '📉 부채 상세 및 상환';
         html = `
             <div class="space-y-3">
-                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
-                    <span>🏦 주택담보대출</span>
-                    <span class="text-red-400">₩${fmt(gameState.liabilities.mortgage)}만</span>
+                <div class="p-3 bg-emerald-900/30 rounded-lg mb-3">
+                    <div class="text-sm text-gray-400">보유 현금</div>
+                    <div class="text-xl font-bold text-emerald-400">₩${fmt(gameState.assets.cash)}만</div>
                 </div>
-                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
-                    <span>💳 신용대출</span>
-                    <span class="text-red-400">₩${fmt(gameState.liabilities.credit)}만</span>
-                </div>
-                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
-                    <span>🎓 학자금대출</span>
-                    <span class="text-red-400">₩${fmt(gameState.liabilities.student)}만</span>
-                </div>
-                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
-                    <span>📋 기타대출</span>
-                    <span class="text-red-400">₩${fmt(gameState.liabilities.other)}만</span>
-                </div>
+
+                ${gameState.liabilities.mortgage > 0 ? `
+                <div class="p-3 bg-gray-800 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span>🏦 주택담보대출</span>
+                        <span class="text-red-400 font-bold">₩${fmt(gameState.liabilities.mortgage)}만</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="number" id="repayMortgage" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.mortgage}">
+                        <button onclick="repayDebt('mortgage')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">상환</button>
+                    </div>
+                </div>` : ''}
+
+                ${gameState.liabilities.credit > 0 ? `
+                <div class="p-3 bg-gray-800 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span>💳 신용대출</span>
+                        <span class="text-red-400 font-bold">₩${fmt(gameState.liabilities.credit)}만</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="number" id="repayCredit" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.credit}">
+                        <button onclick="repayDebt('credit')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">상환</button>
+                    </div>
+                </div>` : ''}
+
+                ${gameState.liabilities.student > 0 ? `
+                <div class="p-3 bg-gray-800 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span>🎓 학자금대출</span>
+                        <span class="text-red-400 font-bold">₩${fmt(gameState.liabilities.student)}만</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="number" id="repayStudent" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.student}">
+                        <button onclick="repayDebt('student')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">상환</button>
+                    </div>
+                </div>` : ''}
+
+                ${gameState.liabilities.other > 0 ? `
+                <div class="p-3 bg-gray-800 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span>📋 기타대출</span>
+                        <span class="text-red-400 font-bold">₩${fmt(gameState.liabilities.other)}만</span>
+                    </div>
+                    <div class="flex gap-2">
+                        <input type="number" id="repayOther" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.other}">
+                        <button onclick="repayDebt('other')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">상환</button>
+                    </div>
+                </div>` : ''}
+
+                ${getTotalLiabilities() === 0 ? `
+                <div class="p-4 bg-emerald-900/30 rounded-lg text-center">
+                    <div class="text-emerald-400 font-bold">🎉 부채 없음!</div>
+                    <div class="text-sm text-gray-400">모든 부채를 상환했습니다.</div>
+                </div>` : ''}
+
                 <div class="border-t border-gray-600 pt-3">
                     <div class="flex justify-between font-bold text-lg">
                         <span>총 부채</span>
@@ -516,4 +559,57 @@ function hideOpportunityModal() {
     if (modal) {
         modal.classList.add('hidden');
     }
+}
+
+// Repay debt
+function repayDebt(debtType) {
+    const inputIds = {
+        mortgage: 'repayMortgage',
+        credit: 'repayCredit',
+        student: 'repayStudent',
+        other: 'repayOther'
+    };
+
+    const debtNames = {
+        mortgage: '주택담보대출',
+        credit: '신용대출',
+        student: '학자금대출',
+        other: '기타대출'
+    };
+
+    const inputEl = document.getElementById(inputIds[debtType]);
+    if (!inputEl) return;
+
+    const amount = parseInt(inputEl.value) || 0;
+    if (amount <= 0) {
+        showNotification('상환 금액을 입력해주세요.', 'warning');
+        return;
+    }
+
+    const currentDebt = gameState.liabilities[debtType];
+    const currentCash = gameState.assets.cash;
+
+    if (amount > currentCash) {
+        showNotification('현금이 부족합니다.', 'error');
+        return;
+    }
+
+    if (amount > currentDebt) {
+        showNotification('부채 금액보다 많이 상환할 수 없습니다.', 'warning');
+        return;
+    }
+
+    // Process repayment
+    gameState.liabilities[debtType] -= amount;
+    gameState.assets.cash -= amount;
+
+    // Recalculate loan interest expense (assume 5% annual = 0.42% monthly)
+    const totalDebt = getTotalLiabilities();
+    gameState.expenses.loan = Math.round(totalDebt * 0.0042);
+
+    showNotification(`${debtNames[debtType]} ₩${fmt(amount)}만 상환 완료!`, 'success');
+
+    // Refresh the modal
+    showDetailModal('liabilities');
+    updateUI();
 }
