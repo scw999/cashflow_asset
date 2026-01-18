@@ -9,12 +9,13 @@ function init() {
 
     // Setup player tabs
     setNumPlayers(1);
-    updateSetupPlayerTabs();
-    loadSetupPlayerData();
 
     // Initialize UI
     updateCurrentPlayerDisplay();
     updateUI();
+
+    // Show setup modal on start
+    showSetupModal();
 
     // Setup tab click handlers
     document.querySelectorAll('[data-tab]').forEach(tab => {
@@ -38,7 +39,7 @@ function init() {
             loadBtn.remove();
         };
 
-        const setupContent = document.querySelector('#setupModal .max-w-4xl');
+        const setupContent = document.querySelector('#setupModal .max-w-2xl');
         if (setupContent) {
             const existingLoadBtn = setupContent.querySelector('.load-save-btn');
             if (!existingLoadBtn) {
@@ -58,7 +59,7 @@ function handleKeyboard(e) {
 
     // Check if setup modal is visible
     const setupModal = document.getElementById('setupModal');
-    if (!setupModal.classList.contains('hidden')) {
+    if (setupModal && !setupModal.classList.contains('hidden')) {
         return;
     }
 
@@ -81,7 +82,7 @@ function handleKeyboard(e) {
             }
             break;
         case '1':
-            showTab('investment');
+            showTab('market');
             break;
         case '2':
             showTab('simulation');
@@ -92,16 +93,22 @@ function handleKeyboard(e) {
         case 'escape':
             hideEventModal();
             hideAssetChartModal();
-            hideSettings();
+            hideSetupModal();
             hideCelebrateModal();
-            hideRealEstateModal();
+            hideOpportunityModal();
             hideVictoryModal();
+            hideDetailModal();
             break;
     }
 }
 
 // Roll dice and move
 function rollDice() {
+    // Prevent rapid clicking
+    if (diceRolling) {
+        return;
+    }
+
     const player = getPlayer();
 
     // Check if player needs to skip turn
@@ -112,6 +119,14 @@ function rollDice() {
         updateUI();
         drawBoard();
         return;
+    }
+
+    // Set cooldown
+    diceRolling = true;
+    const diceBtn = document.getElementById('diceBtn');
+    if (diceBtn) {
+        diceBtn.disabled = true;
+        diceBtn.classList.add('opacity-50', 'cursor-not-allowed');
     }
 
     // Roll dice (1-6, or double if has double dice power)
@@ -135,7 +150,9 @@ function rollDice() {
     if (significantChanges.length > 0) {
         const change = significantChanges[0];
         const color = parseFloat(change.changePercent) > 0 ? 'success' : 'error';
-        showNotification(`${change.name} ${change.changePercent}%!`, color);
+        setTimeout(() => {
+            showNotification(`${change.name} ${change.changePercent}%!`, color);
+        }, 1000);
     }
 
     // Move player
@@ -145,20 +162,24 @@ function rollDice() {
     // Draw board with animation
     drawBoard();
 
-    // Process landing after a short delay
+    // Process landing after a delay
     setTimeout(() => {
         const space = spaces[gameState.position];
         handleSpaceLanding(space);
-    }, 500);
+
+        // Reset cooldown after event is handled
+        setTimeout(() => {
+            diceRolling = false;
+            if (diceBtn) {
+                diceBtn.disabled = false;
+                diceBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            }
+        }, 500);
+    }, 800);
 }
 
 // Handle landing on a space
 function handleSpaceLanding(space) {
-    const modal = document.getElementById('eventModal');
-    const title = document.getElementById('eventTitle');
-    const content = document.getElementById('eventContent');
-    const actions = document.getElementById('eventActions');
-
     // Set current event for reference
     currentEvent = { space, type: space.type };
 
@@ -231,7 +252,7 @@ function handlePayday() {
 
 // Opportunity handler
 function handleOpportunity(space) {
-    // Real estate opportunities only appear on opportunity spaces
+    // Real estate opportunities only appear on real estate spaces
     if (space.name.includes('부동산') || space.name.includes('경매') || space.name.includes('원룸') || space.name.includes('상가')) {
         showRealEstateOpportunity();
     } else {
@@ -241,33 +262,39 @@ function handleOpportunity(space) {
             `<p>투자 기회가 찾아왔습니다!</p>
              <p class="mt-2 text-gray-400">투자 탭에서 주식, ETF, 가상자산을 매매할 수 있습니다.</p>`,
             [
-                { text: '투자하러 가기', action: 'hideEventModal(); showTab("investment");', primary: true },
+                { text: '투자하러 가기', action: 'hideEventModal(); showTab("market");', primary: true },
                 { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
             ]
         );
     }
 }
 
-// Market handler
+// Market handler - 실제로 시장 가격 변동 적용
 function handleMarket(space) {
     const isUp = space.name.includes('상승');
-    const change = isUp ? 1.1 : 0.9; // ±10%
 
-    // Update all stock/crypto values
-    gameState.investments.forEach(inv => {
-        if (inv.shares || inv.amount) {
-            inv.cost = Math.round(inv.cost * change);
-        }
-    });
+    // Apply market event to prices
+    const changes = applyMarketEvent(isUp);
 
-    gameState.assets.stocks = Math.round(gameState.assets.stocks * change);
-    gameState.assets.crypto = Math.round(gameState.assets.crypto * change);
+    // Create affected assets summary
+    const topChanges = changes.slice(0, 5);
+    const affectedSummary = topChanges.map(c =>
+        `<div class="flex justify-between text-sm">
+            <span>${c.name}</span>
+            <span class="${isUp ? 'text-emerald-400' : 'text-red-400'}">${isUp ? '+' : ''}${c.changePercent}%</span>
+        </div>`
+    ).join('');
 
     showEventModal(
         space.name,
-        `<p class="text-lg">시장이 ${isUp ? '상승' : '하락'}했습니다!</p>
-         <p class="mt-2 ${isUp ? 'text-emerald-400' : 'text-red-400'}">
-            주식/가상자산 가치 ${isUp ? '+10%' : '-10%'}
+        `<p class="text-lg mb-3">시장이 ${isUp ? '상승' : '하락'}했습니다!</p>
+         <div class="p-3 bg-gray-800 rounded-lg mb-3">
+            <div class="text-xs text-gray-400 mb-2">영향받은 자산 (${changes.length}개)</div>
+            ${affectedSummary}
+            ${changes.length > 5 ? `<div class="text-xs text-gray-500 mt-2">외 ${changes.length - 5}개...</div>` : ''}
+         </div>
+         <p class="text-sm ${isUp ? 'text-emerald-400' : 'text-red-400'}">
+            보유 자산 가치가 ${isUp ? '상승' : '하락'}했습니다.
          </p>`,
         [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
     );
@@ -306,22 +333,32 @@ function handleBaby() {
         '👶 아기 탄생!',
         `<p class="text-lg">축하합니다! 아기가 태어났습니다!</p>
          <p class="text-yellow-400 font-bold">자녀수: ${gameState.children}명</p>
-         <p class="text-red-400 mt-2">월 지출 +₩30만</p>`,
+         <p class="text-red-400 mt-2">월 지출 +₩30만 (양육비)</p>
+         <div class="mt-3 p-3 bg-gray-800 rounded-lg text-sm">
+            <div class="flex justify-between"><span>기존 지출</span><span>₩${fmt(getTotalExpenses() - 30)}만</span></div>
+            <div class="flex justify-between text-red-400"><span>양육비 추가</span><span>+₩30만</span></div>
+            <div class="border-t border-gray-600 my-2"></div>
+            <div class="flex justify-between font-bold"><span>새 총 지출</span><span>₩${fmt(getTotalExpenses())}만</span></div>
+         </div>`,
         [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
     );
 }
 
-// Layoff handler
+// Layoff handler - 2턴 쉬기 적용
 function handleLayoff() {
     const severance = gameState.income.salary * 2;
     gameState.assets.cash += severance;
+
+    // 2턴 쉬기 적용
+    getPlayer().skipTurns = 2;
 
     showEventModal(
         '😢 해고!',
         `<p class="text-lg">해고되었습니다...</p>
          <p class="text-emerald-400">퇴직금: +₩${fmt(severance)}만</p>
-         <p class="text-yellow-400 mt-2">다음 턴을 건너뜁니다.</p>`,
-        [{ text: '확인', action: 'hideEventModal(); getPlayer().skipTurns++; nextTurn(); updateUI();', primary: true }]
+         <p class="text-yellow-400 mt-2 font-bold">⚠️ 다음 2턴을 쉬어야 합니다!</p>
+         <p class="text-sm text-gray-400 mt-1">(재취업 활동 기간)</p>`,
+        [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
     );
 }
 
@@ -395,6 +432,11 @@ function showEventModal(title, content, actions) {
     const contentEl = document.getElementById('eventContent');
     const actionsEl = document.getElementById('eventActions');
 
+    if (!modal || !titleEl || !contentEl || !actionsEl) {
+        console.error('Event modal elements not found');
+        return;
+    }
+
     titleEl.textContent = title;
     contentEl.innerHTML = content;
     actionsEl.innerHTML = actions.map(a =>
@@ -407,6 +449,14 @@ function showEventModal(title, content, actions) {
     modal.classList.remove('hidden');
 }
 
+// Hide event modal
+function hideEventModal() {
+    const modal = document.getElementById('eventModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+    currentEvent = null;
+}
+
 // Initialize on DOM ready
 document.addEventListener('DOMContentLoaded', init);
-

@@ -40,63 +40,132 @@ const basePrices = {
     '솔라나': 35
 };
 
-// Job Presets
+// 경제 사이클 시스템
+let economicCycle = {
+    phase: 'expansion', // expansion, peak, recession, recovery
+    turnsInPhase: 0,
+    interestRate: 3.5, // 기준금리 (%)
+    inflation: 2.0, // 인플레이션 (%)
+    sentiment: 0.5 // 시장 심리 (0-1, 0.5가 중립)
+};
+
+// 사이클 단계별 특성
+const cycleCharacteristics = {
+    expansion: {
+        stockBias: 0.03, cryptoBias: 0.05, bondBias: -0.01, commodityBias: 0.02,
+        duration: [8, 15], nextPhase: 'peak'
+    },
+    peak: {
+        stockBias: 0.01, cryptoBias: 0.02, bondBias: 0.00, commodityBias: 0.03,
+        duration: [3, 6], nextPhase: 'recession'
+    },
+    recession: {
+        stockBias: -0.03, cryptoBias: -0.05, bondBias: 0.02, commodityBias: -0.02,
+        duration: [5, 10], nextPhase: 'recovery'
+    },
+    recovery: {
+        stockBias: 0.02, cryptoBias: 0.03, bondBias: 0.01, commodityBias: 0.01,
+        duration: [5, 10], nextPhase: 'expansion'
+    }
+};
+
+// 자산별 변동성 및 특성
+const assetCharacteristics = {
+    // 주식
+    '삼성전자': { type: 'stock', volatility: 0.08, dividend: 0.02, beta: 1.0 },
+    'SK하이닉스': { type: 'stock', volatility: 0.12, dividend: 0.01, beta: 1.3 },
+    '네이버': { type: 'stock', volatility: 0.10, dividend: 0.00, beta: 1.1 },
+    '카카오': { type: 'stock', volatility: 0.12, dividend: 0.00, beta: 1.2 },
+    '애플': { type: 'stock', volatility: 0.06, dividend: 0.005, beta: 0.9 },
+    '테슬라': { type: 'stock', volatility: 0.15, dividend: 0.00, beta: 1.8 },
+    '마이크로소프트': { type: 'stock', volatility: 0.07, dividend: 0.008, beta: 0.95 },
+    '엔비디아': { type: 'stock', volatility: 0.18, dividend: 0.001, beta: 1.6 },
+
+    // ETF
+    'S&P500 ETF': { type: 'etf', volatility: 0.05, dividend: 0.015, beta: 1.0 },
+    '나스닥100 ETF': { type: 'etf', volatility: 0.07, dividend: 0.005, beta: 1.2 },
+    '고배당 ETF': { type: 'etf', volatility: 0.04, dividend: 0.04, beta: 0.7 },
+    '리츠 ETF': { type: 'etf', volatility: 0.06, dividend: 0.05, beta: 0.8 },
+    '채권 ETF': { type: 'bond', volatility: 0.02, dividend: 0.03, beta: -0.2 },
+
+    // 원자재
+    '금 ETF': { type: 'commodity', volatility: 0.04, dividend: 0.00, beta: 0.0, safeHaven: true },
+    '은 ETF': { type: 'commodity', volatility: 0.08, dividend: 0.00, beta: 0.3 },
+    '원유 ETF': { type: 'commodity', volatility: 0.12, dividend: 0.00, beta: 0.5 },
+    '농산물 ETF': { type: 'commodity', volatility: 0.06, dividend: 0.00, beta: 0.2 },
+
+    // 가상자산
+    '비트코인': { type: 'crypto', volatility: 0.15, dividend: 0.00, beta: 2.0 },
+    '이더리움': { type: 'crypto', volatility: 0.18, dividend: 0.00, beta: 2.2 },
+    '솔라나': { type: 'crypto', volatility: 0.25, dividend: 0.00, beta: 2.5 }
+};
+
+// Job Presets - 모든 직업의 난이도를 비슷하게 조정
+// 핵심: 소득이 높으면 지출도 높고 빚도 많음, 모든 직업이 현금만 보유
 const presets = {
     '사회초년생': {
         job: '신입사원',
         income: { salary: 280, rental: 0, dividend: 0, other: 0 },
-        expenses: { housing: 50, living: 80, loan: 30, tax: 40 },
+        expenses: { housing: 50, living: 80, loan: 20, tax: 40 },
         assets: { cash: 500, realEstate: 0, stocks: 0, crypto: 0 },
-        liabilities: { mortgage: 0, credit: 0, student: 2000, other: 0 }
+        liabilities: { mortgage: 0, credit: 0, student: 2000, other: 0 },
+        description: '갓 취업한 신입사원. 학자금 대출이 있지만 지출은 적음.'
     },
     '직장인5년차': {
         job: '대리',
-        income: { salary: 400, rental: 0, dividend: 5, other: 0 },
-        expenses: { housing: 80, living: 100, loan: 50, tax: 60 },
-        assets: { cash: 3000, realEstate: 0, stocks: 1000, crypto: 200 },
-        liabilities: { mortgage: 0, credit: 500, student: 1000, other: 0 }
-    },
-    '투자자': {
-        job: '전업투자자',
-        income: { salary: 0, rental: 200, dividend: 150, other: 100 },
-        expenses: { housing: 100, living: 150, loan: 100, tax: 80 },
-        assets: { cash: 10000, realEstate: 50000, stocks: 30000, crypto: 5000 },
-        liabilities: { mortgage: 30000, credit: 0, student: 0, other: 0 }
-    },
-    '고액자산가': {
-        job: '사업가',
-        income: { salary: 0, rental: 500, dividend: 300, other: 400 },
-        expenses: { housing: 200, living: 300, loan: 200, tax: 200 },
-        assets: { cash: 50000, realEstate: 200000, stocks: 100000, crypto: 20000 },
-        liabilities: { mortgage: 80000, credit: 0, student: 0, other: 5000 }
-    },
-    '의사': {
-        job: '전문의',
-        income: { salary: 1200, rental: 0, dividend: 20, other: 0 },
-        expenses: { housing: 150, living: 200, loan: 300, tax: 250 },
-        assets: { cash: 5000, realEstate: 0, stocks: 3000, crypto: 0 },
-        liabilities: { mortgage: 0, credit: 2000, student: 10000, other: 0 }
-    },
-    '변호사': {
-        job: '변호사',
-        income: { salary: 900, rental: 0, dividend: 30, other: 100 },
-        expenses: { housing: 120, living: 180, loan: 150, tax: 200 },
-        assets: { cash: 8000, realEstate: 0, stocks: 5000, crypto: 500 },
-        liabilities: { mortgage: 0, credit: 1000, student: 5000, other: 0 }
+        income: { salary: 400, rental: 0, dividend: 0, other: 0 },
+        expenses: { housing: 80, living: 120, loan: 40, tax: 60 },
+        assets: { cash: 2000, realEstate: 0, stocks: 0, crypto: 0 },
+        liabilities: { mortgage: 0, credit: 1500, student: 500, other: 0 },
+        description: '경력 5년차 직장인. 소득은 늘었지만 지출도 함께 증가.'
     },
     '공무원': {
         job: '7급공무원',
         income: { salary: 320, rental: 0, dividend: 0, other: 0 },
-        expenses: { housing: 60, living: 90, loan: 40, tax: 30 },
-        assets: { cash: 2000, realEstate: 0, stocks: 500, crypto: 0 },
-        liabilities: { mortgage: 0, credit: 0, student: 500, other: 0 }
+        expenses: { housing: 60, living: 90, loan: 30, tax: 30 },
+        assets: { cash: 1500, realEstate: 0, stocks: 0, crypto: 0 },
+        liabilities: { mortgage: 0, credit: 500, student: 1000, other: 0 },
+        description: '안정적인 공무원. 소득과 지출 모두 보통 수준.'
     },
     '자영업자': {
-        job: '식당운영',
+        job: '카페사장',
+        income: { salary: 0, rental: 0, dividend: 0, other: 450 },
+        expenses: { housing: 80, living: 100, loan: 80, tax: 70 },
+        assets: { cash: 1000, realEstate: 0, stocks: 0, crypto: 0 },
+        liabilities: { mortgage: 0, credit: 2000, student: 0, other: 3000 },
+        description: '카페 운영 자영업자. 소득 변동이 크고 사업자금 대출 있음.'
+    },
+    '의사': {
+        job: '전문의',
+        income: { salary: 1200, rental: 0, dividend: 0, other: 0 },
+        expenses: { housing: 200, living: 300, loan: 250, tax: 300 },
+        assets: { cash: 3000, realEstate: 0, stocks: 0, crypto: 0 },
+        liabilities: { mortgage: 5000, credit: 3000, student: 8000, other: 0 },
+        description: '고소득 전문의. 하지만 학자금과 개업 비용으로 부채가 많음.'
+    },
+    '변호사': {
+        job: '변호사',
+        income: { salary: 900, rental: 0, dividend: 0, other: 0 },
+        expenses: { housing: 150, living: 250, loan: 200, tax: 200 },
+        assets: { cash: 2500, realEstate: 0, stocks: 0, crypto: 0 },
+        liabilities: { mortgage: 3000, credit: 2000, student: 5000, other: 0 },
+        description: '고소득 변호사. 학자금 대출과 사무실 비용으로 부채 있음.'
+    },
+    '간호사': {
+        job: '간호사',
+        income: { salary: 350, rental: 0, dividend: 0, other: 50 },
+        expenses: { housing: 60, living: 100, loan: 30, tax: 50 },
+        assets: { cash: 1200, realEstate: 0, stocks: 0, crypto: 0 },
+        liabilities: { mortgage: 0, credit: 500, student: 1500, other: 0 },
+        description: '야근 수당 포함 간호사. 안정적이지만 시간이 부족함.'
+    },
+    '프리랜서': {
+        job: 'IT프리랜서',
         income: { salary: 0, rental: 0, dividend: 0, other: 500 },
-        expenses: { housing: 80, living: 120, loan: 100, tax: 80 },
-        assets: { cash: 3000, realEstate: 10000, stocks: 0, crypto: 0 },
-        liabilities: { mortgage: 0, credit: 3000, student: 0, other: 5000 }
+        expenses: { housing: 70, living: 110, loan: 50, tax: 80 },
+        assets: { cash: 1500, realEstate: 0, stocks: 0, crypto: 0 },
+        liabilities: { mortgage: 0, credit: 1000, student: 1000, other: 500 },
+        description: '자유로운 IT 프리랜서. 소득이 불안정하지만 유동성이 높음.'
     }
 };
 
@@ -170,8 +239,18 @@ const stakingRates = {
     '솔라나': 0.08     // 연 8%
 };
 
+// 주사위 쿨다운 상태
+let diceRolling = false;
+
 // Utility function
 function fmt(n) {
     if (typeof n !== 'number') return '0';
     return n.toLocaleString('ko-KR');
+}
+
+// 랜덤 직업 선택 함수
+function getRandomPreset() {
+    const presetNames = Object.keys(presets);
+    const randomIndex = Math.floor(Math.random() * presetNames.length);
+    return presetNames[randomIndex];
 }

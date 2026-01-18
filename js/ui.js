@@ -4,66 +4,58 @@
 
 // Update UI
 function updateUI() {
-    // Update financial statement
-    document.getElementById('incomeSalary').textContent = `₩${fmt(gameState.income.salary)}만`;
-    document.getElementById('incomeRental').textContent = `₩${fmt(gameState.income.rental)}만`;
-    document.getElementById('incomeDividend').textContent = `₩${fmt(gameState.income.dividend)}만`;
-    document.getElementById('incomeOther').textContent = `₩${fmt(gameState.income.other)}만`;
+    const player = getPlayer();
 
-    document.getElementById('expenseHousing').textContent = `₩${fmt(gameState.expenses.housing)}만`;
-    document.getElementById('expenseLiving').textContent = `₩${fmt(gameState.expenses.living)}만`;
-    document.getElementById('expenseLoan').textContent = `₩${fmt(gameState.expenses.loan)}만`;
-    document.getElementById('expenseTax').textContent = `₩${fmt(gameState.expenses.tax)}만`;
+    // Dashboard
+    document.getElementById('dashCash').textContent = `₩${fmt(gameState.assets.cash)}만`;
+    document.getElementById('dashAssets').textContent = `₩${fmt(getTotalAssets())}만`;
+    document.getElementById('dashDebt').textContent = `₩${fmt(getTotalLiabilities())}만`;
+    document.getElementById('dashNetWorth').textContent = `₩${fmt(getTotalAssets() - getTotalLiabilities())}만`;
+    document.getElementById('dashCashflow').textContent = `₩${fmt(getCashflow())}만`;
 
-    document.getElementById('childExpense').textContent = `₩${fmt(gameState.children * 30)}만 (${gameState.children}명)`;
-
-    document.getElementById('assetCash').textContent = `₩${fmt(gameState.assets.cash)}만`;
-    document.getElementById('assetRealEstate').textContent = `₩${fmt(gameState.assets.realEstate)}만`;
-    document.getElementById('assetStocks').textContent = `₩${fmt(gameState.assets.stocks)}만`;
-    document.getElementById('assetCrypto').textContent = `₩${fmt(gameState.assets.crypto)}만`;
-
-    document.getElementById('liabMortgage').textContent = `₩${fmt(gameState.liabilities.mortgage)}만`;
-    document.getElementById('liabCredit').textContent = `₩${fmt(gameState.liabilities.credit)}만`;
-    document.getElementById('liabStudent').textContent = `₩${fmt(gameState.liabilities.student)}만`;
-    document.getElementById('liabOther').textContent = `₩${fmt(gameState.liabilities.other)}만`;
-
-    // Summaries
+    // Income statement
     const totalIncome = Object.values(gameState.income).reduce((a, b) => a + b, 0);
-    const totalExpense = Object.values(gameState.expenses).reduce((a, b) => a + b, 0) + gameState.children * 30;
-    const cashflow = totalIncome - totalExpense;
     const passiveIncome = getPassiveIncome();
+    const totalExpense = getTotalExpenses();
+    const cashflow = getCashflow();
 
-    document.getElementById('totalIncome').textContent = `₩${fmt(totalIncome)}만`;
-    document.getElementById('totalExpense').textContent = `₩${fmt(totalExpense)}만`;
-    document.getElementById('cashflowAmount').textContent = `₩${fmt(cashflow)}만`;
-    document.getElementById('cashflowAmount').className = cashflow >= 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
-    document.getElementById('passiveIncome').textContent = `₩${fmt(passiveIncome)}만`;
+    document.getElementById('incSalary').textContent = `₩${fmt(gameState.income.salary)}만`;
+    document.getElementById('incPassive').textContent = `₩${fmt(passiveIncome)}만`;
+    document.getElementById('expTotal').textContent = `₩${fmt(totalExpense)}만`;
+    document.getElementById('cashflow').textContent = `₩${fmt(cashflow)}만`;
+    document.getElementById('cashflow').className = cashflow >= 0 ? 'text-emerald-400' : 'text-red-400';
 
-    const totalAssets = getTotalAssets();
-    const totalLiabilities = getTotalLiabilities();
-    const netWorth = totalAssets - totalLiabilities;
-    document.getElementById('totalAssets').textContent = `₩${fmt(totalAssets)}만`;
-    document.getElementById('totalLiabilities').textContent = `₩${fmt(totalLiabilities)}만`;
+    // Balance sheet
+    document.getElementById('totalAssets').textContent = `₩${fmt(getTotalAssets())}만`;
+    document.getElementById('totalLiabilities').textContent = `₩${fmt(getTotalLiabilities())}만`;
+    const netWorth = getTotalAssets() - getTotalLiabilities();
     document.getElementById('netWorth').textContent = `₩${fmt(netWorth)}만`;
-    document.getElementById('netWorth').className = netWorth >= 0 ? 'text-emerald-400 font-bold' : 'text-red-400 font-bold';
+    document.getElementById('netWorth').className = netWorth >= 0 ? 'text-emerald-400' : 'text-red-400';
 
-    // Progress bars
-    const escapeProgress = passiveIncome > 0 ? Math.min(100, (passiveIncome / totalExpense) * 100) : 0;
+    // Escape progress
+    const escapeProgress = passiveIncome > 0 && totalExpense > 0 ? Math.min(100, (passiveIncome / totalExpense) * 100) : 0;
     document.getElementById('escapeProgress').style.width = `${escapeProgress}%`;
-    document.getElementById('escapeProgressText').textContent = `${escapeProgress.toFixed(0)}%`;
+
+    // Current player info
+    document.getElementById('currentPlayerEmoji').textContent = playerEmojis[currentPlayer];
+    document.getElementById('currentPlayerName').textContent = `플레이어 ${currentPlayer + 1}`;
+    document.getElementById('currentPlayerJob').textContent = player.job || '직업 미선택';
+
+    // Dream display
+    const dreamDisplay = document.getElementById('myDreamDisplay');
+    if (dreamDisplay && player.dream) {
+        const dreamData = dreams.find(d => d.id === player.dream);
+        dreamDisplay.textContent = dreamData ? `🎯 목표: ${dreamData.name}` : '';
+    }
 
     // Summary lists
     updateSummaryLists();
 
     // Update active tab content
-    const activeTab = document.querySelector('[data-tab].border-b-2.border-yellow-400');
-    if (activeTab) {
-        const tabName = activeTab.getAttribute('data-tab');
-        if (tabName === 'investment') {
-            document.getElementById('tabContent').innerHTML = getMarketHTML();
-        } else if (tabName === 'portfolio') {
-            document.getElementById('tabContent').innerHTML = getPortfolioHTML();
-        }
+    const activeTabBtn = document.querySelector('.tab-btn.active');
+    if (activeTabBtn) {
+        const tabName = activeTabBtn.getAttribute('data-tab');
+        showTab(tabName);
     }
 
     checkEscape();
@@ -98,44 +90,10 @@ function updateSummaryLists() {
             ? liabs.map(l => `<div class="flex justify-between text-sm"><span>${l.icon} ${l.name}</span><span class="text-red-400">₩${fmt(l.value)}만</span></div>`).join('')
             : '<div class="text-gray-500 text-sm text-center">부채 없음</div>';
     }
-
-    // Investments summary
-    const invList = document.getElementById('investmentSummaryList');
-    if (invList) {
-        const investments = gameState.investments.slice(0, 5); // Show top 5
-        invList.innerHTML = investments.length > 0
-            ? investments.map(inv => {
-                let currentValue;
-                if (inv.amount && inv.baseName && marketPrices[inv.baseName]) {
-                    currentValue = Math.round(inv.amount * marketPrices[inv.baseName] * 100) / 100;
-                } else if (inv.amount && marketPrices[inv.name]) {
-                    currentValue = Math.round(inv.amount * marketPrices[inv.name] * 100) / 100;
-                } else if (inv.shares && marketPrices[inv.name]) {
-                    currentValue = Math.round(inv.shares * marketPrices[inv.name] * 100) / 100;
-                } else {
-                    currentValue = inv.cost;
-                }
-                const pnl = currentValue - inv.cost;
-                const pnlClass = pnl >= 0 ? 'text-emerald-400' : 'text-red-400';
-                return `<div class="flex justify-between text-sm">
-                    <span class="truncate">${inv.name}</span>
-                    <span class="${pnlClass}">₩${fmt(currentValue)}만</span>
-                </div>`;
-            }).join('')
-            : '<div class="text-gray-500 text-sm text-center">투자 없음</div>';
-    }
 }
 
 // Update current player display
 function updateCurrentPlayerDisplay() {
-    const indicator = document.getElementById('currentPlayerIndicator');
-    const avatar = document.getElementById('currentPlayerAvatar');
-    const label = document.getElementById('currentPlayerLabel');
-
-    indicator.className = `flex items-center gap-2 px-4 py-2 rounded-full ${playerColorClasses[currentPlayer]}`;
-    avatar.textContent = playerEmojis[currentPlayer];
-    label.textContent = `플레이어 ${currentPlayer + 1}의 차례`;
-
     updatePlayerTabs();
 }
 
@@ -144,17 +102,22 @@ function updatePlayerTabs() {
     const container = document.getElementById('playerTabs');
     if (!container) return;
 
-    container.innerHTML = '';
-    for (let i = 0; i < numPlayers; i++) {
-        const tab = document.createElement('button');
-        tab.className = `px-3 py-1 rounded-lg text-sm font-bold transition-all ${
-            i === currentPlayer
-                ? playerColorClasses[i] + ' ring-2 ring-white'
-                : 'bg-gray-700 hover:bg-gray-600'
-        }`;
-        tab.innerHTML = `${playerEmojis[i]} P${i + 1}`;
-        tab.onclick = () => switchToPlayer(i);
-        container.appendChild(tab);
+    if (numPlayers > 1) {
+        container.classList.remove('hidden');
+        container.innerHTML = '';
+        for (let i = 0; i < numPlayers; i++) {
+            const tab = document.createElement('button');
+            tab.className = `px-3 py-1 rounded-lg text-sm font-bold transition-all ${
+                i === currentPlayer
+                    ? playerColorClasses[i] + ' ring-2 ring-white'
+                    : 'bg-gray-700 hover:bg-gray-600'
+            }`;
+            tab.innerHTML = `${playerEmojis[i]} P${i + 1}`;
+            tab.onclick = () => switchToPlayer(i);
+            container.appendChild(tab);
+        }
+    } else {
+        container.classList.add('hidden');
     }
 }
 
@@ -181,11 +144,18 @@ function updateSetupPlayerTabs() {
         }`;
         tab.innerHTML = `${playerEmojis[i]} 플레이어 ${i + 1}`;
         tab.onclick = () => {
+            saveSetupPlayer();
             setupPlayer = i;
             updateSetupPlayerTabs();
             loadSetupPlayerData();
         };
         container.appendChild(tab);
+    }
+
+    // Update preset player label
+    const presetLabel = document.getElementById('presetPlayerLabel');
+    if (presetLabel) {
+        presetLabel.textContent = `(플레이어 ${setupPlayer + 1})`;
     }
 }
 
@@ -193,34 +163,66 @@ function updateSetupPlayerTabs() {
 function loadSetupPlayerData() {
     const player = players[setupPlayer];
 
-    document.getElementById('setupJobInput').value = player.job || '';
+    // Update preset buttons
+    updatePresetButtons();
+
+    // Update selected job display
+    const jobDisplay = document.getElementById('selectedJobDisplay');
+    if (jobDisplay) {
+        jobDisplay.textContent = player.job || '없음';
+    }
 
     // Income
-    document.getElementById('setupSalary').value = player.income.salary;
-    document.getElementById('setupRental').value = player.income.rental;
-    document.getElementById('setupDividend').value = player.income.dividend;
-    document.getElementById('setupOther').value = player.income.other;
+    document.getElementById('inpSalary').value = player.income.salary;
+    document.getElementById('inpRental').value = player.income.rental;
+    document.getElementById('inpDividend').value = player.income.dividend;
+    document.getElementById('inpOtherInc').value = player.income.other;
 
     // Expenses
-    document.getElementById('setupHousing').value = player.expenses.housing;
-    document.getElementById('setupLiving').value = player.expenses.living;
-    document.getElementById('setupLoan').value = player.expenses.loan;
-    document.getElementById('setupTax').value = player.expenses.tax;
+    document.getElementById('expHousing').value = player.expenses.housing;
+    document.getElementById('expLiving').value = player.expenses.living;
+    document.getElementById('expLoan').value = player.expenses.loan;
+    document.getElementById('expTax').value = player.expenses.tax;
 
     // Assets
-    document.getElementById('setupCash').value = player.assets.cash;
-    document.getElementById('setupRealEstate').value = player.assets.realEstate;
-    document.getElementById('setupStocks').value = player.assets.stocks;
-    document.getElementById('setupCrypto').value = player.assets.crypto;
+    document.getElementById('astCash').value = player.assets.cash;
+    document.getElementById('astRealEstate').value = player.assets.realEstate;
+    document.getElementById('astStocks').value = player.assets.stocks;
+    document.getElementById('astCrypto').value = player.assets.crypto;
 
     // Liabilities
-    document.getElementById('setupMortgage').value = player.liabilities.mortgage;
-    document.getElementById('setupCredit').value = player.liabilities.credit;
-    document.getElementById('setupStudent').value = player.liabilities.student;
-    document.getElementById('setupOtherLiab').value = player.liabilities.other;
+    document.getElementById('debtMortgage').value = player.liabilities.mortgage;
+    document.getElementById('debtCredit').value = player.liabilities.credit;
+    document.getElementById('debtStudent').value = player.liabilities.student;
+    document.getElementById('debtOther').value = player.liabilities.other;
 
     // Dream selection
     updateDreamSelection();
+}
+
+// Update preset buttons
+function updatePresetButtons() {
+    const container = document.getElementById('presetBtns');
+    if (!container) return;
+
+    container.innerHTML = Object.entries(presets).map(([key, preset]) => `
+        <button onclick="applyPreset('${key}')" class="preset-btn p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition ${players[setupPlayer].jobPreset === key ? 'ring-2 ring-yellow-400' : ''}">
+            <div class="font-bold text-sm">${preset.job}</div>
+            <div class="text-xs text-gray-400">${key}</div>
+        </button>
+    `).join('') + `
+        <button onclick="applyRandomPreset()" class="preset-btn p-2 bg-purple-700 hover:bg-purple-600 rounded-lg text-center transition">
+            <div class="font-bold text-sm">🎲 랜덤</div>
+            <div class="text-xs text-gray-300">랜덤 선택</div>
+        </button>
+    `;
+}
+
+// Apply random preset
+function applyRandomPreset() {
+    const randomKey = getRandomPreset();
+    applyPreset(randomKey);
+    showNotification(`🎲 ${presets[randomKey].job}이(가) 선택되었습니다!`, 'success');
 }
 
 // Update dream selection UI
@@ -239,7 +241,7 @@ function updateDreamSelection() {
             }">
             <div class="font-bold">${dream.name}</div>
             <div class="text-xs text-gray-300">${dream.desc}</div>
-            ${dream.cost > 0 ? `<div class="text-xs text-yellow-400 mt-1">필요자금: ₩${fmt(dream.cost)}만</div>` : ''}
+            ${dream.cost > 0 ? `<div class="text-xs text-yellow-400 mt-1">₩${fmt(dream.cost)}만</div>` : ''}
         </button>
     `).join('');
 }
@@ -262,6 +264,7 @@ function applyPreset(presetName) {
     Object.assign(player.expenses, preset.expenses);
     Object.assign(player.assets, preset.assets);
     Object.assign(player.liabilities, preset.liabilities);
+    player.investments = []; // Start with no investments
 
     loadSetupPlayerData();
 
@@ -269,49 +272,54 @@ function applyPreset(presetName) {
     document.querySelectorAll('.preset-btn').forEach(btn => {
         btn.classList.remove('ring-2', 'ring-yellow-400');
     });
-    event.target.classList.add('ring-2', 'ring-yellow-400');
+    if (event && event.target) {
+        event.target.closest('.preset-btn').classList.add('ring-2', 'ring-yellow-400');
+    }
 }
 
 // Save setup player data
 function saveSetupPlayer() {
     const player = players[setupPlayer];
 
-    player.job = document.getElementById('setupJobInput').value;
-
     // Income
-    player.income.salary = +document.getElementById('setupSalary').value || 0;
-    player.income.rental = +document.getElementById('setupRental').value || 0;
-    player.income.dividend = +document.getElementById('setupDividend').value || 0;
-    player.income.other = +document.getElementById('setupOther').value || 0;
+    player.income.salary = +document.getElementById('inpSalary').value || 0;
+    player.income.rental = +document.getElementById('inpRental').value || 0;
+    player.income.dividend = +document.getElementById('inpDividend').value || 0;
+    player.income.other = +document.getElementById('inpOtherInc').value || 0;
 
     // Expenses
-    player.expenses.housing = +document.getElementById('setupHousing').value || 0;
-    player.expenses.living = +document.getElementById('setupLiving').value || 0;
-    player.expenses.loan = +document.getElementById('setupLoan').value || 0;
-    player.expenses.tax = +document.getElementById('setupTax').value || 0;
+    player.expenses.housing = +document.getElementById('expHousing').value || 0;
+    player.expenses.living = +document.getElementById('expLiving').value || 0;
+    player.expenses.loan = +document.getElementById('expLoan').value || 0;
+    player.expenses.tax = +document.getElementById('expTax').value || 0;
 
     // Assets
-    player.assets.cash = +document.getElementById('setupCash').value || 0;
-    player.assets.realEstate = +document.getElementById('setupRealEstate').value || 0;
-    player.assets.stocks = +document.getElementById('setupStocks').value || 0;
-    player.assets.crypto = +document.getElementById('setupCrypto').value || 0;
+    player.assets.cash = +document.getElementById('astCash').value || 0;
+    player.assets.realEstate = +document.getElementById('astRealEstate').value || 0;
+    player.assets.stocks = +document.getElementById('astStocks').value || 0;
+    player.assets.crypto = +document.getElementById('astCrypto').value || 0;
 
     // Liabilities
-    player.liabilities.mortgage = +document.getElementById('setupMortgage').value || 0;
-    player.liabilities.credit = +document.getElementById('setupCredit').value || 0;
-    player.liabilities.student = +document.getElementById('setupStudent').value || 0;
-    player.liabilities.other = +document.getElementById('setupOtherLiab').value || 0;
+    player.liabilities.mortgage = +document.getElementById('debtMortgage').value || 0;
+    player.liabilities.credit = +document.getElementById('debtCredit').value || 0;
+    player.liabilities.student = +document.getElementById('debtStudent').value || 0;
+    player.liabilities.other = +document.getElementById('debtOther').value || 0;
 }
 
-// Start game
-function startGame() {
-    // Save current setup player data
+// Apply settings to current setup player
+function applySettingsToPlayer() {
+    saveSetupPlayer();
+    showNotification(`플레이어 ${setupPlayer + 1} 설정 적용됨`, 'success');
+}
+
+// Apply settings and close modal
+function applySettingsAndClose() {
     saveSetupPlayer();
 
     // Validate all players have jobs and dreams
     for (let i = 0; i < numPlayers; i++) {
         if (!players[i].job) {
-            alert(`플레이어 ${i + 1}의 직업을 설정해주세요.`);
+            alert(`플레이어 ${i + 1}의 직업을 선택해주세요.`);
             setupPlayer = i;
             updateSetupPlayerTabs();
             loadSetupPlayerData();
@@ -326,105 +334,166 @@ function startGame() {
         }
     }
 
-    document.getElementById('setupModal').classList.add('hidden');
+    hideSetupModal();
     currentPlayer = 0;
     turn = 1;
     document.getElementById('turnCount').textContent = turn;
     updateCurrentPlayerDisplay();
     updateUI();
     drawBoard();
+
+    showNotification('게임 설정이 완료되었습니다!', 'success');
 }
 
-// Show settings modal
-function showSettings() {
-    document.getElementById('settingsModal').classList.remove('hidden');
-
-    // Load current player data
-    document.getElementById('editJobInput').value = getPlayer().job || '';
-    document.getElementById('editSalary').value = gameState.income.salary;
-    document.getElementById('editRental').value = gameState.income.rental;
-    document.getElementById('editDividend').value = gameState.income.dividend;
-    document.getElementById('editOther').value = gameState.income.other;
-
-    document.getElementById('editHousing').value = gameState.expenses.housing;
-    document.getElementById('editLiving').value = gameState.expenses.living;
-    document.getElementById('editLoan').value = gameState.expenses.loan;
-    document.getElementById('editTax').value = gameState.expenses.tax;
-
-    document.getElementById('editCash').value = gameState.assets.cash;
-    document.getElementById('editRealEstate').value = gameState.assets.realEstate;
-    document.getElementById('editStocks').value = gameState.assets.stocks;
-    document.getElementById('editCrypto').value = gameState.assets.crypto;
-
-    document.getElementById('editMortgage').value = gameState.liabilities.mortgage;
-    document.getElementById('editCredit').value = gameState.liabilities.credit;
-    document.getElementById('editStudent').value = gameState.liabilities.student;
-    document.getElementById('editOtherLiab').value = gameState.liabilities.other;
-
-    document.getElementById('editChildren').value = gameState.children;
+// Show setup modal
+function showSetupModal() {
+    document.getElementById('setupModal').classList.remove('hidden');
+    updateSetupPlayerTabs();
+    loadSetupPlayerData();
 }
 
-// Hide settings modal
-function hideSettings() {
-    document.getElementById('settingsModal').classList.add('hidden');
+// Hide setup modal
+function hideSetupModal() {
+    document.getElementById('setupModal').classList.add('hidden');
 }
 
-// Save settings
-function saveSettings() {
-    getPlayer().job = document.getElementById('editJobInput').value;
+// Show detail modal for assets/liabilities/expenses
+function showDetailModal(type) {
+    const modal = document.getElementById('detailModal');
+    const title = document.getElementById('detailModalTitle');
+    const content = document.getElementById('detailModalContent');
 
-    gameState.income.salary = +document.getElementById('editSalary').value || 0;
-    gameState.income.rental = +document.getElementById('editRental').value || 0;
-    gameState.income.dividend = +document.getElementById('editDividend').value || 0;
-    gameState.income.other = +document.getElementById('editOther').value || 0;
+    let html = '';
 
-    gameState.expenses.housing = +document.getElementById('editHousing').value || 0;
-    gameState.expenses.living = +document.getElementById('editLiving').value || 0;
-    gameState.expenses.loan = +document.getElementById('editLoan').value || 0;
-    gameState.expenses.tax = +document.getElementById('editTax').value || 0;
+    if (type === 'cash') {
+        title.textContent = '💵 현금 상세';
+        html = `
+            <div class="space-y-3">
+                <div class="p-4 bg-gray-800 rounded-lg">
+                    <div class="text-2xl font-bold text-emerald-400">₩${fmt(gameState.assets.cash)}만</div>
+                    <div class="text-sm text-gray-400 mt-1">보유 현금</div>
+                </div>
+                <div class="text-sm text-gray-400">
+                    <p>현금은 투자, 지출, 부채 상환 등에 사용됩니다.</p>
+                    <p class="mt-2">월급날에 캐시플로우가 추가됩니다.</p>
+                </div>
+            </div>
+        `;
+    } else if (type === 'assets') {
+        title.textContent = '📊 자산 상세';
+        html = `
+            <div class="space-y-3">
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>💵 현금</span>
+                    <span class="text-emerald-400">₩${fmt(gameState.assets.cash)}만</span>
+                </div>
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>🏠 부동산</span>
+                    <span class="text-blue-400">₩${fmt(gameState.assets.realEstate)}만</span>
+                </div>
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>📈 주식/ETF</span>
+                    <span class="text-purple-400">₩${fmt(gameState.assets.stocks)}만</span>
+                </div>
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>💎 가상자산</span>
+                    <span class="text-orange-400">₩${fmt(gameState.assets.crypto)}만</span>
+                </div>
+                <div class="border-t border-gray-600 pt-3">
+                    <div class="flex justify-between font-bold text-lg">
+                        <span>총 자산</span>
+                        <span class="text-emerald-400">₩${fmt(getTotalAssets())}만</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (type === 'liabilities') {
+        title.textContent = '📉 부채 상세';
+        html = `
+            <div class="space-y-3">
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>🏦 주택담보대출</span>
+                    <span class="text-red-400">₩${fmt(gameState.liabilities.mortgage)}만</span>
+                </div>
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>💳 신용대출</span>
+                    <span class="text-red-400">₩${fmt(gameState.liabilities.credit)}만</span>
+                </div>
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>🎓 학자금대출</span>
+                    <span class="text-red-400">₩${fmt(gameState.liabilities.student)}만</span>
+                </div>
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>📋 기타대출</span>
+                    <span class="text-red-400">₩${fmt(gameState.liabilities.other)}만</span>
+                </div>
+                <div class="border-t border-gray-600 pt-3">
+                    <div class="flex justify-between font-bold text-lg">
+                        <span>총 부채</span>
+                        <span class="text-red-400">₩${fmt(getTotalLiabilities())}만</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (type === 'expenses') {
+        title.textContent = '💸 지출 상세';
+        const childExpense = gameState.children * 30;
+        html = `
+            <div class="space-y-3">
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>🏠 주거비</span>
+                    <span class="text-red-400">₩${fmt(gameState.expenses.housing)}만</span>
+                </div>
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>🍽️ 생활비</span>
+                    <span class="text-red-400">₩${fmt(gameState.expenses.living)}만</span>
+                </div>
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>💰 대출이자</span>
+                    <span class="text-red-400">₩${fmt(gameState.expenses.loan)}만</span>
+                </div>
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>📋 세금/보험</span>
+                    <span class="text-red-400">₩${fmt(gameState.expenses.tax)}만</span>
+                </div>
+                ${childExpense > 0 ? `
+                <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
+                    <span>👶 양육비 (${gameState.children}명)</span>
+                    <span class="text-red-400">₩${fmt(childExpense)}만</span>
+                </div>` : ''}
+                <div class="border-t border-gray-600 pt-3">
+                    <div class="flex justify-between font-bold text-lg">
+                        <span>총 지출</span>
+                        <span class="text-red-400">₩${fmt(getTotalExpenses())}만</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    }
 
-    gameState.assets.cash = +document.getElementById('editCash').value || 0;
-    gameState.assets.realEstate = +document.getElementById('editRealEstate').value || 0;
-    gameState.assets.stocks = +document.getElementById('editStocks').value || 0;
-    gameState.assets.crypto = +document.getElementById('editCrypto').value || 0;
+    content.innerHTML = html;
+    modal.classList.remove('hidden');
+}
 
-    gameState.liabilities.mortgage = +document.getElementById('editMortgage').value || 0;
-    gameState.liabilities.credit = +document.getElementById('editCredit').value || 0;
-    gameState.liabilities.student = +document.getElementById('editStudent').value || 0;
-    gameState.liabilities.other = +document.getElementById('editOtherLiab').value || 0;
-
-    gameState.children = +document.getElementById('editChildren').value || 0;
-
-    updateUI();
-
-    // Show save confirmation
-    const saveBtn = document.querySelector('#settingsModal button[onclick="saveSettings()"]');
-    const originalText = saveBtn.textContent;
-    saveBtn.textContent = '저장되었습니다!';
-    saveBtn.classList.remove('bg-emerald-600', 'hover:bg-emerald-700');
-    saveBtn.classList.add('bg-green-500');
-
-    setTimeout(() => {
-        saveBtn.textContent = originalText;
-        saveBtn.classList.remove('bg-green-500');
-        saveBtn.classList.add('bg-emerald-600', 'hover:bg-emerald-700');
-    }, 1500);
+// Hide detail modal
+function hideDetailModal() {
+    document.getElementById('detailModal').classList.add('hidden');
 }
 
 // Tab switching
 function showTab(tabName) {
     // Update tab buttons
-    document.querySelectorAll('[data-tab]').forEach(btn => {
-        btn.classList.remove('border-b-2', 'border-yellow-400', 'text-yellow-400');
-        btn.classList.add('text-gray-400');
+    document.querySelectorAll('.tab-btn').forEach(btn => {
+        btn.classList.remove('active', 'bg-gray-700');
+        if (btn.getAttribute('data-tab') === tabName) {
+            btn.classList.add('active', 'bg-gray-700');
+        }
     });
-    document.querySelector(`[data-tab="${tabName}"]`).classList.add('border-b-2', 'border-yellow-400', 'text-yellow-400');
-    document.querySelector(`[data-tab="${tabName}"]`).classList.remove('text-gray-400');
 
     // Update content
     const content = document.getElementById('tabContent');
     switch(tabName) {
-        case 'investment':
+        case 'market':
             content.innerHTML = getMarketHTML();
             break;
         case 'simulation':
@@ -436,14 +505,15 @@ function showTab(tabName) {
     }
 }
 
-// Hide event modal
-function hideEventModal() {
-    document.getElementById('eventModal').classList.add('hidden');
-    currentEvent = null;
-}
-
 // Hide celebrate modal
 function hideCelebrateModal() {
     document.getElementById('celebrateModal').classList.add('hidden');
 }
 
+// Hide opportunity modal
+function hideOpportunityModal() {
+    const modal = document.getElementById('opportunityModal');
+    if (modal) {
+        modal.classList.add('hidden');
+    }
+}

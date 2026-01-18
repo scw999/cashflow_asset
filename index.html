@@ -56,8 +56,8 @@
                 <div class="text-xs text-gray-400">💰 순자산</div>
                 <div id="dashNetWorth" class="text-lg font-bold text-purple-400">₩0</div>
             </div>
-            <div class="card rounded-xl p-3 border-l-4 border-yellow-500">
-                <div class="text-xs text-gray-400">💸 월 캐시플로우</div>
+            <div onclick="showDetailModal('expenses')" class="card rounded-xl p-3 border-l-4 border-yellow-500 cursor-pointer hover:scale-105 transition">
+                <div class="text-xs text-gray-400">💸 월 캐시플로우 <span class="text-[10px]">▼</span></div>
                 <div id="dashCashflow" class="text-lg font-bold text-yellow-400">₩0</div>
             </div>
         </div>
@@ -91,6 +91,15 @@
             </div>
         </div>
 
+        <!-- Event Modal -->
+        <div id="eventModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+            <div class="card rounded-2xl p-6 w-full max-w-lg">
+                <h2 id="eventTitle" class="text-xl font-bold mb-4">이벤트</h2>
+                <div id="eventContent" class="mb-4"></div>
+                <div id="eventActions" class="flex gap-2 justify-end"></div>
+            </div>
+        </div>
+
         <!-- Opportunity Modal (부동산 기회) -->
         <div id="opportunityModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
             <div class="card rounded-2xl p-6 w-full max-w-lg">
@@ -119,12 +128,6 @@
                     </button>
                 </div>
                 <svg id="gameBoard" viewBox="0 0 600 600" class="w-full max-w-2xl mx-auto"></svg>
-                <div id="eventCard" class="hidden mt-4 p-4 card rounded-xl border-2 border-yellow-400">
-                    <h3 class="font-bold text-lg mb-2" id="eventTitle"></h3>
-                    <p id="eventDesc" class="text-gray-300 mb-3"></p>
-                    <div id="priceChangeInfo" class="hidden mb-3 p-3 bg-gray-800 rounded-lg text-sm"></div>
-                    <button onclick="handleEvent()" class="w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg">확인</button>
-                </div>
             </div>
 
             <!-- Financial Statement -->
@@ -136,7 +139,10 @@
                         <div class="flex justify-between"><span>근로소득</span><span id="incSalary" class="text-emerald-400">₩0</span></div>
                         <div class="flex justify-between"><span>패시브소득</span><span id="incPassive" class="text-emerald-400">₩0</span></div>
                         <div class="border-t border-gray-600 my-2"></div>
-                        <div class="flex justify-between"><span>총 지출</span><span id="expTotal" class="text-red-400">₩0</span></div>
+                        <div onclick="showDetailModal('expenses')" class="flex justify-between cursor-pointer hover:bg-gray-700 rounded p-1 -m-1">
+                            <span>총 지출 <span class="text-[10px] text-gray-500">▼</span></span>
+                            <span id="expTotal" class="text-red-400">₩0</span>
+                        </div>
                         <div class="border-t border-gray-600 my-2"></div>
                         <div class="flex justify-between font-bold text-lg"><span>월 캐시플로우</span><span id="cashflow" class="text-yellow-400">₩0</span></div>
                     </div>
@@ -175,7 +181,7 @@
         <!-- Bottom Tabs -->
         <div class="mt-6 card rounded-2xl overflow-hidden">
             <div class="flex border-b border-gray-700">
-                <button onclick="showTab('market')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition" data-tab="market">🏪 투자시장</button>
+                <button onclick="showTab('market')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition active bg-gray-700" data-tab="market">🏪 투자시장</button>
                 <button onclick="showTab('simulation')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition" data-tab="simulation">📈 시뮬레이션</button>
                 <button onclick="showTab('portfolio')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition" data-tab="portfolio">💼 포트폴리오</button>
             </div>
@@ -184,7 +190,7 @@
     </div>
 
     <!-- Setup Modal -->
-    <div id="setupModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+    <div id="setupModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
         <div class="card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
             <!-- 닫기 버튼 -->
             <button onclick="hideSetupModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
@@ -195,7 +201,7 @@
             <div class="mb-4">
                 <h3 class="font-bold mb-2">👥 플레이어 수</h3>
                 <div class="flex gap-2">
-                    <button onclick="setNumPlayers(1)" class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-yellow-600 rounded-lg transition" data-count="1">1인</button>
+                    <button onclick="setNumPlayers(1)" class="player-count-btn flex-1 py-3 bg-yellow-600 rounded-lg transition" data-count="1">1인</button>
                     <button onclick="setNumPlayers(2)" class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-blue-600 rounded-lg transition" data-count="2">2인</button>
                     <button onclick="setNumPlayers(3)" class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-red-600 rounded-lg transition" data-count="3">3인</button>
                     <button onclick="setNumPlayers(4)" class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-green-600 rounded-lg transition" data-count="4">4인</button>
@@ -217,7 +223,7 @@
             <!-- Job Presets -->
             <div class="mb-4">
                 <h3 class="font-bold mb-2">🎭 직업 프리셋 <span id="presetPlayerLabel" class="text-yellow-400">(플레이어 1)</span></h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="presetBtns"></div>
+                <div class="grid grid-cols-3 md:grid-cols-5 gap-2" id="presetBtns"></div>
                 <div class="mt-2">
                     <span class="text-sm text-gray-400">현재 선택된 직업: </span>
                     <span id="selectedJobDisplay" class="text-yellow-400 font-bold">없음</span>
@@ -266,7 +272,7 @@
 
             <div class="flex gap-2 mt-6">
                 <button onclick="applySettingsToPlayer()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold">현재 플레이어에 적용</button>
-                <button onclick="applySettingsAndClose()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold">저장 후 닫기</button>
+                <button onclick="applySettingsAndClose()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold">게임 시작</button>
             </div>
         </div>
     </div>

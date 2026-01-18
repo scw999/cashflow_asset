@@ -16,7 +16,8 @@ function initPriceHistory() {
         let price = basePrices[name];
         // Generate 10 turns of fake historical data
         for (let i = 0; i < 10; i++) {
-            const change = (Math.random() - 0.5) * 0.15;
+            const char = assetCharacteristics[name] || { volatility: 0.1 };
+            const change = (Math.random() - 0.5) * char.volatility * 2;
             price = Math.max(0.1, price * (1 + change));
             history.push(Math.round(price * 100) / 100);
         }
@@ -109,21 +110,81 @@ function getTotalLiabilities() {
     return Object.values(gameState.liabilities).reduce((a, b) => a + b, 0);
 }
 
-// Update market prices with random fluctuation
+// 경제 사이클 업데이트
+function updateEconomicCycle() {
+    economicCycle.turnsInPhase++;
+
+    const cycleInfo = cycleCharacteristics[economicCycle.phase];
+    const [minDuration, maxDuration] = cycleInfo.duration;
+
+    // Check if phase should change
+    if (economicCycle.turnsInPhase >= minDuration) {
+        const changeChance = (economicCycle.turnsInPhase - minDuration) / (maxDuration - minDuration);
+        if (Math.random() < changeChance) {
+            economicCycle.phase = cycleInfo.nextPhase;
+            economicCycle.turnsInPhase = 0;
+
+            // Adjust interest rate based on phase
+            if (economicCycle.phase === 'recession') {
+                economicCycle.interestRate = Math.max(0.5, economicCycle.interestRate - 0.5);
+            } else if (economicCycle.phase === 'expansion') {
+                economicCycle.interestRate = Math.min(6, economicCycle.interestRate + 0.25);
+            }
+        }
+    }
+
+    // Update market sentiment
+    if (economicCycle.phase === 'expansion' || economicCycle.phase === 'recovery') {
+        economicCycle.sentiment = Math.min(0.8, economicCycle.sentiment + (Math.random() * 0.1 - 0.03));
+    } else {
+        economicCycle.sentiment = Math.max(0.2, economicCycle.sentiment - (Math.random() * 0.1 - 0.03));
+    }
+}
+
+// Update market prices with economic cycle and asset characteristics
 function updateMarketPrices() {
     const changes = [];
 
+    // Update economic cycle
+    updateEconomicCycle();
+
+    const cycleInfo = cycleCharacteristics[economicCycle.phase];
+
     Object.keys(marketPrices).forEach(name => {
         const oldPrice = marketPrices[name];
+        const char = assetCharacteristics[name] || { type: 'stock', volatility: 0.1, beta: 1.0 };
 
-        // Different volatility for different asset types
-        let volatility = 0.1; // Default: -10% to +10%
-        if (name === '비트코인' || name === '솔라나') volatility = 0.15;
-        if (name === '이더리움') volatility = 0.12;
-        if (name.includes('ETF')) volatility = 0.05;
-        if (name === '금 ETF' || name === '채권 ETF') volatility = 0.03;
+        // Base random change
+        let changePercent = (Math.random() - 0.5) * 2 * char.volatility;
 
-        const changePercent = (Math.random() - 0.5) * 2 * volatility;
+        // Apply economic cycle bias based on asset type
+        let cycleBias = 0;
+        if (char.type === 'stock' || char.type === 'etf') {
+            cycleBias = cycleInfo.stockBias * char.beta;
+        } else if (char.type === 'crypto') {
+            cycleBias = cycleInfo.cryptoBias * char.beta;
+        } else if (char.type === 'bond') {
+            cycleBias = cycleInfo.bondBias;
+        } else if (char.type === 'commodity') {
+            cycleBias = cycleInfo.commodityBias;
+            // Safe haven assets (gold) benefit in recession
+            if (char.safeHaven && economicCycle.phase === 'recession') {
+                cycleBias += 0.02;
+            }
+        }
+
+        // Apply market sentiment
+        const sentimentEffect = (economicCycle.sentiment - 0.5) * 0.02;
+
+        // Apply interest rate effect (higher rates = lower prices for growth assets)
+        let rateEffect = 0;
+        if (char.type === 'crypto' || (char.type === 'stock' && char.beta > 1.2)) {
+            rateEffect = -((economicCycle.interestRate - 3) * 0.005);
+        }
+
+        changePercent += cycleBias + sentimentEffect + rateEffect;
+
+        // Apply change
         marketPrices[name] = Math.max(0.1, marketPrices[name] * (1 + changePercent));
         marketPrices[name] = Math.round(marketPrices[name] * 100) / 100;
 
@@ -138,20 +199,113 @@ function updateMarketPrices() {
         });
     });
 
-    // Update investment values based on new prices
+    // Update all players' investment values based on new prices
     players.forEach(player => {
+        let totalStockValue = 0;
+        let totalCryptoValue = 0;
+
         player.investments.forEach(inv => {
-            if (inv.amount && inv.baseName && marketPrices[inv.baseName]) {
-                inv.currentPrice = marketPrices[inv.baseName];
-                inv.currentValue = inv.amount * inv.currentPrice;
-            } else if (inv.amount && marketPrices[inv.name]) {
+            // Update crypto investments
+            if (inv.type === 'crypto') {
+                if (inv.isStable) {
+                    // Stablecoin doesn't change price
+                    inv.currentValue = inv.amount;
+                } else if (inv.baseName && marketPrices[inv.baseName]) {
+                    inv.currentPrice = marketPrices[inv.baseName];
+                    inv.currentValue = Math.round(inv.amount * inv.currentPrice * 100) / 100;
+                    totalCryptoValue += inv.currentValue;
+                } else if (inv.amount && marketPrices[inv.name]) {
+                    inv.currentPrice = marketPrices[inv.name];
+                    inv.currentValue = Math.round(inv.amount * inv.currentPrice * 100) / 100;
+                    totalCryptoValue += inv.currentValue;
+                }
+            }
+            // Update stock/ETF investments
+            else if (inv.type === 'stocks' && inv.shares && marketPrices[inv.name]) {
                 inv.currentPrice = marketPrices[inv.name];
-                inv.currentValue = inv.amount * inv.currentPrice;
-            } else if (inv.shares && marketPrices[inv.name]) {
-                inv.currentPrice = marketPrices[inv.name];
-                inv.currentValue = inv.shares * inv.currentPrice;
+                inv.currentValue = Math.round(inv.shares * inv.currentPrice * 100) / 100;
+                totalStockValue += inv.currentValue;
             }
         });
+
+        // Update asset totals based on current market values
+        // Calculate stable coin value separately
+        let stableValue = 0;
+        player.investments.forEach(inv => {
+            if (inv.isStable) stableValue += inv.amount;
+        });
+
+        if (totalCryptoValue > 0 || stableValue > 0) {
+            player.assets.crypto = Math.round((totalCryptoValue + stableValue) * 100) / 100;
+        }
+        if (totalStockValue > 0) {
+            player.assets.stocks = Math.round(totalStockValue * 100) / 100;
+        }
+    });
+
+    return changes;
+}
+
+// Apply market event (from market space)
+function applyMarketEvent(isUp) {
+    const multiplier = isUp ? 1.1 : 0.9;
+    const changePercent = isUp ? 10 : -10;
+
+    // Apply to random subset of assets
+    const assetNames = Object.keys(marketPrices);
+    const affectedCount = Math.floor(assetNames.length * (0.5 + Math.random() * 0.3));
+    const shuffled = assetNames.sort(() => Math.random() - 0.5);
+    const affected = shuffled.slice(0, affectedCount);
+
+    const changes = [];
+
+    affected.forEach(name => {
+        const oldPrice = marketPrices[name];
+        marketPrices[name] = Math.round(marketPrices[name] * multiplier * 100) / 100;
+
+        priceHistory[name].push(marketPrices[name]);
+        if (priceHistory[name].length > 30) priceHistory[name].shift();
+
+        changes.push({
+            name,
+            oldPrice,
+            newPrice: marketPrices[name],
+            changePercent: changePercent.toFixed(1)
+        });
+    });
+
+    // Update investment values
+    players.forEach(player => {
+        let totalStockValue = 0;
+        let totalCryptoValue = 0;
+
+        player.investments.forEach(inv => {
+            if (inv.type === 'crypto' && !inv.isStable) {
+                const priceName = inv.baseName || inv.name;
+                if (marketPrices[priceName]) {
+                    inv.currentPrice = marketPrices[priceName];
+                    inv.currentValue = Math.round(inv.amount * inv.currentPrice * 100) / 100;
+                    totalCryptoValue += inv.currentValue;
+                }
+            } else if (inv.type === 'stocks' && inv.shares && marketPrices[inv.name]) {
+                inv.currentPrice = marketPrices[inv.name];
+                inv.currentValue = Math.round(inv.shares * inv.currentPrice * 100) / 100;
+                totalStockValue += inv.currentValue;
+            }
+        });
+
+        // Update asset totals
+        let stableValue = 0;
+        player.investments.forEach(inv => {
+            if (inv.isStable) stableValue += inv.amount;
+        });
+
+        if (totalCryptoValue > 0 || stableValue > 0) {
+            player.assets.crypto = Math.round((totalCryptoValue + stableValue) * 100) / 100;
+        }
+        if (totalStockValue > 0) {
+            player.assets.stocks = Math.round(totalStockValue * 100) / 100;
+        }
     });
 
     return changes;
@@ -191,6 +345,7 @@ function setNumPlayers(n) {
         players.push(createPlayer());
     }
     currentPlayer = 0;
+    setupPlayer = 0;
 
     // Update UI
     document.querySelectorAll('.player-count-btn').forEach(btn => {
@@ -204,9 +359,9 @@ function setNumPlayers(n) {
         btn.classList.add(colors[n - 1]);
     }
 
-    updateSetupPlayerTabs();
-    drawBoard();
-    updatePlayerTabs();
+    if (typeof updateSetupPlayerTabs === 'function') updateSetupPlayerTabs();
+    if (typeof drawBoard === 'function') drawBoard();
+    if (typeof updatePlayerTabs === 'function') updatePlayerTabs();
 }
 
 // Next player's turn
