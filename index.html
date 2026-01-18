@@ -1,4 +1,3 @@
-
 <!DOCTYPE html>
 <html lang="ko">
 
@@ -39,54 +38,25 @@
         }
 
         @keyframes bounce {
-
-            0%,
-            100% {
-                transform: translateY(0);
-            }
-
-            50% {
-                transform: translateY(-10px);
-            }
+            0%, 100% { transform: translateY(0); }
+            50% { transform: translateY(-10px); }
         }
 
         @keyframes celebrate {
-            0% {
-                transform: scale(1);
-            }
-
-            50% {
-                transform: scale(1.2);
-            }
-
-            100% {
-                transform: scale(1);
-            }
+            0% { transform: scale(1); }
+            50% { transform: scale(1.2); }
+            100% { transform: scale(1); }
         }
 
-        .bounce {
-            animation: bounce 0.5s;
-        }
-
-        .celebrate {
-            animation: celebrate 0.5s ease-in-out infinite;
-        }
+        .bounce { animation: bounce 0.5s; }
+        .celebrate { animation: celebrate 0.5s ease-in-out infinite; }
 
         @keyframes float {
-
-            0%,
-            100% {
-                transform: translateY(0) rotate(0deg);
-            }
-
-            50% {
-                transform: translateY(-20px) rotate(5deg);
-            }
+            0%, 100% { transform: translateY(0) rotate(0deg); }
+            50% { transform: translateY(-20px) rotate(5deg); }
         }
 
-        .float {
-            animation: float 3s ease-in-out infinite;
-        }
+        .float { animation: float 3s ease-in-out infinite; }
 
         .dice {
             font-size: 3rem;
@@ -94,22 +64,12 @@
             transition: transform 0.1s;
         }
 
-        .dice:hover {
-            transform: scale(1.1);
-        }
-
-        .dice.rolling {
-            animation: roll 0.1s linear infinite;
-        }
+        .dice:hover { transform: scale(1.1); }
+        .dice.rolling { animation: roll 0.1s linear infinite; }
 
         @keyframes roll {
-            0% {
-                transform: rotate(0deg);
-            }
-
-            100% {
-                transform: rotate(360deg);
-            }
+            0% { transform: rotate(0deg); }
+            100% { transform: rotate(360deg); }
         }
 
         .track-space {
@@ -121,45 +81,79 @@
             transform: scale(1.1);
             filter: brightness(1.2);
         }
+
+        .player-indicator {
+            animation: pulse 2s infinite;
+        }
+
+        @keyframes pulse {
+            0%, 100% { opacity: 1; }
+            50% { opacity: 0.7; }
+        }
+
+        .asset-item {
+            cursor: pointer;
+            transition: all 0.2s;
+        }
+
+        .asset-item:hover {
+            transform: translateX(5px);
+            background: rgba(255,255,255,0.1);
+        }
+
+        .price-up { color: #10b981; }
+        .price-down { color: #ef4444; }
+
+        .player-tab {
+            transition: all 0.2s;
+        }
+
+        .player-tab.active {
+            transform: scale(1.05);
+        }
     </style>
 </head>
 
 <body class="text-white p-4">
     <div id="app" class="max-w-7xl mx-auto">
-        <!-- Header -->
-        <header class="flex justify-between items-center mb-4">
-            <h1
-                class="text-3xl font-bold bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+        <!-- Header with Current Player Indicator -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
                 💰 캐시플로우 자산관리</h1>
+            
+            <!-- Current Player Display -->
+            <div id="currentPlayerDisplay" class="player-indicator card rounded-xl px-4 py-2 flex items-center gap-3">
+                <span class="text-2xl" id="currentPlayerEmoji">🐭</span>
+                <div>
+                    <div class="text-sm text-gray-400">현재 플레이어</div>
+                    <div class="font-bold" id="currentPlayerName">플레이어 1</div>
+                    <div class="text-xs text-gray-400" id="currentPlayerJob">직업 미선택</div>
+                </div>
+            </div>
+
             <div class="flex gap-2">
-                <button onclick="resetGame()"
-                    class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition hover:scale-105">🔄 리셋</button>
-                <button onclick="saveGame()"
-                    class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition hover:scale-105">💾
-                    저장</button>
-                <button onclick="loadGame()"
-                    class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition hover:scale-105">📂
-                    불러오기</button>
-                <button onclick="showSetupModal()"
-                    class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition hover:scale-105">⚙️
-                    설정</button>
+                <button onclick="resetGame()" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition hover:scale-105">🔄 리셋</button>
+                <button onclick="saveGame()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition hover:scale-105">💾 저장</button>
+                <button onclick="loadGame()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition hover:scale-105">📂 불러오기</button>
+                <button onclick="showSetupModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition hover:scale-105">⚙️ 설정</button>
             </div>
         </header>
 
+        <!-- Player Tabs (for multiplayer) -->
+        <div id="playerTabs" class="flex gap-2 mb-4 overflow-x-auto pb-2 hidden">
+        </div>
+
         <!-- Financial Status Dashboard -->
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
-            <div onclick="showDetailModal('cash')"
-                class="card rounded-xl p-3 border-l-4 border-emerald-500 cursor-pointer hover:scale-105 transition">
+            <div onclick="showDetailModal('cash')" class="card rounded-xl p-3 border-l-4 border-emerald-500 cursor-pointer hover:scale-105 transition">
                 <div class="text-xs text-gray-400">💵 현금</div>
                 <div id="dashCash" class="text-lg font-bold text-emerald-400">₩0</div>
             </div>
-            <div onclick="showDetailModal('assets')"
-                class="card rounded-xl p-3 border-l-4 border-blue-500 cursor-pointer hover:scale-105 transition">
+            <div onclick="showDetailModal('assets')" class="card rounded-xl p-3 border-l-4 border-blue-500 cursor-pointer hover:scale-105 transition">
                 <div class="text-xs text-gray-400">📊 총 자산 <span class="text-[10px]">▼</span></div>
                 <div id="dashAssets" class="text-lg font-bold text-blue-400">₩0</div>
             </div>
-            <div onclick="showDetailModal('liabilities')"
-                class="card rounded-xl p-3 border-l-4 border-orange-500 cursor-pointer hover:scale-105 transition">
+            <div onclick="showDetailModal('liabilities')" class="card rounded-xl p-3 border-l-4 border-orange-500 cursor-pointer hover:scale-105 transition">
                 <div class="text-xs text-gray-400">📉 총 부채 <span class="text-[10px]">▼</span></div>
                 <div id="dashDebt" class="text-lg font-bold text-orange-400">₩0</div>
             </div>
@@ -184,6 +178,24 @@
             </div>
         </div>
 
+        <!-- Asset Price Chart Modal -->
+        <div id="assetChartModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+            <div class="card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="assetChartTitle" class="text-xl font-bold">자산 가격 차트</h2>
+                    <button onclick="hideAssetChartModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                <div class="mb-4">
+                    <div class="flex justify-between items-center">
+                        <span id="assetCurrentPrice" class="text-2xl font-bold"></span>
+                        <span id="assetPriceChange" class="text-lg"></span>
+                    </div>
+                </div>
+                <canvas id="assetPriceChart" height="300"></canvas>
+                <div class="mt-4 text-sm text-gray-400 text-center">최근 30턴 가격 변동</div>
+            </div>
+        </div>
+
         <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
             <!-- Game Board -->
             <div class="lg:col-span-2 card rounded-2xl p-6">
@@ -192,8 +204,7 @@
                     <span class="text-sm">턴: <span id="turnCount" class="font-bold text-yellow-400">1</span></span>
                 </div>
                 <div class="text-center mb-4">
-                    <button onclick="rollDice()" id="diceBtn"
-                        class="px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-2xl shadow-lg hover:shadow-yellow-500/30 transition-all hover:scale-105">
+                    <button onclick="rollDice()" id="diceBtn" class="px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-2xl shadow-lg hover:shadow-yellow-500/30 transition-all hover:scale-105">
                         <span id="dice" class="text-5xl">🎲</span>
                         <div class="text-black font-bold mt-1">주사위 굴리기</div>
                     </button>
@@ -202,8 +213,8 @@
                 <div id="eventCard" class="hidden mt-4 p-4 card rounded-xl border-2 border-yellow-400">
                     <h3 class="font-bold text-lg mb-2" id="eventTitle"></h3>
                     <p id="eventDesc" class="text-gray-300 mb-3"></p>
-                    <button onclick="handleEvent()"
-                        class="w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg">확인</button>
+                    <div id="priceChangeInfo" class="hidden mb-3 p-3 bg-gray-800 rounded-lg text-sm"></div>
+                    <button onclick="handleEvent()" class="w-full py-2 bg-yellow-500 hover:bg-yellow-600 text-black font-bold rounded-lg">확인</button>
                 </div>
             </div>
 
@@ -213,37 +224,39 @@
                 <div class="card rounded-2xl p-4 glow-green">
                     <h3 class="font-bold text-emerald-400 mb-3">📊 손익계산서</h3>
                     <div class="space-y-2 text-sm">
-                        <div class="flex justify-between"><span>근로소득</span><span id="incSalary"
-                                class="text-emerald-400">₩0</span></div>
-                        <div class="flex justify-between"><span>패시브소득</span><span id="incPassive"
-                                class="text-emerald-400">₩0</span></div>
+                        <div class="flex justify-between"><span>근로소득</span><span id="incSalary" class="text-emerald-400">₩0</span></div>
+                        <div class="flex justify-between"><span>패시브소득</span><span id="incPassive" class="text-emerald-400">₩0</span></div>
                         <div class="border-t border-gray-600 my-2"></div>
-                        <div class="flex justify-between"><span>총 지출</span><span id="expTotal"
-                                class="text-red-400">₩0</span></div>
+                        <div class="flex justify-between"><span>총 지출</span><span id="expTotal" class="text-red-400">₩0</span></div>
                         <div class="border-t border-gray-600 my-2"></div>
-                        <div class="flex justify-between font-bold text-lg"><span>월 캐시플로우</span><span id="cashflow"
-                                class="text-yellow-400">₩0</span></div>
+                        <div class="flex justify-between font-bold text-lg"><span>월 캐시플로우</span><span id="cashflow" class="text-yellow-400">₩0</span></div>
                     </div>
                 </div>
+
                 <!-- Balance Sheet -->
                 <div class="card rounded-2xl p-4">
                     <h3 class="font-bold text-blue-400 mb-3">📈 대차대조표</h3>
                     <div class="space-y-2 text-sm">
-                        <div class="flex justify-between"><span>총 자산</span><span id="totalAssets"
-                                class="text-blue-400">₩0</span></div>
-                        <div class="flex justify-between"><span>총 부채</span><span id="totalLiabilities"
-                                class="text-red-400">₩0</span></div>
+                        <div class="flex justify-between"><span>총 자산</span><span id="totalAssets" class="text-blue-400">₩0</span></div>
+                        <div class="flex justify-between"><span>총 부채</span><span id="totalLiabilities" class="text-red-400">₩0</span></div>
                         <div class="border-t border-gray-600 my-2"></div>
                         <div class="flex justify-between font-bold"><span>순자산</span><span id="netWorth">₩0</span></div>
                     </div>
+                    
+                    <!-- Asset/Liability Summary List -->
+                    <div class="mt-4 pt-4 border-t border-gray-600">
+                        <h4 class="text-xs text-gray-400 mb-2">자산 상세</h4>
+                        <div id="assetSummaryList" class="space-y-1 text-xs"></div>
+                        <h4 class="text-xs text-gray-400 mb-2 mt-3">부채 상세</h4>
+                        <div id="liabilitySummaryList" class="space-y-1 text-xs"></div>
+                    </div>
                 </div>
+
                 <!-- Escape Progress -->
                 <div class="card rounded-2xl p-4 glow-gold">
                     <h3 class="font-bold text-yellow-400 mb-3">🏃 탈출 진행도</h3>
                     <div class="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
-                        <div id="escapeProgress"
-                            class="h-full bg-gradient-to-r from-emerald-500 to-yellow-400 transition-all"
-                            style="width: 0%"></div>
+                        <div id="escapeProgress" class="h-full bg-gradient-to-r from-emerald-500 to-yellow-400 transition-all" style="width: 0%"></div>
                     </div>
                     <p class="text-sm mt-2 text-gray-400">패시브 소득 ≥ 총 지출 시 탈출!</p>
                 </div>
@@ -253,12 +266,9 @@
         <!-- Bottom Tabs -->
         <div class="mt-6 card rounded-2xl overflow-hidden">
             <div class="flex border-b border-gray-700">
-                <button onclick="showTab('market')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition"
-                    data-tab="market">🏪 투자시장</button>
-                <button onclick="showTab('simulation')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition"
-                    data-tab="simulation">📈 시뮬레이션</button>
-                <button onclick="showTab('portfolio')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition"
-                    data-tab="portfolio">💼 포트폴리오</button>
+                <button onclick="showTab('market')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition" data-tab="market">🏪 투자시장</button>
+                <button onclick="showTab('simulation')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition" data-tab="simulation">📈 시뮬레이션</button>
+                <button onclick="showTab('portfolio')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition" data-tab="portfolio">💼 포트폴리오</button>
             </div>
             <div id="tabContent" class="p-4"></div>
         </div>
@@ -268,87 +278,82 @@
     <div id="setupModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
         <div class="card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
             <h2 class="text-2xl font-bold mb-4">⚙️ 게임 설정</h2>
+            
+            <!-- Player Count -->
             <div class="mb-4">
                 <h3 class="font-bold mb-2">👥 플레이어 수</h3>
                 <div class="flex gap-2">
-                    <button onclick="setNumPlayers(1)"
-                        class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-yellow-600 rounded-lg transition"
-                        data-count="1">1인</button>
-                    <button onclick="setNumPlayers(2)"
-                        class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-blue-600 rounded-lg transition"
-                        data-count="2">2인</button>
-                    <button onclick="setNumPlayers(3)"
-                        class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-red-600 rounded-lg transition"
-                        data-count="3">3인</button>
-                    <button onclick="setNumPlayers(4)"
-                        class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-green-600 rounded-lg transition"
-                        data-count="4">4인</button>
+                    <button onclick="setNumPlayers(1)" class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-yellow-600 rounded-lg transition" data-count="1">1인</button>
+                    <button onclick="setNumPlayers(2)" class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-blue-600 rounded-lg transition" data-count="2">2인</button>
+                    <button onclick="setNumPlayers(3)" class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-red-600 rounded-lg transition" data-count="3">3인</button>
+                    <button onclick="setNumPlayers(4)" class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-green-600 rounded-lg transition" data-count="4">4인</button>
                 </div>
             </div>
+
+            <!-- Player Selection Tabs -->
             <div class="mb-4">
-                <h3 class="font-bold mb-2">🎭 직업 프리셋 <span id="presetPlayerLabel" class="text-yellow-400">(플레이어
-                        1)</span></h3>
-                <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="presetBtns"></div>
+                <h3 class="font-bold mb-2">🎮 플레이어 선택 (설정할 플레이어 선택)</h3>
+                <div id="setupPlayerTabs" class="flex gap-2 mb-3">
+                    <button onclick="selectSetupPlayer(0)" class="setup-player-tab flex-1 py-2 bg-yellow-600 rounded-lg transition flex items-center justify-center gap-2" data-player="0">
+                        <span>🐭</span> 플레이어 1
+                    </button>
+                </div>
             </div>
+
+            <!-- Job Presets -->
+            <div class="mb-4">
+                <h3 class="font-bold mb-2">🎭 직업 프리셋 <span id="presetPlayerLabel" class="text-yellow-400">(플레이어 1)</span></h3>
+                <div class="grid grid-cols-2 md:grid-cols-4 gap-2" id="presetBtns"></div>
+                <div class="mt-2">
+                    <span class="text-sm text-gray-400">현재 선택된 직업: </span>
+                    <span id="selectedJobDisplay" class="text-yellow-400 font-bold">없음</span>
+                </div>
+            </div>
+
+            <!-- Custom Settings -->
             <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
                 <div>
                     <h3 class="font-bold mb-2 text-emerald-400">💵 수입</h3>
                     <div class="space-y-2">
-                        <div><label class="text-sm">월급</label><input type="number" id="inpSalary"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">임대수입</label><input type="number" id="inpRental"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">배당금</label><input type="number" id="inpDividend"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">기타수입</label><input type="number" id="inpOtherInc"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">월급</label><input type="number" id="inpSalary" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">임대수입</label><input type="number" id="inpRental" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">배당금</label><input type="number" id="inpDividend" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">기타수입</label><input type="number" id="inpOtherInc" class="w-full bg-gray-700 rounded p-2" value="0"></div>
                     </div>
                 </div>
                 <div>
                     <h3 class="font-bold mb-2 text-red-400">💸 지출</h3>
                     <div class="space-y-2">
-                        <div><label class="text-sm">주거비</label><input type="number" id="expHousing"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">생활비</label><input type="number" id="expLiving"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">대출이자</label><input type="number" id="expLoan"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">세금/보험</label><input type="number" id="expTax"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">주거비</label><input type="number" id="expHousing" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">생활비</label><input type="number" id="expLiving" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">대출이자</label><input type="number" id="expLoan" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">세금/보험</label><input type="number" id="expTax" class="w-full bg-gray-700 rounded p-2" value="0"></div>
                     </div>
                 </div>
                 <div>
                     <h3 class="font-bold mb-2 text-blue-400">🏠 자산</h3>
                     <div class="space-y-2">
-                        <div><label class="text-sm">현금/예금</label><input type="number" id="astCash"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">부동산</label><input type="number" id="astRealEstate"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">주식/ETF</label><input type="number" id="astStocks"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">가상자산</label><input type="number" id="astCrypto"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">현금/예금</label><input type="number" id="astCash" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">부동산</label><input type="number" id="astRealEstate" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">주식/ETF</label><input type="number" id="astStocks" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">가상자산</label><input type="number" id="astCrypto" class="w-full bg-gray-700 rounded p-2" value="0"></div>
                     </div>
                 </div>
                 <div>
                     <h3 class="font-bold mb-2 text-orange-400">📉 부채</h3>
                     <div class="space-y-2">
-                        <div><label class="text-sm">주택담보대출</label><input type="number" id="debtMortgage"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">신용대출</label><input type="number" id="debtCredit"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">학자금대출</label><input type="number" id="debtStudent"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
-                        <div><label class="text-sm">기타대출</label><input type="number" id="debtOther"
-                                class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">주택담보대출</label><input type="number" id="debtMortgage" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">신용대출</label><input type="number" id="debtCredit" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">학자금대출</label><input type="number" id="debtStudent" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">기타대출</label><input type="number" id="debtOther" class="w-full bg-gray-700 rounded p-2" value="0"></div>
                     </div>
                 </div>
             </div>
+
             <div class="flex gap-2 mt-6">
-                <button onclick="applySettings()"
-                    class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold">적용</button>
-                <button onclick="hideSetupModal()"
-                    class="flex-1 py-3 bg-gray-600 hover:bg-gray-700 rounded-lg">취소</button>
+                <button onclick="applySettingsToPlayer()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold">현재 플레이어에 적용</button>
+                <button onclick="applySettingsAndClose()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold">저장 후 닫기</button>
+                <button onclick="hideSetupModal()" class="flex-1 py-3 bg-gray-600 hover:bg-gray-700 rounded-lg">취소</button>
             </div>
         </div>
     </div>
@@ -359,9 +364,7 @@
             <div class="text-8xl celebrate mb-4">🎉</div>
             <h2 class="text-4xl font-bold text-yellow-400 mb-2">쥐 레이스 탈출!</h2>
             <p class="text-xl text-gray-300 mb-6">패시브 소득이 지출을 초과했습니다!</p>
-            <button onclick="enterFastTrack()"
-                class="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl font-bold text-xl">패스트 트랙 진입
-                →</button>
+            <button onclick="enterFastTrack()" class="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl font-bold text-xl">패스트 트랙 진입 →</button>
         </div>
     </div>
 
@@ -369,9 +372,10 @@
         // Player colors for multiplayer
         const playerColors = ['#fbbf24', '#3b82f6', '#ef4444', '#10b981'];
         const playerEmojis = ['🐭', '🐱', '🐶', '🐰'];
+        const playerColorClasses = ['bg-yellow-600', 'bg-blue-600', 'bg-red-600', 'bg-green-600'];
 
         // Stock/Asset prices (base prices in 만원)
-        let marketPrices = {
+        let basePrices = {
             '삼성전자': 7, 'SK하이닉스': 15, '네이버': 20, '카카오': 5,
             '애플': 25, '테슬라': 35, '마이크로소프트': 40, '엔비디아': 90,
             'S&P500 ETF': 5, '나스닥100 ETF': 6, '고배당 ETF': 4, '리츠 ETF': 3, '채권 ETF': 10,
@@ -379,20 +383,35 @@
             '비트코인': 1000, '이더리움': 500, '솔라나': 200
         };
 
-        // Price history for charts
+        let marketPrices = { ...basePrices };
+
+        // Price history for charts (pre-generate some history)
         let priceHistory = {};
         Object.keys(marketPrices).forEach(name => {
-            priceHistory[name] = [marketPrices[name]];
+            // Generate 10 turns of fake historical data
+            let history = [];
+            let price = basePrices[name];
+            for (let i = 0; i < 10; i++) {
+                const change = (Math.random() - 0.5) * 0.15;
+                price = Math.max(0.1, price * (1 + change));
+                history.push(Math.round(price * 100) / 100);
+            }
+            history.push(marketPrices[name]);
+            priceHistory[name] = history;
         });
 
         // Game State with multiplayer support
         let numPlayers = 1;
         let currentPlayer = 0;
+        let setupPlayer = 0; // Which player we're setting up in the modal
         let players = [];
 
         function createPlayer() {
             return {
-                position: 0, inFastTrack: false,
+                position: 0, 
+                inFastTrack: false,
+                job: null, // 직업명
+                jobPreset: null, // 프리셋명
                 income: { salary: 0, rental: 0, dividend: 0, other: 0 },
                 expenses: { housing: 0, living: 0, loan: 0, tax: 0 },
                 assets: { cash: 0, realEstate: 0, stocks: 0, crypto: 0 },
@@ -486,6 +505,7 @@
             drawBoard();
             updateUI();
             showTab('market');
+            updateCurrentPlayerDisplay();
             if (localStorage.getItem('cashflowGame')) {
                 if (confirm('저장된 게임이 있습니다. 불러오시겠습니까?')) loadGame();
                 else showSetupModal();
@@ -517,19 +537,146 @@
             document.getElementById('debtCredit').value = p.liabilities.credit;
             document.getElementById('debtStudent').value = p.liabilities.student;
             document.getElementById('debtOther').value = p.liabilities.other;
+            
+            document.getElementById('selectedJobDisplay').textContent = `${name} (${p.job})`;
+            
+            // Store selected preset for this player
+            players[setupPlayer].jobPreset = name;
+            players[setupPlayer].job = p.job;
+        }
+
+        function selectSetupPlayer(idx) {
+            setupPlayer = idx;
+            
+            // Update tabs UI
+            document.querySelectorAll('.setup-player-tab').forEach((tab, i) => {
+                tab.classList.remove(...playerColorClasses, 'bg-gray-700');
+                tab.classList.add(i === idx ? playerColorClasses[i] : 'bg-gray-700');
+            });
+            
+            document.getElementById('presetPlayerLabel').textContent = `(플레이어 ${idx + 1})`;
+            
+            // Load this player's current settings into the form
+            loadPlayerSettingsToForm(idx);
+        }
+
+        function loadPlayerSettingsToForm(idx) {
+            const p = players[idx];
+            document.getElementById('inpSalary').value = p.income.salary;
+            document.getElementById('inpRental').value = p.income.rental;
+            document.getElementById('inpDividend').value = p.income.dividend;
+            document.getElementById('inpOtherInc').value = p.income.other;
+            document.getElementById('expHousing').value = p.expenses.housing;
+            document.getElementById('expLiving').value = p.expenses.living;
+            document.getElementById('expLoan').value = p.expenses.loan;
+            document.getElementById('expTax').value = p.expenses.tax;
+            document.getElementById('astCash').value = p.assets.cash;
+            document.getElementById('astRealEstate').value = p.assets.realEstate;
+            document.getElementById('astStocks').value = p.assets.stocks;
+            document.getElementById('astCrypto').value = p.assets.crypto;
+            document.getElementById('debtMortgage').value = p.liabilities.mortgage;
+            document.getElementById('debtCredit').value = p.liabilities.credit;
+            document.getElementById('debtStudent').value = p.liabilities.student;
+            document.getElementById('debtOther').value = p.liabilities.other;
+            
+            document.getElementById('selectedJobDisplay').textContent = p.job ? `${p.jobPreset || ''} (${p.job})` : '없음';
+        }
+
+        function applySettingsToPlayer() {
+            const p = players[setupPlayer];
+            p.income = { 
+                salary: +document.getElementById('inpSalary').value, 
+                rental: +document.getElementById('inpRental').value, 
+                dividend: +document.getElementById('inpDividend').value, 
+                other: +document.getElementById('inpOtherInc').value 
+            };
+            p.expenses = { 
+                housing: +document.getElementById('expHousing').value, 
+                living: +document.getElementById('expLiving').value, 
+                loan: +document.getElementById('expLoan').value, 
+                tax: +document.getElementById('expTax').value 
+            };
+            p.assets = { 
+                cash: +document.getElementById('astCash').value, 
+                realEstate: +document.getElementById('astRealEstate').value, 
+                stocks: +document.getElementById('astStocks').value, 
+                crypto: +document.getElementById('astCrypto').value 
+            };
+            p.liabilities = { 
+                mortgage: +document.getElementById('debtMortgage').value, 
+                credit: +document.getElementById('debtCredit').value, 
+                student: +document.getElementById('debtStudent').value, 
+                other: +document.getElementById('debtOther').value 
+            };
+            
+            alert(`플레이어 ${setupPlayer + 1} 설정이 적용되었습니다!`);
+            updateUI();
+        }
+
+        function applySettingsAndClose() {
+            applySettingsToPlayer();
+            hideSetupModal();
         }
 
         function applySettings() {
-            gameState.income = { salary: +document.getElementById('inpSalary').value, rental: +document.getElementById('inpRental').value, dividend: +document.getElementById('inpDividend').value, other: +document.getElementById('inpOtherInc').value };
-            gameState.expenses = { housing: +document.getElementById('expHousing').value, living: +document.getElementById('expLiving').value, loan: +document.getElementById('expLoan').value, tax: +document.getElementById('expTax').value };
-            gameState.assets = { cash: +document.getElementById('astCash').value, realEstate: +document.getElementById('astRealEstate').value, stocks: +document.getElementById('astStocks').value, crypto: +document.getElementById('astCrypto').value };
-            gameState.liabilities = { mortgage: +document.getElementById('debtMortgage').value, credit: +document.getElementById('debtCredit').value, student: +document.getElementById('debtStudent').value, other: +document.getElementById('debtOther').value };
+            applySettingsToPlayer();
             hideSetupModal();
             updateUI();
         }
 
-        function showSetupModal() { document.getElementById('setupModal').classList.remove('hidden'); }
-        function hideSetupModal() { document.getElementById('setupModal').classList.add('hidden'); }
+        function showSetupModal() { 
+            document.getElementById('setupModal').classList.remove('hidden'); 
+            updateSetupPlayerTabs();
+            selectSetupPlayer(0);
+        }
+        
+        function hideSetupModal() { 
+            document.getElementById('setupModal').classList.add('hidden'); 
+            updateCurrentPlayerDisplay();
+        }
+
+        function updateSetupPlayerTabs() {
+            const container = document.getElementById('setupPlayerTabs');
+            container.innerHTML = players.map((p, i) => `
+                <button onclick="selectSetupPlayer(${i})" class="setup-player-tab flex-1 py-2 ${i === setupPlayer ? playerColorClasses[i] : 'bg-gray-700'} rounded-lg transition flex items-center justify-center gap-2" data-player="${i}">
+                    <span>${playerEmojis[i]}</span> 플레이어 ${i + 1}
+                    ${p.job ? `<span class="text-xs">(${p.job})</span>` : ''}
+                </button>
+            `).join('');
+        }
+
+        function updateCurrentPlayerDisplay() {
+            const p = getPlayer();
+            document.getElementById('currentPlayerEmoji').textContent = playerEmojis[currentPlayer];
+            document.getElementById('currentPlayerName').textContent = `플레이어 ${currentPlayer + 1}`;
+            document.getElementById('currentPlayerJob').textContent = p.job || '직업 미선택';
+            document.getElementById('currentPlayerDisplay').style.borderColor = playerColors[currentPlayer];
+            document.getElementById('currentPlayerDisplay').style.borderWidth = '2px';
+            
+            // Update player tabs
+            updatePlayerTabs();
+        }
+
+        function updatePlayerTabs() {
+            const container = document.getElementById('playerTabs');
+            if (numPlayers > 1) {
+                container.classList.remove('hidden');
+                container.innerHTML = players.map((p, i) => `
+                    <div class="player-tab card rounded-xl px-4 py-2 flex items-center gap-2 ${i === currentPlayer ? 'active ring-2' : 'opacity-60'}" style="border-color: ${playerColors[i]}; ${i === currentPlayer ? `ring-color: ${playerColors[i]}` : ''}">
+                        <span class="text-xl">${playerEmojis[i]}</span>
+                        <div>
+                            <div class="font-bold text-sm">P${i + 1}</div>
+                            <div class="text-xs text-gray-400">${p.job || '미선택'}</div>
+                        </div>
+                        <div class="text-xs ml-2">
+                            <div class="text-emerald-400">₩${fmt(Object.values(p.assets).reduce((a,b)=>a+b,0))}만</div>
+                        </div>
+                    </div>
+                `).join('');
+            } else {
+                container.classList.add('hidden');
+            }
+        }
 
         // Draw Board
         function drawBoard() {
@@ -537,7 +684,6 @@
             let html = '';
             const cx = 280, cy = 280, r1 = 230, r2 = 130;
 
-            // Icon mapping for spaces
             const getIcon = (name) => {
                 if (name.includes('월급')) return '💰';
                 if (name.includes('부동산') || name.includes('원룸') || name.includes('경매')) return '🏠';
@@ -561,44 +707,43 @@
                 return '●';
             };
 
-            // Rat Race - larger circles
+            // Rat Race
             ratRaceSpaces.forEach((space, i) => {
                 const angle = (i / 24) * Math.PI * 2 - Math.PI / 2;
                 const x = cx + r1 * Math.cos(angle), y = cy + r1 * Math.sin(angle);
                 html += `<g class="track-space" onclick="showSpaceInfo(${i}, false)">
-            <circle cx="${x}" cy="${y}" r="24" fill="${space.color}" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
-            <text x="${x}" y="${y + 2}" text-anchor="middle" dominant-baseline="middle" font-size="18" style="font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;">${getIcon(space.name)}</text>
-        </g>`;
+                    <circle cx="${x}" cy="${y}" r="24" fill="${space.color}" stroke="rgba(255,255,255,0.3)" stroke-width="2"/>
+                    <text x="${x}" y="${y + 2}" text-anchor="middle" dominant-baseline="middle" font-size="18" style="font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;">${getIcon(space.name)}</text>
+                </g>`;
             });
 
-            // Fast Track - larger circles
+            // Fast Track
             fastTrackSpaces.forEach((space, i) => {
                 const angle = (i / 8) * Math.PI * 2 - Math.PI / 2;
                 const x = cx + r2 * Math.cos(angle), y = cy + r2 * Math.sin(angle);
                 html += `<g class="track-space" onclick="showSpaceInfo(${i}, true)">
-            <circle cx="${x}" cy="${y}" r="22" fill="${space.color}" stroke="#fbbf2466" stroke-width="2"/>
-            <text x="${x}" y="${y + 2}" text-anchor="middle" dominant-baseline="middle" font-size="16" style="font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;">${getIcon(space.name)}</text>
-        </g>`;
+                    <circle cx="${x}" cy="${y}" r="22" fill="${space.color}" stroke="#fbbf2466" stroke-width="2"/>
+                    <text x="${x}" y="${y + 2}" text-anchor="middle" dominant-baseline="middle" font-size="16" style="font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;">${getIcon(space.name)}</text>
+                </g>`;
             });
 
-            // Player Tokens - show all players
+            // Player Tokens
             players.forEach((player, pIdx) => {
                 const track = player.inFastTrack ? fastTrackSpaces : ratRaceSpaces;
                 const radius = player.inFastTrack ? r2 : r1;
                 const baseAngle = (player.position / track.length) * Math.PI * 2 - Math.PI / 2;
-                // Offset tokens slightly if multiple players on same space
                 const offset = pIdx * 0.05;
                 const angle = baseAngle + offset;
                 const px = cx + (radius - 30) * Math.cos(angle), py = cy + (radius - 30) * Math.sin(angle);
                 const isCurrentTurn = pIdx === currentPlayer;
                 html += `<circle class="token" cx="${px}" cy="${py}" r="${isCurrentTurn ? 16 : 12}" fill="${isCurrentTurn ? '#fff' : '#333'}" stroke="${playerColors[pIdx]}" stroke-width="4"/>
-             <text x="${px}" y="${py + 2}" text-anchor="middle" dominant-baseline="middle" font-size="${isCurrentTurn ? 16 : 12}" style="font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;">${playerEmojis[pIdx]}</text>`;
+                    <text x="${px}" y="${py + 2}" text-anchor="middle" dominant-baseline="middle" font-size="${isCurrentTurn ? 16 : 12}" style="font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif;">${playerEmojis[pIdx]}</text>`;
             });
 
             // Center Text
             html += `<text x="${cx}" y="${cy - 15}" text-anchor="middle" font-size="16" fill="#9ca3af">${getPlayer().inFastTrack ? '패스트 트랙' : '쥐 레이스'}</text>
-             <text x="${cx}" y="${cy + 10}" text-anchor="middle" font-size="20" fill="#fbbf24" font-weight="bold">턴 ${gameState.turn}</text>
-             <text x="${cx}" y="${cy + 35}" text-anchor="middle" font-size="14" fill="${playerColors[currentPlayer]}">플레이어 ${currentPlayer + 1}</text>`;
+                <text x="${cx}" y="${cy + 10}" text-anchor="middle" font-size="20" fill="#fbbf24" font-weight="bold">턴 ${gameState.turn}</text>
+                <text x="${cx}" y="${cy + 35}" text-anchor="middle" font-size="14" fill="${playerColors[currentPlayer]}">플레이어 ${currentPlayer + 1}</text>`;
 
             svg.innerHTML = html;
         }
@@ -638,9 +783,11 @@
             const card = document.getElementById('eventCard');
             const title = document.getElementById('eventTitle');
             const desc = document.getElementById('eventDesc');
+            const priceInfo = document.getElementById('priceChangeInfo');
 
             currentEvent = { type: space.type, space };
             title.textContent = space.name;
+            priceInfo.classList.add('hidden');
 
             switch (space.type) {
                 case 'payday':
@@ -697,8 +844,11 @@
             }
             document.getElementById('eventCard').classList.add('hidden');
 
-            // Update market prices
-            updateMarketPrices();
+            // Update market prices with random fluctuation
+            const priceChanges = updateMarketPrices();
+            
+            // Show price changes info
+            showPriceChangesNotification(priceChanges);
 
             // Next player's turn
             currentPlayer = (currentPlayer + 1) % numPlayers;
@@ -708,18 +858,30 @@
             document.getElementById('turnCount').textContent = gameState.turn;
 
             updateUI();
+            updateCurrentPlayerDisplay();
             checkEscape();
             currentEvent = null;
         }
 
-        // Update market prices with random fluctuation
+        // Update market prices with random fluctuation (enhanced)
         function updateMarketPrices() {
+            const changes = [];
             Object.keys(marketPrices).forEach(name => {
-                const change = (Math.random() - 0.5) * 0.1; // -5% to +5%
-                marketPrices[name] = Math.max(0.1, marketPrices[name] * (1 + change));
+                const oldPrice = marketPrices[name];
+                // -10% to +10% random change
+                const changePercent = (Math.random() - 0.5) * 0.2;
+                marketPrices[name] = Math.max(0.1, marketPrices[name] * (1 + changePercent));
                 marketPrices[name] = Math.round(marketPrices[name] * 100) / 100;
+                
                 priceHistory[name].push(marketPrices[name]);
                 if (priceHistory[name].length > 30) priceHistory[name].shift();
+                
+                changes.push({
+                    name,
+                    oldPrice,
+                    newPrice: marketPrices[name],
+                    changePercent: ((marketPrices[name] - oldPrice) / oldPrice * 100).toFixed(1)
+                });
             });
 
             // Update investment values based on new prices
@@ -731,6 +893,28 @@
                     }
                 });
             });
+            
+            return changes;
+        }
+
+        function showPriceChangesNotification(changes) {
+            // Show top movers
+            const sorted = [...changes].sort((a, b) => Math.abs(b.changePercent) - Math.abs(a.changePercent));
+            const topMovers = sorted.slice(0, 5);
+            
+            const notification = document.createElement('div');
+            notification.className = 'fixed bottom-4 right-4 card rounded-xl p-4 z-40 animate-bounce';
+            notification.innerHTML = `
+                <div class="text-sm font-bold mb-2">📊 시장 변동</div>
+                ${topMovers.map(m => `
+                    <div class="text-xs flex justify-between gap-4">
+                        <span>${m.name}</span>
+                        <span class="${m.changePercent > 0 ? 'text-emerald-400' : 'text-red-400'}">${m.changePercent > 0 ? '+' : ''}${m.changePercent}%</span>
+                    </div>
+                `).join('')}
+            `;
+            document.body.appendChild(notification);
+            setTimeout(() => notification.remove(), 3000);
         }
 
         // Set number of players
@@ -742,7 +926,6 @@
             }
             currentPlayer = 0;
 
-            // Update UI
             document.querySelectorAll('.player-count-btn').forEach(btn => {
                 btn.classList.remove('bg-yellow-600', 'bg-blue-600', 'bg-red-600', 'bg-green-600');
                 btn.classList.add('bg-gray-700');
@@ -751,8 +934,9 @@
             document.querySelector(`[data-count="${n}"]`).classList.remove('bg-gray-700');
             document.querySelector(`[data-count="${n}"]`).classList.add(colors[n - 1]);
 
-            document.getElementById('presetPlayerLabel').textContent = `(플레이어 1)`;
+            updateSetupPlayerTabs();
             drawBoard();
+            updatePlayerTabs();
         }
 
         // Calculations
@@ -784,7 +968,6 @@
             document.getElementById('totalLiabilities').textContent = `₩${fmt(getTotalLiabilities())}만`;
             document.getElementById('netWorth').textContent = `₩${fmt(getTotalAssets() - getTotalLiabilities())}만`;
 
-            // Dashboard updates
             document.getElementById('dashCash').textContent = `₩${fmt(gameState.assets.cash)}만`;
             document.getElementById('dashAssets').textContent = `₩${fmt(getTotalAssets())}만`;
             document.getElementById('dashDebt').textContent = `₩${fmt(getTotalLiabilities())}만`;
@@ -793,7 +976,115 @@
 
             const progress = Math.min(100, (getPassiveIncome() / Math.max(1, getTotalExpenses())) * 100);
             document.getElementById('escapeProgress').style.width = progress + '%';
+            
+            // Update asset/liability summary lists
+            updateSummaryLists();
+            
             drawBoard();
+            updatePlayerTabs();
+        }
+
+        // Update summary lists under balance sheet
+        function updateSummaryLists() {
+            const assets = gameState.assets;
+            const liab = gameState.liabilities;
+            const inv = gameState.investments;
+            
+            // Asset summary
+            let assetHtml = '';
+            if (assets.cash > 0) assetHtml += `<div class="asset-item flex justify-between p-1 rounded" onclick="showDetailModal('cash')"><span>💵 현금</span><span class="text-emerald-400">₩${fmt(assets.cash)}만</span></div>`;
+            if (assets.realEstate > 0) assetHtml += `<div class="asset-item flex justify-between p-1 rounded" onclick="showDetailModal('assets')"><span>🏠 부동산</span><span class="text-blue-400">₩${fmt(assets.realEstate)}만</span></div>`;
+            if (assets.stocks > 0) assetHtml += `<div class="asset-item flex justify-between p-1 rounded" onclick="showDetailModal('assets')"><span>📊 주식/ETF</span><span class="text-purple-400">₩${fmt(assets.stocks)}만</span></div>`;
+            if (assets.crypto > 0) assetHtml += `<div class="asset-item flex justify-between p-1 rounded" onclick="showDetailModal('assets')"><span>💎 가상자산</span><span class="text-yellow-400">₩${fmt(assets.crypto)}만</span></div>`;
+            
+            // Add individual investments that can be clicked for charts
+            inv.forEach((item, idx) => {
+                if (item.shares && marketPrices[item.name]) {
+                    const currentValue = Math.round(item.shares * marketPrices[item.name]);
+                    const pnl = currentValue - item.cost;
+                    assetHtml += `<div class="asset-item flex justify-between p-1 rounded text-[10px]" onclick="showAssetChart('${item.name}')">
+                        <span class="text-gray-400">└ ${item.name} (${item.shares}주)</span>
+                        <span class="${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}">₩${fmt(currentValue)}만</span>
+                    </div>`;
+                }
+            });
+            
+            document.getElementById('assetSummaryList').innerHTML = assetHtml || '<div class="text-gray-500">자산 없음</div>';
+            
+            // Liability summary
+            let liabHtml = '';
+            if (liab.mortgage > 0) liabHtml += `<div class="asset-item flex justify-between p-1 rounded" onclick="showDetailModal('liabilities')"><span>🏠 주택담보</span><span class="text-orange-400">₩${fmt(liab.mortgage)}만</span></div>`;
+            if (liab.credit > 0) liabHtml += `<div class="asset-item flex justify-between p-1 rounded" onclick="showDetailModal('liabilities')"><span>💳 신용대출</span><span class="text-orange-400">₩${fmt(liab.credit)}만</span></div>`;
+            if (liab.student > 0) liabHtml += `<div class="asset-item flex justify-between p-1 rounded" onclick="showDetailModal('liabilities')"><span>🎓 학자금</span><span class="text-orange-400">₩${fmt(liab.student)}만</span></div>`;
+            if (liab.other > 0) liabHtml += `<div class="asset-item flex justify-between p-1 rounded" onclick="showDetailModal('liabilities')"><span>📄 기타</span><span class="text-orange-400">₩${fmt(liab.other)}만</span></div>`;
+            
+            document.getElementById('liabilitySummaryList').innerHTML = liabHtml || '<div class="text-gray-500">부채 없음</div>';
+        }
+
+        // Asset Price Chart Modal
+        let assetChartInstance = null;
+        
+        function showAssetChart(assetName) {
+            const modal = document.getElementById('assetChartModal');
+            const title = document.getElementById('assetChartTitle');
+            const currentPriceEl = document.getElementById('assetCurrentPrice');
+            const priceChangeEl = document.getElementById('assetPriceChange');
+            
+            title.textContent = `📈 ${assetName} 가격 차트`;
+            
+            const history = priceHistory[assetName] || [];
+            const currentPrice = marketPrices[assetName];
+            const startPrice = history[0] || currentPrice;
+            const totalChange = ((currentPrice - startPrice) / startPrice * 100).toFixed(1);
+            
+            currentPriceEl.textContent = `₩${fmt(currentPrice)}만`;
+            priceChangeEl.innerHTML = `<span class="${totalChange >= 0 ? 'text-emerald-400' : 'text-red-400'}">${totalChange >= 0 ? '▲' : '▼'} ${Math.abs(totalChange)}%</span>`;
+            
+            modal.classList.remove('hidden');
+            
+            // Draw chart
+            setTimeout(() => {
+                const ctx = document.getElementById('assetPriceChart');
+                if (assetChartInstance) assetChartInstance.destroy();
+                
+                assetChartInstance = new Chart(ctx, {
+                    type: 'line',
+                    data: {
+                        labels: history.map((_, i) => i === 0 ? '시작' : i === history.length - 1 ? '현재' : `${i}턴전`).reverse(),
+                        datasets: [{
+                            label: '가격 (만원)',
+                            data: [...history],
+                            borderColor: totalChange >= 0 ? '#10b981' : '#ef4444',
+                            backgroundColor: totalChange >= 0 ? 'rgba(16, 185, 129, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                            fill: true,
+                            tension: 0.3
+                        }]
+                    },
+                    options: {
+                        responsive: true,
+                        plugins: {
+                            legend: { display: false }
+                        },
+                        scales: {
+                            x: { 
+                                ticks: { color: '#9ca3af' },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            },
+                            y: { 
+                                ticks: { 
+                                    color: '#9ca3af',
+                                    callback: v => '₩' + fmt(v)
+                                },
+                                grid: { color: 'rgba(255,255,255,0.1)' }
+                            }
+                        }
+                    }
+                });
+            }, 100);
+        }
+
+        function hideAssetChartModal() {
+            document.getElementById('assetChartModal').classList.add('hidden');
         }
 
         // Detail Modal Functions
@@ -837,17 +1128,20 @@
                         </div>
                         ${inv.length > 0 ? `
                             <div class="mt-4">
-                                <h4 class="font-bold mb-2">보유 투자 목록</h4>
+                                <h4 class="font-bold mb-2">보유 투자 목록 (클릭하여 차트 보기)</h4>
                                 <div class="space-y-2 max-h-40 overflow-y-auto">
-                                    ${inv.map((i, idx) => `
-                                        <div class="flex justify-between items-center text-sm p-2 bg-gray-700/50 rounded">
+                                    ${inv.map((i, idx) => {
+                                        const currentValue = i.shares && marketPrices[i.name] ? Math.round(i.shares * marketPrices[i.name]) : i.cost;
+                                        const pnl = currentValue - i.cost;
+                                        return `
+                                        <div class="flex justify-between items-center text-sm p-2 bg-gray-700/50 rounded cursor-pointer hover:bg-gray-600/50" onclick="hideDetailModal(); showAssetChart('${i.name}');">
                                             <span>${i.name} ${i.shares ? `(${i.shares}주)` : ''}</span>
                                             <div class="flex items-center gap-2">
-                                                <span>₩${fmt(i.cost)}만</span>
-                                                <button onclick="hideDetailModal(); showTab('portfolio');" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">상세</button>
+                                                <span class="${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}">₩${fmt(currentValue)}만</span>
+                                                <span class="text-xs">📈</span>
                                             </div>
                                         </div>
-                                    `).join('')}
+                                    `}).join('')}
                                 </div>
                             </div>
                         ` : ''}
@@ -914,12 +1208,7 @@
         }
 
         function payDebt(type) {
-            const debtNames = {
-                mortgage: '주택담보대출',
-                credit: '신용대출',
-                student: '학자금대출',
-                other: '기타대출'
-            };
+            const debtNames = { mortgage: '주택담보대출', credit: '신용대출', student: '학자금대출', other: '기타대출' };
             const currentDebt = gameState.liabilities[type];
             if (currentDebt <= 0) return;
 
@@ -931,13 +1220,12 @@
             gameState.assets.cash -= amount;
             gameState.liabilities[type] -= amount;
 
-            // Reduce loan interest expense proportionally
             const interestRates = { mortgage: 0.04, credit: 0.08, student: 0.03, other: 0.10 };
             const interestReduction = Math.round(amount * interestRates[type] / 12);
             gameState.expenses.loan = Math.max(0, gameState.expenses.loan - interestReduction);
 
             updateUI();
-            showDetailModal('liabilities'); // Refresh modal
+            showDetailModal('liabilities');
             alert(`₩${fmt(amount)}만원 상환 완료!\n월 이자 ₩${fmt(interestReduction)}만원 절약`);
         }
 
@@ -968,46 +1256,60 @@
 
         function getMarketHTML() {
             return `<div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-4 gap-4">
-        <div class="card p-4 rounded-xl border border-blue-500/30"><h4 class="font-bold text-blue-400 mb-3">🏠 부동산</h4>
-            <div class="space-y-2 text-sm">
-                <button onclick="buyInvestment('realEstate','원룸건물',15000,50)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">원룸건물 ₩15,000만 (월₩50만)</button>
-                <button onclick="buyInvestment('realEstate','상가',30000,100)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">상가 ₩30,000만 (월₩100만)</button>
-                <button onclick="buyInvestment('realEstate','아파트갭투자',5000,30)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">아파트 갭투자 ₩5,000만</button>
-                <button onclick="buyInvestment('realEstate','오피스텔',8000,40)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">오피스텔 ₩8,000만</button>
-            </div></div>
-        <div class="card p-4 rounded-xl border border-purple-500/30"><h4 class="font-bold text-purple-400 mb-3">📊 주식 (주당가격)</h4>
-            <div class="space-y-2 text-sm">
-                <button onclick="buyStock('삼성전자',7,0.02)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">🇰🇷 삼성전자 ₩7만/주</button>
-                <button onclick="buyStock('SK하이닉스',15,0.01)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">🇰🇷 SK하이닉스 ₩15만/주</button>
-                <button onclick="buyStock('네이버',20,0)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">🇰🇷 네이버 ₩20만/주</button>
-                <button onclick="buyStock('애플',25,0.005)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">🇺🇸 애플 ₩25만/주</button>
-                <button onclick="buyStock('테슬라',35,0)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">🇺🇸 테슬라 ₩35만/주</button>
-                <button onclick="buyStock('엔비디아',90,0.003)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">🇺🇸 엔비디아 ₩90만/주</button>
-            </div></div>
-        <div class="card p-4 rounded-xl border border-emerald-500/30"><h4 class="font-bold text-emerald-400 mb-3">📈 ETF (주당가격)</h4>
-            <div class="space-y-2 text-sm">
-                <button onclick="buyStock('S&P500 ETF',5,0.015)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">S&P500 ETF ₩5만/주</button>
-                <button onclick="buyStock('나스닥100 ETF',6,0.01)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">나스닥100 ETF ₩6만/주</button>
-                <button onclick="buyStock('고배당 ETF',4,0.04)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">고배당 ETF ₩4만/주 💰</button>
-                <button onclick="buyStock('리츠 ETF',3,0.05)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">리츠 ETF ₩3만/주 💰</button>
-                <button onclick="buyStock('채권 ETF',10,0.03)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">채권 ETF ₩10만/주</button>
-            </div></div>
-        <div class="card p-4 rounded-xl border border-yellow-500/30"><h4 class="font-bold text-yellow-400 mb-3">🥇 원자재 ETF</h4>
-            <div class="space-y-2 text-sm">
-                <button onclick="buyStock('금 ETF',8,0)" class="w-full p-2 bg-gradient-to-r from-yellow-900/50 to-yellow-700/30 hover:from-yellow-800/50 hover:to-yellow-600/30 rounded text-left hover:scale-[1.02] transition">🥇 금 ETF ₩8만/주</button>
-                <button onclick="buyStock('은 ETF',3,0)" class="w-full p-2 bg-gradient-to-r from-gray-600/50 to-gray-500/30 hover:from-gray-500/50 hover:to-gray-400/30 rounded text-left hover:scale-[1.02] transition">🥈 은 ETF ₩3만/주</button>
-                <button onclick="buyStock('원유 ETF',5,0)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">🛢️ 원유 ETF ₩5만/주</button>
-                <button onclick="buyStock('농산물 ETF',4,0)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">🌾 농산물 ETF ₩4만/주</button>
-            </div></div>
-        <div class="card p-4 rounded-xl border border-orange-500/30 col-span-full md:col-span-2 lg:col-span-4"><h4 class="font-bold text-orange-400 mb-3">💎 가상자산</h4>
-            <div class="grid grid-cols-2 md:grid-cols-5 gap-2 text-sm">
-                <button onclick="buyInvestment('crypto','비트코인',1000,0)" class="p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">₿ 비트코인 ₩1,000만</button>
-                <button onclick="buyInvestment('crypto','이더리움',500,0)" class="p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">Ξ 이더리움 ₩500만</button>
-                <button onclick="buyInvestment('crypto','솔라나',200,0)" class="p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">◎ 솔라나 ₩200만</button>
-                <button onclick="buyInvestment('crypto','스테이블예치',1000,5)" class="p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">💵 스테이블 예치 (월₩5만)</button>
-                <button onclick="buyInvestment('crypto','ETH스테이킹',500,2)" class="p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">⛓️ ETH 스테이킹 (월₩2만)</button>
-            </div></div>
-        </div>`;
+                <div class="card p-4 rounded-xl border border-blue-500/30"><h4 class="font-bold text-blue-400 mb-3">🏠 부동산</h4>
+                    <div class="space-y-2 text-sm">
+                        <button onclick="buyInvestment('realEstate','원룸건물',15000,50)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">원룸건물 ₩15,000만 (월₩50만)</button>
+                        <button onclick="buyInvestment('realEstate','상가',30000,100)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">상가 ₩30,000만 (월₩100만)</button>
+                        <button onclick="buyInvestment('realEstate','아파트갭투자',5000,30)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">아파트 갭투자 ₩5,000만</button>
+                        <button onclick="buyInvestment('realEstate','오피스텔',8000,40)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">오피스텔 ₩8,000만</button>
+                    </div></div>
+                <div class="card p-4 rounded-xl border border-purple-500/30"><h4 class="font-bold text-purple-400 mb-3">📊 주식 (클릭하여 차트)</h4>
+                    <div class="space-y-2 text-sm">
+                        ${['삼성전자', 'SK하이닉스', '네이버', '애플', '테슬라', '엔비디아'].map(name => {
+                            const price = marketPrices[name];
+                            const history = priceHistory[name];
+                            const prevPrice = history[history.length - 2] || price;
+                            const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
+                            return `<div class="flex items-center gap-1">
+                                <button onclick="buyStock('${name}',${price},0.01)" class="flex-1 p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">
+                                    ${name} ₩${fmt(price)}만/주 <span class="${change >= 0 ? 'text-emerald-400' : 'text-red-400'}">${change >= 0 ? '+' : ''}${change}%</span>
+                                </button>
+                                <button onclick="showAssetChart('${name}')" class="p-2 bg-gray-600 hover:bg-gray-500 rounded">📈</button>
+                            </div>`;
+                        }).join('')}
+                    </div></div>
+                <div class="card p-4 rounded-xl border border-emerald-500/30"><h4 class="font-bold text-emerald-400 mb-3">📈 ETF (클릭하여 차트)</h4>
+                    <div class="space-y-2 text-sm">
+                        ${['S&P500 ETF', '나스닥100 ETF', '고배당 ETF', '리츠 ETF', '채권 ETF'].map(name => {
+                            const price = marketPrices[name];
+                            const history = priceHistory[name];
+                            const prevPrice = history[history.length - 2] || price;
+                            const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
+                            return `<div class="flex items-center gap-1">
+                                <button onclick="buyStock('${name}',${price},0.02)" class="flex-1 p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">
+                                    ${name} ₩${fmt(price)}만/주 <span class="${change >= 0 ? 'text-emerald-400' : 'text-red-400'}">${change >= 0 ? '+' : ''}${change}%</span>
+                                </button>
+                                <button onclick="showAssetChart('${name}')" class="p-2 bg-gray-600 hover:bg-gray-500 rounded">📈</button>
+                            </div>`;
+                        }).join('')}
+                    </div></div>
+                <div class="card p-4 rounded-xl border border-yellow-500/30"><h4 class="font-bold text-yellow-400 mb-3">💎 가상자산 (클릭하여 차트)</h4>
+                    <div class="space-y-2 text-sm">
+                        ${['비트코인', '이더리움', '솔라나'].map(name => {
+                            const price = marketPrices[name];
+                            const history = priceHistory[name];
+                            const prevPrice = history[history.length - 2] || price;
+                            const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
+                            return `<div class="flex items-center gap-1">
+                                <button onclick="buyInvestment('crypto','${name}',${price},0)" class="flex-1 p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">
+                                    ${name} ₩${fmt(price)}만 <span class="${change >= 0 ? 'text-emerald-400' : 'text-red-400'}">${change >= 0 ? '+' : ''}${change}%</span>
+                                </button>
+                                <button onclick="showAssetChart('${name}')" class="p-2 bg-gray-600 hover:bg-gray-500 rounded">📈</button>
+                            </div>`;
+                        }).join('')}
+                        <button onclick="buyInvestment('crypto','스테이블예치',1000,5)" class="w-full p-2 bg-gray-700 hover:bg-gray-600 rounded text-left hover:scale-[1.02] transition">💵 스테이블 예치 (월₩5만)</button>
+                    </div></div>
+            </div>`;
         }
 
         function buyInvestment(type, name, cost, monthlyIncome) {
@@ -1025,45 +1327,46 @@
         }
 
         function buyStock(name, pricePerShare, dividendYield) {
-            const shares = parseInt(prompt(`${name} (1주당 ₩${fmt(pricePerShare)}만)\n몇 주 구매하시겠습니까?`, '10'));
+            const currentPrice = marketPrices[name] || pricePerShare;
+            const shares = parseInt(prompt(`${name} (현재가 ₩${fmt(currentPrice)}만/주)\n몇 주 구매하시겠습니까?`, '10'));
             if (!shares || shares <= 0) return;
-            const totalCost = pricePerShare * shares;
+            const totalCost = Math.round(currentPrice * shares);
             const monthlyDividend = Math.floor(totalCost * dividendYield);
             if (gameState.assets.cash < totalCost) { alert(`현금이 부족합니다! 필요: ₩${fmt(totalCost)}만`); return; }
             if (!confirm(`${name} ${shares}주를 ₩${fmt(totalCost)}만원에 구매하시겠습니까?${monthlyDividend > 0 ? `\n예상 월 배당: ₩${fmt(monthlyDividend)}만` : ''}`)) return;
             gameState.assets.cash -= totalCost;
             gameState.assets.stocks += totalCost;
             if (monthlyDividend > 0) gameState.income.dividend += monthlyDividend;
-            gameState.investments.push({ type: 'stocks', name, cost: totalCost, monthlyIncome: monthlyDividend, shares, pricePerShare });
+            gameState.investments.push({ type: 'stocks', name, cost: totalCost, monthlyIncome: monthlyDividend, shares, pricePerShare: currentPrice });
             updateUI();
             showTab('portfolio');
         }
 
         function getSimulationHTML() {
             return `<div class="grid grid-cols-1 md:grid-cols-2 gap-4">
-        <div class="card p-4 rounded-xl">
-            <h4 class="font-bold text-emerald-400 mb-3">🏃 탈출 시뮬레이션</h4>
-            <div class="space-y-3">
-                <div><label class="text-sm">월 저축액 (만원)</label><input type="number" id="simSave" class="w-full bg-gray-700 rounded p-2" value="${Math.max(0, getCashflow())}"></div>
-                <div><label class="text-sm">예상 투자수익률 (%/년)</label><input type="number" id="simReturn" class="w-full bg-gray-700 rounded p-2" value="8"></div>
-                <button onclick="runEscapeSim()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold">시뮬레이션 실행</button>
-            </div>
-            <div id="escapeResult" class="mt-4 text-sm"></div>
-        </div>
-        <div class="card p-4 rounded-xl">
-            <h4 class="font-bold text-blue-400 mb-3">📈 30년 자산 시뮬레이션</h4>
-            <div class="space-y-3">
-                <div><label class="text-sm">시나리오</label>
-                    <select id="simScenario" class="w-full bg-gray-700 rounded p-2">
-                        <option value="bear">하락장 (-50%)</option>
-                        <option value="flat">횡보장 (0%)</option>
-                        <option value="normal" selected>보통 (+8%/년)</option>
-                        <option value="bull">상승장 (+100%)</option>
-                    </select></div>
-                <button onclick="runLongSim()" class="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold">시뮬레이션 실행</button>
-            </div>
-            <canvas id="simChart" class="mt-4"></canvas>
-        </div></div>`;
+                <div class="card p-4 rounded-xl">
+                    <h4 class="font-bold text-emerald-400 mb-3">🏃 탈출 시뮬레이션</h4>
+                    <div class="space-y-3">
+                        <div><label class="text-sm">월 저축액 (만원)</label><input type="number" id="simSave" class="w-full bg-gray-700 rounded p-2" value="${Math.max(0, getCashflow())}"></div>
+                        <div><label class="text-sm">예상 투자수익률 (%/년)</label><input type="number" id="simReturn" class="w-full bg-gray-700 rounded p-2" value="8"></div>
+                        <button onclick="runEscapeSim()" class="w-full py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold">시뮬레이션 실행</button>
+                    </div>
+                    <div id="escapeResult" class="mt-4 text-sm"></div>
+                </div>
+                <div class="card p-4 rounded-xl">
+                    <h4 class="font-bold text-blue-400 mb-3">📈 30년 자산 시뮬레이션</h4>
+                    <div class="space-y-3">
+                        <div><label class="text-sm">시나리오</label>
+                            <select id="simScenario" class="w-full bg-gray-700 rounded p-2">
+                                <option value="bear">하락장 (-50%)</option>
+                                <option value="flat">횡보장 (0%)</option>
+                                <option value="normal" selected>보통 (+8%/년)</option>
+                                <option value="bull">상승장 (+100%)</option>
+                            </select></div>
+                        <button onclick="runLongSim()" class="w-full py-2 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold">시뮬레이션 실행</button>
+                    </div>
+                    <canvas id="simChart" class="mt-4"></canvas>
+                </div></div>`;
         }
 
         function runEscapeSim() {
@@ -1111,7 +1414,6 @@
             const assets = gameState.assets;
             const total = getTotalAssets();
 
-            // Calculate percentages
             const breakdown = [
                 { name: '현금', value: assets.cash, color: '#10b981' },
                 { name: '부동산', value: assets.realEstate, color: '#3b82f6' },
@@ -1133,32 +1435,32 @@
                     </div>
                 </div>
                 <div class="card p-4 rounded-xl">
-                    <h4 class="font-bold text-purple-400 mb-3">💼 보유 투자 (${inv.length}건)</h4>
+                    <h4 class="font-bold text-purple-400 mb-3">💼 보유 투자 (${inv.length}건) - 클릭하여 차트 보기</h4>
                     <div class="space-y-2 max-h-64 overflow-y-auto">
                         ${inv.length === 0 ? '<p class="text-gray-400 text-center py-4">보유중인 투자가 없습니다.</p>' :
-                    inv.map((i, idx) => {
-                        const currentValue = i.shares && marketPrices[i.name] ? Math.round(i.shares * marketPrices[i.name]) : i.cost;
-                        const pnl = currentValue - i.cost;
-                        const pnlPct = i.cost > 0 ? Math.round(pnl / i.cost * 100) : 0;
-                        return `<div class="flex justify-between items-center p-2 bg-gray-700/50 rounded-lg text-sm">
-                                <div>
-                                    <span class="font-bold">${i.name}</span>
-                                    ${i.shares ? `<span class="text-gray-400 ml-1">${i.shares}주</span>` : ''}
-                                    <div class="text-xs text-gray-400">매수: ₩${fmt(i.cost)}만 → 현재: ₩${fmt(currentValue)}만 
-                                        <span class="${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}">(${pnl >= 0 ? '+' : ''}${pnlPct}%)</span>
+                            inv.map((i, idx) => {
+                                const currentValue = i.shares && marketPrices[i.name] ? Math.round(i.shares * marketPrices[i.name]) : i.cost;
+                                const pnl = currentValue - i.cost;
+                                const pnlPct = i.cost > 0 ? Math.round(pnl / i.cost * 100) : 0;
+                                return `<div class="flex justify-between items-center p-2 bg-gray-700/50 rounded-lg text-sm">
+                                    <div class="cursor-pointer hover:text-yellow-400" onclick="showAssetChart('${i.name}')">
+                                        <span class="font-bold">${i.name}</span>
+                                        ${i.shares ? `<span class="text-gray-400 ml-1">${i.shares}주</span>` : ''}
+                                        <div class="text-xs text-gray-400">매수: ₩${fmt(i.cost)}만 → 현재: ₩${fmt(currentValue)}만 
+                                            <span class="${pnl >= 0 ? 'text-emerald-400' : 'text-red-400'}">(${pnl >= 0 ? '+' : ''}${pnlPct}%)</span>
+                                        </div>
                                     </div>
-                                </div>
-                                <div class="flex items-center gap-2">
-                                    ${i.monthlyIncome > 0 ? `<span class="text-xs text-emerald-400">월 ₩${fmt(i.monthlyIncome)}만</span>` : ''}
-                                    <button onclick="sellInvestment(${idx})" class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs">매도</button>
-                                </div>
-                            </div>`;
-                    }).join('')}
+                                    <div class="flex items-center gap-2">
+                                        ${i.monthlyIncome > 0 ? `<span class="text-xs text-emerald-400">월 ₩${fmt(i.monthlyIncome)}만</span>` : ''}
+                                        <button onclick="showAssetChart('${i.name}')" class="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">📈</button>
+                                        <button onclick="sellInvestment(${idx})" class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs">매도</button>
+                                    </div>
+                                </div>`;
+                            }).join('')}
                     </div>
                 </div>
             </div>`;
 
-            // Render chart after HTML is inserted
             setTimeout(() => {
                 const ctx = document.getElementById('portfolioChart');
                 if (ctx && breakdown.length > 0) {
@@ -1167,21 +1469,13 @@
                         type: 'doughnut',
                         data: {
                             labels: breakdown.map(b => b.name),
-                            datasets: [{
-                                data: breakdown.map(b => b.value),
-                                backgroundColor: breakdown.map(b => b.color),
-                                borderWidth: 0
-                            }]
+                            datasets: [{ data: breakdown.map(b => b.value), backgroundColor: breakdown.map(b => b.color), borderWidth: 0 }]
                         },
                         options: {
                             responsive: true,
                             plugins: {
                                 legend: { display: false },
-                                tooltip: {
-                                    callbacks: {
-                                        label: (ctx) => `₩${fmt(ctx.raw)}만 (${Math.round(ctx.raw / total * 100)}%)`
-                                    }
-                                }
+                                tooltip: { callbacks: { label: (ctx) => `₩${fmt(ctx.raw)}만 (${Math.round(ctx.raw / total * 100)}%)` } }
                             }
                         }
                     });
@@ -1194,7 +1488,6 @@
         function sellInvestment(idx) {
             const inv = gameState.investments[idx];
 
-            // If it has shares, ask how many to sell
             if (inv.shares && inv.shares > 1) {
                 const sharesToSell = parseInt(prompt(`${inv.name} ${inv.shares}주 보유중\n몇 주를 매도하시겠습니까?`, inv.shares));
                 if (!sharesToSell || sharesToSell <= 0) return;
@@ -1220,7 +1513,6 @@
                     gameState.investments.splice(idx, 1);
                 }
             } else {
-                // Full sale
                 const currentValue = inv.shares && marketPrices[inv.name] ? Math.round(inv.shares * marketPrices[inv.name]) : inv.cost;
                 if (!confirm(`${inv.name}을(를) ₩${fmt(currentValue)}만원에 매도하시겠습니까?`)) return;
 
@@ -1239,15 +1531,30 @@
 
         // Save/Load
         function saveGame() {
-            localStorage.setItem('cashflowGame', JSON.stringify(gameState));
+            const saveData = {
+                players,
+                numPlayers,
+                currentPlayer,
+                turn: gameState.turn,
+                marketPrices,
+                priceHistory
+            };
+            localStorage.setItem('cashflowGame', JSON.stringify(saveData));
             alert('게임이 저장되었습니다!');
         }
 
         function loadGame() {
             const saved = localStorage.getItem('cashflowGame');
             if (saved) {
-                gameState = JSON.parse(saved);
+                const data = JSON.parse(saved);
+                players = data.players || [createPlayer()];
+                numPlayers = data.numPlayers || 1;
+                currentPlayer = data.currentPlayer || 0;
+                gameState.turn = data.turn || 1;
+                if (data.marketPrices) marketPrices = data.marketPrices;
+                if (data.priceHistory) priceHistory = data.priceHistory;
                 updateUI();
+                updateCurrentPlayerDisplay();
                 alert('게임을 불러왔습니다!');
             }
         }
@@ -1255,27 +1562,28 @@
         function resetGame() {
             if (!confirm('정말 게임을 리셋하시겠습니까?\n모든 진행 상황이 초기화됩니다.')) return;
 
-            // Reset players
             numPlayers = 1;
             currentPlayer = 0;
             players = [createPlayer()];
             gameState.turn = 1;
 
-            // Reset market prices
-            marketPrices = {
-                '삼성전자': 7, 'SK하이닉스': 15, '네이버': 20, '카카오': 5,
-                '애플': 25, '테슬라': 35, '마이크로소프트': 40, '엔비디아': 90,
-                'S&P500 ETF': 5, '나스닥100 ETF': 6, '고배당 ETF': 4, '리츠 ETF': 3, '채권 ETF': 10,
-                '금 ETF': 8, '은 ETF': 3, '원유 ETF': 5, '농산물 ETF': 4,
-                '비트코인': 1000, '이더리움': 500, '솔라나': 200
-            };
+            marketPrices = { ...basePrices };
             priceHistory = {};
             Object.keys(marketPrices).forEach(name => {
-                priceHistory[name] = [marketPrices[name]];
+                let history = [];
+                let price = basePrices[name];
+                for (let i = 0; i < 10; i++) {
+                    const change = (Math.random() - 0.5) * 0.15;
+                    price = Math.max(0.1, price * (1 + change));
+                    history.push(Math.round(price * 100) / 100);
+                }
+                history.push(marketPrices[name]);
+                priceHistory[name] = history;
             });
 
             localStorage.removeItem('cashflowGame');
             updateUI();
+            updateCurrentPlayerDisplay();
             showSetupModal();
         }
 
