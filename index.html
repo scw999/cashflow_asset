@@ -275,9 +275,12 @@
     </div>
 
     <!-- Setup Modal -->
-    <div id="setupModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
-        <div class="card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
-            <h2 class="text-2xl font-bold mb-4">⚙️ 게임 설정</h2>
+<div id="setupModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+    <div class="card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+        <!-- 닫기 버튼 -->
+        <button onclick="hideSetupModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
+        
+        <h2 class="text-2xl font-bold mb-4">⚙️ 게임 설정</h2>
             
             <!-- Player Count -->
             <div class="mb-4">
@@ -350,11 +353,10 @@
                 </div>
             </div>
 
-            <div class="flex gap-2 mt-6">
-                <button onclick="applySettingsToPlayer()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold">현재 플레이어에 적용</button>
-                <button onclick="applySettingsAndClose()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold">저장 후 닫기</button>
-                <button onclick="hideSetupModal()" class="flex-1 py-3 bg-gray-600 hover:bg-gray-700 rounded-lg">취소</button>
-            </div>
+<div class="flex gap-2 mt-6">
+    <button onclick="applySettingsToPlayer()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold">현재 플레이어에 적용</button>
+    <button onclick="applySettingsAndClose()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold">저장 후 닫기</button>
+</div>
         </div>
     </div>
 
@@ -613,10 +615,11 @@
             updateUI();
         }
 
-        function applySettingsAndClose() {
-            applySettingsToPlayer();
-            hideSetupModal();
-        }
+function applySettingsAndClose() {
+    applySettingsToPlayer();
+    hideSetupModal();
+    alert('저장되었습니다!');
+}
 
         function applySettings() {
             applySettingsToPlayer();
