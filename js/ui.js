@@ -418,18 +418,32 @@ function showDetailModal(type) {
         `;
     } else if (type === 'liabilities') {
         title.textContent = '📉 부채 상세 및 상환';
+        const mortgageRate = getMortgageRate();
+        const creditRate = getCreditRate();
+        const studentRate = interestRate + 1.5;  // 학자금 금리
+        const otherRate = interestRate + 3.0;    // 기타대출 금리
+
         html = `
             <div class="space-y-3">
-                <div class="p-3 bg-emerald-900/30 rounded-lg mb-3">
-                    <div class="text-sm text-gray-400">보유 현금</div>
-                    <div class="text-xl font-bold text-emerald-400">₩${fmt(gameState.assets.cash)}만</div>
+                <div class="p-3 bg-cyan-900/30 rounded-lg mb-3">
+                    <div class="flex justify-between items-center">
+                        <div>
+                            <div class="text-sm text-gray-400">기준금리</div>
+                            <div class="text-xl font-bold text-cyan-400">${interestRate.toFixed(1)}%</div>
+                        </div>
+                        <div class="text-right">
+                            <div class="text-sm text-gray-400">보유 현금</div>
+                            <div class="text-xl font-bold text-emerald-400">₩${fmt(gameState.assets.cash)}만</div>
+                        </div>
+                    </div>
                 </div>
 
                 <div class="p-3 bg-gray-800 rounded-lg">
-                    <div class="flex justify-between items-center mb-2">
+                    <div class="flex justify-between items-center mb-1">
                         <span>🏦 주택담보대출</span>
                         <span class="${gameState.liabilities.mortgage > 0 ? 'text-red-400' : 'text-gray-500'} font-bold">₩${fmt(gameState.liabilities.mortgage)}만</span>
                     </div>
+                    <div class="text-xs text-cyan-400 mb-2">연 ${mortgageRate.toFixed(1)}% (월 이자: ₩${fmt(Math.round(gameState.liabilities.mortgage * mortgageRate / 100 / 12))}만)</div>
                     ${gameState.liabilities.mortgage > 0 ? `
                     <div class="flex gap-2">
                         <input type="number" id="repayMortgage" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.mortgage}">
@@ -438,10 +452,11 @@ function showDetailModal(type) {
                 </div>
 
                 <div class="p-3 bg-gray-800 rounded-lg">
-                    <div class="flex justify-between items-center mb-2">
+                    <div class="flex justify-between items-center mb-1">
                         <span>💳 신용대출</span>
                         <span class="${gameState.liabilities.credit > 0 ? 'text-red-400' : 'text-gray-500'} font-bold">₩${fmt(gameState.liabilities.credit)}만</span>
                     </div>
+                    <div class="text-xs text-orange-400 mb-2">연 ${creditRate.toFixed(1)}% (월 이자: ₩${fmt(Math.round(gameState.liabilities.credit * creditRate / 100 / 12))}만)</div>
                     ${gameState.liabilities.credit > 0 ? `
                     <div class="flex gap-2">
                         <input type="number" id="repayCredit" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.credit}">
@@ -450,10 +465,11 @@ function showDetailModal(type) {
                 </div>
 
                 <div class="p-3 bg-gray-800 rounded-lg">
-                    <div class="flex justify-between items-center mb-2">
+                    <div class="flex justify-between items-center mb-1">
                         <span>🎓 학자금대출</span>
                         <span class="${gameState.liabilities.student > 0 ? 'text-red-400' : 'text-gray-500'} font-bold">₩${fmt(gameState.liabilities.student)}만</span>
                     </div>
+                    <div class="text-xs text-purple-400 mb-2">연 ${studentRate.toFixed(1)}% (월 이자: ₩${fmt(Math.round(gameState.liabilities.student * studentRate / 100 / 12))}만)</div>
                     ${gameState.liabilities.student > 0 ? `
                     <div class="flex gap-2">
                         <input type="number" id="repayStudent" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.student}">
@@ -462,10 +478,11 @@ function showDetailModal(type) {
                 </div>
 
                 <div class="p-3 bg-gray-800 rounded-lg">
-                    <div class="flex justify-between items-center mb-2">
+                    <div class="flex justify-between items-center mb-1">
                         <span>📋 기타대출</span>
                         <span class="${gameState.liabilities.other > 0 ? 'text-red-400' : 'text-gray-500'} font-bold">₩${fmt(gameState.liabilities.other)}만</span>
                     </div>
+                    <div class="text-xs text-yellow-400 mb-2">연 ${otherRate.toFixed(1)}% (월 이자: ₩${fmt(Math.round(gameState.liabilities.other * otherRate / 100 / 12))}만)</div>
                     ${gameState.liabilities.other > 0 ? `
                     <div class="flex gap-2">
                         <input type="number" id="repayOther" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.other}">

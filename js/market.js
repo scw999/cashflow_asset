@@ -200,7 +200,8 @@ function getMarketHTML() {
 // Buy stock
 function buyStock(name) {
     const currentPrice = marketPrices[name];
-    const shares = parseInt(prompt(`${name} (현재가 ₩${fmt(currentPrice)}만/주)\n\n몇 주 구매하시겠습니까?`, '10'));
+    const maxShares = Math.floor(gameState.assets.cash / currentPrice);
+    const shares = parseInt(prompt(`${name} (현재가 ₩${fmt(currentPrice)}만/주)\n\n보유 현금: ₩${fmt(gameState.assets.cash)}만\n최대 구매 가능: ${maxShares}주\n\n몇 주 구매하시겠습니까?`, Math.min(10, maxShares).toString()));
 
     if (!shares || shares <= 0) return;
 
@@ -248,7 +249,8 @@ function buyStock(name) {
 // Buy cryptocurrency (소수점 단위 가능)
 function buyCrypto(name) {
     const currentPrice = marketPrices[name];
-    const amount = parseFloat(prompt(`${name} (현재가 ₩${fmt(currentPrice)}만)\n\n몇 개 구매하시겠습니까?\n(0.001 단위까지 입력 가능)`, '1'));
+    const maxAmount = Math.floor((gameState.assets.cash / currentPrice) * 1000) / 1000;  // 0.001 단위
+    const amount = parseFloat(prompt(`${name} (현재가 ₩${fmt(currentPrice)}만)\n\n보유 현금: ₩${fmt(gameState.assets.cash)}만\n최대 구매 가능: ${maxAmount}개\n\n몇 개 구매하시겠습니까?\n(0.001 단위까지 입력 가능)`, Math.min(1, maxAmount).toString()));
 
     if (!amount || amount <= 0) return;
 

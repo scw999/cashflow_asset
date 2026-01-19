@@ -1236,18 +1236,32 @@ function handleBaby() {
 
 // Layoff handler - 2턴 쉬기 적용
 function handleLayoff() {
-    const severance = gameState.income.salary * 2;
-    gameState.assets.cash += severance;
+    const expenses = getTotalExpenses();
 
-    // 2턴 쉬기 적용
-    getPlayer().skipTurns = 2;
+    // 지출 1회분 차감
+    gameState.assets.cash -= expenses;
+
+    // 현금이 부족하면 신용대출 발생
+    if (gameState.assets.cash < 0) {
+        const shortage = Math.abs(gameState.assets.cash);
+        gameState.liabilities.credit += shortage;
+        gameState.expenses.loan += Math.round(shortage * getCreditRate() / 100 / 12);
+        gameState.assets.cash = 0;
+    }
 
     showEventModal(
-        '😢 해고!',
-        `<p class="text-lg">해고되었습니다...</p>
-         <p class="text-emerald-400">퇴직금: +₩${fmt(severance)}만</p>
-         <p class="text-yellow-400 mt-2 font-bold">⚠️ 다음 2턴을 쉬어야 합니다!</p>
-         <p class="text-sm text-gray-400 mt-1">(재취업 활동 기간)</p>`,
+        '😢 퇴사!',
+        `<div class="space-y-3">
+            <p class="text-lg text-center">퇴사하게 되었습니다...</p>
+            <div class="p-4 bg-red-900/30 rounded-lg">
+                <div class="flex justify-between mb-2">
+                    <span>지출 1회 납부</span>
+                    <span class="text-red-400 font-bold">-₩${fmt(expenses)}만</span>
+                </div>
+                <div class="text-xs text-gray-400">퇴직금 없이 바로 지출을 내야합니다.</div>
+            </div>
+            <p class="text-sm text-gray-400 text-center">현재 현금: ₩${fmt(gameState.assets.cash)}만</p>
+        </div>`,
         [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
     );
 }
