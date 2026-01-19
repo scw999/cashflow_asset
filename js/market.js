@@ -547,9 +547,15 @@ function sellInvestment(idx) {
         }
     } else if (inv.amount && inv.amount > 0) {
         // Crypto with amount
-        const amountToSell = parseFloat(prompt(`${inv.name} ${inv.amount.toFixed(3)}개 보유중\n몇 개를 매도하시겠습니까?`, inv.amount.toFixed(3)));
+        let amountToSell = parseFloat(prompt(`${inv.name} ${inv.amount.toFixed(3)}개 보유중\n몇 개를 매도하시겠습니까?`, inv.amount.toFixed(3)));
         if (!amountToSell || amountToSell <= 0) return;
-        if (amountToSell > inv.amount) {
+
+        // 부동소수점 오차 허용 (전량 매도 시 정확히 맞추기)
+        if (Math.abs(amountToSell - inv.amount) < 0.0001) {
+            amountToSell = inv.amount;  // 전량 매도로 처리
+        }
+
+        if (amountToSell > inv.amount + 0.0001) {
             alert('보유 수량보다 많이 매도할 수 없습니다.');
             return;
         }
