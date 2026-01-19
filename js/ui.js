@@ -209,6 +209,7 @@ function updatePresetButtons() {
         <button onclick="applyPreset('${key}')" class="preset-btn p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition ${players[setupPlayer].jobPreset === key ? 'ring-2 ring-yellow-400' : ''}">
             <div class="font-bold text-sm">${preset.job}</div>
             <div class="text-xs text-gray-400">${key}</div>
+            <div class="text-xs text-pink-400 mt-1">👶 양육비 ₩${preset.childcareCost || 30}만/자녀</div>
         </button>
     `).join('') + `
         <button onclick="applyRandomPreset()" class="preset-btn p-2 bg-purple-700 hover:bg-purple-600 rounded-lg text-center transition">
@@ -481,7 +482,9 @@ function showDetailModal(type) {
         `;
     } else if (type === 'expenses') {
         title.textContent = '💸 지출 상세';
-        const childExpense = gameState.children * 30;
+        const player = getPlayer();
+        const childcareCostPerChild = player.childcareCost || 30;
+        const childExpense = gameState.children * childcareCostPerChild;
         html = `
             <div class="space-y-3">
                 <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
@@ -500,15 +503,124 @@ function showDetailModal(type) {
                     <span>📋 세금/보험</span>
                     <span class="text-red-400">₩${fmt(gameState.expenses.tax)}만</span>
                 </div>
-                ${childExpense > 0 ? `
                 <div class="flex justify-between p-3 bg-gray-800 rounded-lg">
-                    <span>👶 양육비 (${gameState.children}명)</span>
+                    <span>👶 양육비 (${gameState.children}명 × ₩${childcareCostPerChild}만)</span>
                     <span class="text-red-400">₩${fmt(childExpense)}만</span>
-                </div>` : ''}
+                </div>
                 <div class="border-t border-gray-600 pt-3">
                     <div class="flex justify-between font-bold text-lg">
                         <span>총 지출</span>
                         <span class="text-red-400">₩${fmt(getTotalExpenses())}만</span>
+                    </div>
+                </div>
+            </div>
+        `;
+    } else if (type === 'cashflow') {
+        title.textContent = '💰 월 캐시플로우 상세';
+        const player = getPlayer();
+        const childcareCostPerChild = player.childcareCost || 30;
+        const childExpense = gameState.children * childcareCostPerChild;
+        const totalIncome = Object.values(gameState.income).reduce((a, b) => a + b, 0);
+        const passiveIncome = getPassiveIncome();
+        const totalExpense = getTotalExpenses();
+        const cashflow = getCashflow();
+
+        html = `
+            <div class="space-y-4">
+                <!-- 소득 -->
+                <div class="p-3 bg-emerald-900/20 rounded-lg border border-emerald-600/30">
+                    <h4 class="font-bold text-emerald-400 mb-2">📈 소득</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>💼 근로소득 (월급)</span>
+                            <span class="text-emerald-400">+₩${fmt(gameState.income.salary)}만</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>🏠 임대소득</span>
+                            <span class="text-emerald-400">+₩${fmt(gameState.income.rental)}만</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>💵 배당소득</span>
+                            <span class="text-emerald-400">+₩${fmt(gameState.income.dividend)}만</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>📊 기타소득</span>
+                            <span class="text-emerald-400">+₩${fmt(gameState.income.other)}만</span>
+                        </div>
+                        <div class="border-t border-emerald-600/30 pt-2 mt-2">
+                            <div class="flex justify-between font-bold">
+                                <span>총 소득</span>
+                                <span class="text-emerald-400">+₩${fmt(totalIncome)}만</span>
+                            </div>
+                            <div class="flex justify-between text-xs text-gray-400 mt-1">
+                                <span>패시브 소득</span>
+                                <span>₩${fmt(passiveIncome)}만</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 지출 -->
+                <div class="p-3 bg-red-900/20 rounded-lg border border-red-600/30">
+                    <h4 class="font-bold text-red-400 mb-2">📉 지출</h4>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between">
+                            <span>🏠 주거비</span>
+                            <span class="text-red-400">-₩${fmt(gameState.expenses.housing)}만</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>🍽️ 생활비</span>
+                            <span class="text-red-400">-₩${fmt(gameState.expenses.living)}만</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>💰 대출이자</span>
+                            <span class="text-red-400">-₩${fmt(gameState.expenses.loan)}만</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>📋 세금/보험</span>
+                            <span class="text-red-400">-₩${fmt(gameState.expenses.tax)}만</span>
+                        </div>
+                        <div class="flex justify-between">
+                            <span>👶 양육비 (${gameState.children}명 × ₩${childcareCostPerChild}만)</span>
+                            <span class="text-red-400">-₩${fmt(childExpense)}만</span>
+                        </div>
+                        <div class="border-t border-red-600/30 pt-2 mt-2">
+                            <div class="flex justify-between font-bold">
+                                <span>총 지출</span>
+                                <span class="text-red-400">-₩${fmt(totalExpense)}만</span>
+                            </div>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 캐시플로우 계산 -->
+                <div class="p-4 bg-yellow-900/20 rounded-lg border border-yellow-600/30">
+                    <div class="text-center">
+                        <div class="text-sm text-gray-400 mb-2">총 소득 - 총 지출</div>
+                        <div class="text-lg">
+                            <span class="text-emerald-400">₩${fmt(totalIncome)}만</span>
+                            <span class="text-gray-400 mx-2">−</span>
+                            <span class="text-red-400">₩${fmt(totalExpense)}만</span>
+                        </div>
+                        <div class="border-t border-yellow-600/30 my-3"></div>
+                        <div class="text-2xl font-bold ${cashflow >= 0 ? 'text-emerald-400' : 'text-red-400'}">
+                            월 캐시플로우: ₩${fmt(cashflow)}만
+                        </div>
+                    </div>
+                </div>
+
+                <!-- 쥐 레이스 탈출 조건 -->
+                <div class="p-3 bg-purple-900/20 rounded-lg border border-purple-600/30 text-sm">
+                    <div class="flex justify-between items-center">
+                        <span class="text-purple-400">🏃 쥐 레이스 탈출 조건</span>
+                        <span class="text-gray-300">패시브 소득 ≥ 총 지출</span>
+                    </div>
+                    <div class="flex justify-between items-center mt-2">
+                        <span class="text-gray-400">현재 진행도</span>
+                        <span class="${passiveIncome >= totalExpense ? 'text-emerald-400' : 'text-yellow-400'}">
+                            ₩${fmt(passiveIncome)}만 / ₩${fmt(totalExpense)}만
+                            (${totalExpense > 0 ? Math.round(passiveIncome / totalExpense * 100) : 0}%)
+                        </span>
                     </div>
                 </div>
             </div>

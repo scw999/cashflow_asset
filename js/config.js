@@ -214,38 +214,38 @@ const presets = {
     }
 };
 
-// Rat Race Spaces (부동산 칸 확대)
+// Rat Race Spaces (부동산 칸 통합)
 const ratRaceSpaces = [
     { type: 'payday', name: '💰월급날', color: '#10b981' },
     { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
     { type: 'market', name: '📈시장상승', color: '#22c55e' },
     { type: 'doodad', name: '🛒충동지출', color: '#ef4444' },
     { type: 'opportunity', name: '📊주식', color: '#8b5cf6' },
-    { type: 'opportunity', name: '🏠급매물건', subType: 'urgentSale', color: '#0ea5e9' },
+    { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
     { type: 'payday', name: '💰월급날', color: '#10b981' },
     { type: 'opportunity', name: '💎가상자산', color: '#f59e0b' },
     { type: 'market', name: '📉시장하락', color: '#dc2626' },
     { type: 'baby', name: '👶아기탄생', color: '#f472b6' },
-    { type: 'opportunity', name: '🏢상가투자', color: '#06b6d4' },
+    { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
     { type: 'charity', name: '❤️기부', color: '#ec4899' },
     { type: 'payday', name: '💰월급날', color: '#10b981' },
-    { type: 'opportunity', name: '🏠경매물건', subType: 'auction', color: '#0891b2' },
+    { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
     { type: 'doodad', name: '🛒충동지출', color: '#ef4444' },
     { type: 'opportunity', name: '📊ETF', color: '#7c3aed' },
-    { type: 'opportunity', name: '🏠오피스텔', color: '#3b82f6' },
+    { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
     { type: 'market', name: '📈시장상승', color: '#22c55e' },
     { type: 'payday', name: '💰월급날', color: '#10b981' },
-    { type: 'opportunity', name: '🏠급매물건', subType: 'urgentSale', color: '#0ea5e9' },
+    { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
     { type: 'layoff', name: '😢해고', color: '#991b1b' },
     { type: 'opportunity', name: '💰스테이킹', color: '#d97706' },
     { type: 'doodad', name: '🛒충동지출', color: '#ef4444' },
-    { type: 'opportunity', name: '🏠빌라', color: '#2563eb' },
+    { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
     { type: 'payday', name: '💰월급날', color: '#10b981' },
-    { type: 'opportunity', name: '🏠경매물건', subType: 'auction', color: '#0891b2' },
+    { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
     { type: 'market', name: '📉시장하락', color: '#dc2626' },
     { type: 'baby', name: '👶아기탄생', color: '#f472b6' },
-    { type: 'opportunity', name: '🏠원룸', color: '#2563eb' },
-    { type: 'opportunity', name: '🏠다가구', color: '#3b82f6' }
+    { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
+    { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' }
 ];
 
 // Fast Track Spaces (사업 투자 + 꿈 + 월급날)

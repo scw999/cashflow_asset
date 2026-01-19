@@ -288,53 +288,8 @@ function handlePayday() {
 
 // Opportunity handler
 function handleOpportunity(space) {
-    const player = getPlayer();
-
-    // 급매 물건 - 2회 밟으면 할인 구매 가능
-    if (space.subType === 'urgentSale') {
-        player.urgentSaleCount = (player.urgentSaleCount || 0) + 1;
-
-        if (player.urgentSaleCount >= 2) {
-            // 급매 조건 충족! 할인 구매
-            showUrgentSaleOpportunity();
-        } else {
-            showEventModal(
-                '🏠 급매 물건 발견!',
-                `<p class="text-lg">급매 물건 정보를 수집 중입니다...</p>
-                 <p class="mt-3 p-3 bg-blue-900/30 rounded-lg">
-                    <span class="text-blue-400 font-bold">발품 진행도: ${player.urgentSaleCount}/2</span>
-                 </p>
-                 <p class="mt-2 text-gray-400 text-sm">급매 칸을 한 번 더 밟으면 시세보다 20% 할인된 가격에 매입할 수 있습니다!</p>`,
-                [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
-            );
-        }
-        return;
-    }
-
-    // 경매 물건 - 3회 밟으면 경매 구매 가능
-    if (space.subType === 'auction') {
-        player.auctionCount = (player.auctionCount || 0) + 1;
-
-        if (player.auctionCount >= 3) {
-            // 경매 조건 충족! 대폭 할인 구매
-            showAuctionOpportunity();
-        } else {
-            showEventModal(
-                '🏠 경매 물건 조사!',
-                `<p class="text-lg">경매 물건을 조사하고 있습니다...</p>
-                 <p class="mt-3 p-3 bg-cyan-900/30 rounded-lg">
-                    <span class="text-cyan-400 font-bold">경매 준비도: ${player.auctionCount}/3</span>
-                 </p>
-                 <p class="mt-2 text-gray-400 text-sm">경매 칸을 ${3 - player.auctionCount}번 더 밟으면 시세보다 30% 할인된 경매가로 낙찰받을 수 있습니다!</p>`,
-                [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
-            );
-        }
-        return;
-    }
-
-    // Real estate opportunities - 일반 부동산 칸
-    if (space.name.includes('부동산') || space.name.includes('원룸') || space.name.includes('상가') ||
-        space.name.includes('오피스텔') || space.name.includes('빌라') || space.name.includes('다가구')) {
+    // Real estate opportunities - 부동산 칸
+    if (space.name.includes('부동산')) {
         // 부동산 칸에서는 다양한 이벤트 발생
         handleRealEstateEvent();
     } else if (space.name.includes('주식') || space.name.includes('ETF')) {
@@ -357,10 +312,37 @@ function handleOpportunity(space) {
     }
 }
 
-// 부동산 이벤트 핸들러 (구매 기회는 항상, 추가 이벤트는 랜덤)
+// 부동산 이벤트 핸들러 (통합 - 구매, 매수자, 급매, 경매)
 function handleRealEstateEvent() {
-    // 부동산 칸에 가면 무조건 구매 기회가 먼저 나옴
-    // 추가로 랜덤하게 매수자 등장 이벤트가 나올 수 있음
+    const player = getPlayer();
+    const realEstateInvestments = gameState.investments.filter(inv => inv.type === 'realEstate');
+
+    // 급매/경매 카운트 증가 (발품 팔기)
+    player.urgentSaleCount = (player.urgentSaleCount || 0) + 1;
+    player.auctionCount = (player.auctionCount || 0) + 1;
+
+    // 이벤트 결정 (랜덤)
+    const roll = Math.random() * 100;
+
+    // 급매 조건 충족 (2회) - 20% 확률로 급매 오퍼
+    if (player.urgentSaleCount >= 2 && roll < 20) {
+        showUrgentSaleOpportunity();
+        return;
+    }
+
+    // 경매 조건 충족 (3회) - 15% 확률로 경매 오퍼
+    if (player.auctionCount >= 3 && roll < 35 && roll >= 20) {
+        showAuctionOpportunity();
+        return;
+    }
+
+    // 매수자 등장 (부동산 보유 시) - 20% 확률
+    if (realEstateInvestments.length > 0 && roll < 55 && roll >= 35) {
+        showBuyerOpportunity(realEstateInvestments);
+        return;
+    }
+
+    // 기본: 구매 기회 (항상 나옴)
     showRealEstateOpportunity();
 }
 
