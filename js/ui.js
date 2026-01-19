@@ -466,8 +466,9 @@ function showDetailModal(type) {
                     <div class="text-xs text-cyan-400 mb-2">연 ${mortgageRate.toFixed(1)}% (월 이자: ₩${fmt(Math.round(gameState.liabilities.mortgage * mortgageRate / 100 / 12))}만)</div>
                     ${gameState.liabilities.mortgage > 0 ? `
                     <div class="flex gap-2">
-                        <input type="number" id="repayMortgage" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.mortgage}">
+                        <input type="number" id="repayMortgage" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.mortgage}" step="0.01" value="${gameState.liabilities.mortgage <= 10 ? gameState.liabilities.mortgage : ''}">
                         <button onclick="repayDebt('mortgage')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">상환</button>
+                        ${gameState.liabilities.mortgage <= gameState.assets.cash ? `<button onclick="repayFullDebt('mortgage')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 rounded text-sm">전액</button>` : ''}
                     </div>` : '<div class="text-xs text-gray-500">부채 없음</div>'}
                 </div>
 
@@ -503,8 +504,9 @@ function showDetailModal(type) {
                     <div class="text-xs text-orange-400 mb-2">연 ${creditRate.toFixed(1)}% (월 이자: ₩${fmt(Math.round(gameState.liabilities.credit * creditRate / 100 / 12))}만)</div>
                     ${gameState.liabilities.credit > 0 ? `
                     <div class="flex gap-2">
-                        <input type="number" id="repayCredit" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.credit}">
+                        <input type="number" id="repayCredit" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.credit}" step="0.01" value="${gameState.liabilities.credit <= 10 ? gameState.liabilities.credit : ''}">
                         <button onclick="repayDebt('credit')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">상환</button>
+                        ${gameState.liabilities.credit <= gameState.assets.cash ? `<button onclick="repayFullDebt('credit')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 rounded text-sm">전액</button>` : ''}
                     </div>` : '<div class="text-xs text-gray-500">부채 없음</div>'}
                 </div>
 
@@ -516,8 +518,9 @@ function showDetailModal(type) {
                     <div class="text-xs text-purple-400 mb-2">연 ${studentRate.toFixed(1)}% (월 이자: ₩${fmt(Math.round(gameState.liabilities.student * studentRate / 100 / 12))}만)</div>
                     ${gameState.liabilities.student > 0 ? `
                     <div class="flex gap-2">
-                        <input type="number" id="repayStudent" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.student}">
+                        <input type="number" id="repayStudent" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.student}" step="0.01" value="${gameState.liabilities.student <= 10 ? gameState.liabilities.student : ''}">
                         <button onclick="repayDebt('student')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">상환</button>
+                        ${gameState.liabilities.student <= gameState.assets.cash ? `<button onclick="repayFullDebt('student')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 rounded text-sm">전액</button>` : ''}
                     </div>` : '<div class="text-xs text-gray-500">부채 없음</div>'}
                 </div>
 
@@ -529,8 +532,9 @@ function showDetailModal(type) {
                     <div class="text-xs text-yellow-400 mb-2">연 ${otherRate.toFixed(1)}% (월 이자: ₩${fmt(Math.round(gameState.liabilities.other * otherRate / 100 / 12))}만)</div>
                     ${gameState.liabilities.other > 0 ? `
                     <div class="flex gap-2">
-                        <input type="number" id="repayOther" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.other}">
+                        <input type="number" id="repayOther" class="flex-1 bg-gray-700 rounded p-2 text-sm" placeholder="상환 금액" min="0" max="${gameState.liabilities.other}" step="0.01" value="${gameState.liabilities.other <= 10 ? gameState.liabilities.other : ''}">
                         <button onclick="repayDebt('other')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">상환</button>
+                        ${gameState.liabilities.other <= gameState.assets.cash ? `<button onclick="repayFullDebt('other')" class="px-3 py-1 bg-emerald-600 hover:bg-emerald-700 rounded text-sm">전액</button>` : ''}
                     </div>` : '<div class="text-xs text-gray-500">부채 없음</div>'}
                 </div>
 
@@ -763,14 +767,24 @@ function repayDebt(debtType) {
     const inputEl = document.getElementById(inputIds[debtType]);
     if (!inputEl) return;
 
-    const amount = parseInt(inputEl.value) || 0;
+    let amount = parseFloat(inputEl.value) || 0;
+    const currentDebt = gameState.liabilities[debtType];
+    const currentCash = gameState.assets.cash;
+
+    // 소액 잔액(1만원 이하)이면 전액 상환으로 처리
+    if (currentDebt > 0 && currentDebt <= 1 && (amount <= 0 || Math.abs(amount - currentDebt) < 0.01)) {
+        amount = currentDebt;
+    }
+
     if (amount <= 0) {
         showNotification('상환 금액을 입력해주세요.', 'warning');
         return;
     }
 
-    const currentDebt = gameState.liabilities[debtType];
-    const currentCash = gameState.assets.cash;
+    // 부채보다 약간 많이 입력해도 부채 금액으로 조정
+    if (amount > currentDebt && amount - currentDebt < 1) {
+        amount = currentDebt;
+    }
 
     if (amount > currentCash) {
         showNotification('현금이 부족합니다.', 'error');
@@ -783,14 +797,56 @@ function repayDebt(debtType) {
     }
 
     // Process repayment
-    gameState.liabilities[debtType] -= amount;
-    gameState.assets.cash -= amount;
+    gameState.liabilities[debtType] = Math.max(0, Math.round((gameState.liabilities[debtType] - amount) * 100) / 100);
+    gameState.assets.cash = Math.round((gameState.assets.cash - amount) * 100) / 100;
+
+    // 0.01 미만의 잔액은 0으로 정리
+    if (gameState.liabilities[debtType] > 0 && gameState.liabilities[debtType] < 0.01) {
+        gameState.liabilities[debtType] = 0;
+    }
 
     // Recalculate loan interest expense (assume 5% annual = 0.42% monthly)
     const totalDebt = getTotalLiabilities();
     gameState.expenses.loan = Math.round(totalDebt * 0.0042);
 
     showNotification(`${debtNames[debtType]} ₩${fmt(amount)}만 상환 완료!`, 'success');
+
+    // Refresh the modal
+    showDetailModal('liabilities');
+    updateUI();
+}
+
+// Repay full debt amount
+function repayFullDebt(debtType) {
+    const debtNames = {
+        mortgage: '주택담보대출',
+        credit: '신용대출',
+        student: '학자금대출',
+        other: '기타대출'
+    };
+
+    const currentDebt = gameState.liabilities[debtType];
+    const currentCash = gameState.assets.cash;
+
+    if (currentDebt <= 0) {
+        showNotification('상환할 부채가 없습니다.', 'warning');
+        return;
+    }
+
+    if (currentDebt > currentCash) {
+        showNotification('현금이 부족합니다.', 'error');
+        return;
+    }
+
+    // Process full repayment
+    gameState.liabilities[debtType] = 0;
+    gameState.assets.cash = Math.round((currentCash - currentDebt) * 100) / 100;
+
+    // Recalculate loan interest expense
+    const totalDebt = getTotalLiabilities();
+    gameState.expenses.loan = Math.round(totalDebt * 0.0042);
+
+    showNotification(`${debtNames[debtType]} ₩${fmt(currentDebt)}만 전액 상환 완료!`, 'success');
 
     // Refresh the modal
     showDetailModal('liabilities');
