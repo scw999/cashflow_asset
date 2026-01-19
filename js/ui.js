@@ -613,3 +613,157 @@ function repayDebt(debtType) {
     showDetailModal('liabilities');
     updateUI();
 }
+
+// Block Deal Modal (Fast Track)
+function showBlockDealModal(type) {
+    const modal = document.getElementById('blockDealModal');
+    const cashDisplay = document.getElementById('blockDealCash');
+    const content = document.getElementById('blockDealContent');
+
+    cashDisplay.textContent = `₩${fmt(gameState.assets.cash)}만`;
+
+    let html = '';
+
+    if (type === 'realestate') {
+        html = `
+            <div class="text-sm text-gray-400 mb-4">
+                패스트트랙에서는 부동산을 대량으로 매입할 수 있습니다.
+                현재 시세로 즉시 구매 가능합니다.
+            </div>
+            <div class="space-y-3">
+                ${Object.keys(realEstateMarketPrices).map(name => {
+                    const price = realEstateMarketPrices[name];
+                    const char = realEstateCharacteristics[name] || { rentalYield: 0.04 };
+                    const monthlyIncome = Math.round(price * char.rentalYield / 12);
+                    const canAfford = gameState.assets.cash >= price;
+                    return `
+                        <div class="p-3 bg-gray-800 rounded-lg ${!canAfford ? 'opacity-50' : ''}">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold">${name}</span>
+                                <span class="text-yellow-400">₩${fmt(price)}만</span>
+                            </div>
+                            <div class="flex justify-between text-sm text-gray-400 mb-2">
+                                <span>예상 월 수익</span>
+                                <span class="text-emerald-400">+₩${fmt(monthlyIncome)}만</span>
+                            </div>
+                            <button onclick="buyBlockDealRealEstate('${name}')"
+                                class="w-full py-2 ${canAfford ? 'bg-blue-600 hover:bg-blue-700' : 'bg-gray-600 cursor-not-allowed'} rounded font-bold"
+                                ${!canAfford ? 'disabled' : ''}>
+                                ${canAfford ? '구매하기' : '자금 부족'}
+                            </button>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    } else if (type === 'stocks') {
+        html = `
+            <div class="text-sm text-gray-400 mb-4">
+                대량 주식 매수로 더 큰 수익을 노리세요!
+                10주 이상 구매시 할인 적용됩니다.
+            </div>
+            <div class="space-y-3">
+                ${['삼성전자', '애플', '테슬라', '엔비디아', 'S&P500 ETF', '나스닥100 ETF'].map(name => {
+                    const price = marketPrices[name];
+                    const char = assetCharacteristics[name] || {};
+                    const minShares = 100;
+                    const totalCost = price * minShares;
+                    const canAfford = gameState.assets.cash >= totalCost;
+                    return `
+                        <div class="p-3 bg-gray-800 rounded-lg ${!canAfford ? 'opacity-50' : ''}">
+                            <div class="flex justify-between items-center mb-2">
+                                <span class="font-bold">${name}</span>
+                                <span class="text-yellow-400">₩${fmt(price)}만/주</span>
+                            </div>
+                            <div class="text-sm text-gray-400 mb-2">
+                                최소 ${minShares}주 = ₩${fmt(totalCost)}만
+                            </div>
+                            <button onclick="buyBlockDealStock('${name}', ${minShares})"
+                                class="w-full py-2 ${canAfford ? 'bg-purple-600 hover:bg-purple-700' : 'bg-gray-600 cursor-not-allowed'} rounded font-bold"
+                                ${!canAfford ? 'disabled' : ''}>
+                                ${canAfford ? `${minShares}주 구매` : '자금 부족'}
+                            </button>
+                        </div>
+                    `;
+                }).join('')}
+            </div>
+        `;
+    }
+
+    content.innerHTML = html;
+    modal.classList.remove('hidden');
+}
+
+function hideBlockDealModal() {
+    document.getElementById('blockDealModal').classList.add('hidden');
+}
+
+// Buy block deal real estate
+function buyBlockDealRealEstate(name) {
+    const price = realEstateMarketPrices[name];
+    const char = realEstateCharacteristics[name] || { rentalYield: 0.04 };
+    const monthlyIncome = Math.round(price * char.rentalYield / 12);
+
+    if (gameState.assets.cash < price) {
+        showNotification('현금이 부족합니다!', 'error');
+        return;
+    }
+
+    if (!confirm(`${name}을(를) ₩${fmt(price)}만원에 구매하시겠습니까?\n\n예상 월 수익: ₩${fmt(monthlyIncome)}만`)) {
+        return;
+    }
+
+    gameState.assets.cash -= price;
+    gameState.assets.realEstate += price;
+    gameState.income.rental += monthlyIncome;
+
+    gameState.investments.push({
+        type: 'realEstate',
+        name: name,
+        cost: price,
+        monthlyIncome: monthlyIncome,
+        purchaseTurn: turn
+    });
+
+    showNotification(`${name} 구매 완료! 월 수익 +₩${fmt(monthlyIncome)}만`, 'success');
+    hideBlockDealModal();
+    checkFastTrackVictory();
+    updateUI();
+}
+
+// Buy block deal stock
+function buyBlockDealStock(name, shares) {
+    const price = marketPrices[name];
+    const totalCost = Math.round(price * shares * 100) / 100;
+    const char = assetCharacteristics[name] || {};
+    const monthlyDividend = Math.floor(totalCost * (char.dividend || 0) / 12);
+
+    if (gameState.assets.cash < totalCost) {
+        showNotification('현금이 부족합니다!', 'error');
+        return;
+    }
+
+    if (!confirm(`${name} ${shares}주를 ₩${fmt(totalCost)}만원에 구매하시겠습니까?${monthlyDividend > 0 ? `\n예상 월 배당: ₩${fmt(monthlyDividend)}만` : ''}`)) {
+        return;
+    }
+
+    gameState.assets.cash -= totalCost;
+    gameState.assets.stocks += totalCost;
+
+    if (monthlyDividend > 0) {
+        gameState.income.dividend += monthlyDividend;
+    }
+
+    gameState.investments.push({
+        type: 'stocks',
+        name: name,
+        cost: totalCost,
+        shares: shares,
+        pricePerShare: price,
+        monthlyIncome: monthlyDividend
+    });
+
+    showNotification(`${name} ${shares}주 블록딜 완료!`, 'success');
+    hideBlockDealModal();
+    updateUI();
+}

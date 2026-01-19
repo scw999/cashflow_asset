@@ -297,6 +297,21 @@
         </div>
     </div>
 
+    <!-- Block Deal Modal (Fast Track) -->
+    <div id="blockDealModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-purple-400">📦 블록딜 (대량 매수)</h2>
+                <button onclick="hideBlockDealModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="mb-4 p-3 bg-purple-900/30 rounded-lg">
+                <div class="text-sm text-gray-400">보유 현금</div>
+                <div id="blockDealCash" class="text-xl font-bold text-emerald-400">₩0만</div>
+            </div>
+            <div id="blockDealContent"></div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/config.js"></script>
     <script src="js/gameState.js"></script>

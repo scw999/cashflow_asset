@@ -40,6 +40,30 @@ const basePrices = {
     '솔라나': 35
 };
 
+// 부동산 기본 가격 (만원)
+const realEstatePrices = {
+    '서울 아파트': 80000,
+    '수도권 아파트': 45000,
+    '지방 아파트': 15000,
+    '오피스텔': 25000,
+    '상가': 35000,
+    '원룸 건물': 40000,
+    '빌라': 20000,
+    '다가구 주택': 30000
+};
+
+// 부동산 특성
+const realEstateCharacteristics = {
+    '서울 아파트': { type: 'realestate', volatility: 0.03, rentalYield: 0.025, beta: 1.0, location: 'seoul' },
+    '수도권 아파트': { type: 'realestate', volatility: 0.04, rentalYield: 0.03, beta: 0.9, location: 'metro' },
+    '지방 아파트': { type: 'realestate', volatility: 0.05, rentalYield: 0.05, beta: 0.7, location: 'local' },
+    '오피스텔': { type: 'realestate', volatility: 0.04, rentalYield: 0.045, beta: 0.8, location: 'any' },
+    '상가': { type: 'realestate', volatility: 0.06, rentalYield: 0.06, beta: 1.1, location: 'any' },
+    '원룸 건물': { type: 'realestate', volatility: 0.04, rentalYield: 0.055, beta: 0.85, location: 'any' },
+    '빌라': { type: 'realestate', volatility: 0.05, rentalYield: 0.04, beta: 0.75, location: 'any' },
+    '다가구 주택': { type: 'realestate', volatility: 0.045, rentalYield: 0.05, beta: 0.8, location: 'any' }
+};
+
 // 경제 사이클 시스템
 let economicCycle = {
     phase: 'expansion', // expansion, peak, recession, recovery
@@ -197,19 +221,28 @@ const ratRaceSpaces = [
     { type: 'market', name: '📉시장하락', color: '#dc2626' }
 ];
 
-// Fast Track Spaces (사업 투자 + 꿈)
+// Fast Track Spaces (사업 투자 + 꿈 + 월급날)
 const fastTrackSpaces = [
+    { type: 'payday', name: '💰월급날', color: '#10b981' },
     { type: 'business', name: '🏢프랜차이즈', cost: 50000, monthlyIncome: 500, color: '#10b981' },
     { type: 'business', name: '🏭제조공장', cost: 100000, monthlyIncome: 1000, color: '#3b82f6' },
     { type: 'dream', name: '🏝️섬구매', cost: 500000, color: '#fbbf24' },
     { type: 'business', name: '🏬쇼핑몰', cost: 150000, monthlyIncome: 1500, color: '#8b5cf6' },
+    { type: 'payday', name: '💰월급날', color: '#10b981' },
+    { type: 'business', name: '🚢해운사업', cost: 180000, monthlyIncome: 1800, color: '#0ea5e9' },
     { type: 'dream', name: '🚀우주여행', cost: 300000, color: '#a855f7' },
     { type: 'business', name: '💻IT스타트업', cost: 80000, monthlyIncome: 800, color: '#06b6d4' },
+    { type: 'business', name: '🎮게임회사', cost: 90000, monthlyIncome: 900, color: '#f43f5e' },
     { type: 'dream', name: '🏰성구매', cost: 1000000, color: '#f97316' },
+    { type: 'payday', name: '💰월급날', color: '#10b981' },
     { type: 'business', name: '🏨호텔체인', cost: 200000, monthlyIncome: 2000, color: '#ec4899' },
+    { type: 'business', name: '🏥병원사업', cost: 250000, monthlyIncome: 2500, color: '#14b8a6' },
     { type: 'dream', name: '🎨예술컬렉션', cost: 200000, color: '#14b8a6' },
     { type: 'business', name: '⚡에너지사업', cost: 120000, monthlyIncome: 1200, color: '#eab308' },
+    { type: 'payday', name: '💰월급날', color: '#10b981' },
+    { type: 'business', name: '📱통신사업', cost: 300000, monthlyIncome: 3000, color: '#6366f1' },
     { type: 'dream', name: '🏎️슈퍼카', cost: 150000, color: '#ef4444' },
+    { type: 'business', name: '🎬엔터테인먼트', cost: 150000, monthlyIncome: 1500, color: '#d946ef' },
     { type: 'dream', name: '🌍세계여행', cost: 100000, color: '#3b82f6' }
 ];
 

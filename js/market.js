@@ -4,16 +4,44 @@
 
 // Get market tab HTML
 function getMarketHTML() {
+    const inFastTrack = gameState.inFastTrack;
+
     return `
         <div class="grid grid-cols-1 md:grid-cols-2 lg:grid-cols-5 gap-4">
-            <!-- 부동산 - 기회 칸에서만 구매 가능 알림 -->
+            <!-- 부동산 시세 및 정보 -->
             <div class="card p-4 rounded-xl border border-blue-500/30">
-                <h4 class="font-bold text-blue-400 mb-3">🏠 부동산</h4>
-                <div class="text-sm text-gray-400 text-center py-4">
-                    <p class="mb-2">부동산은 <span class="text-yellow-400">기회 칸</span>에</p>
-                    <p class="mb-2">도착했을 때만 구매할 수 있습니다.</p>
-                    <p class="text-xs mt-4">보유 부동산: ₩${fmt(gameState.assets.realEstate)}만</p>
+                <h4 class="font-bold text-blue-400 mb-3">🏠 부동산 시세</h4>
+                <div class="space-y-2 text-sm max-h-64 overflow-y-auto">
+                    ${Object.keys(realEstateMarketPrices).map(name => {
+                        const price = realEstateMarketPrices[name];
+                        const history = realEstatePriceHistory[name] || [price];
+                        const prevPrice = history.length > 1 ? history[history.length - 2] : price;
+                        const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
+                        const char = realEstateCharacteristics[name] || {};
+                        return `
+                            <div class="p-2 bg-gray-800 rounded">
+                                <div class="flex justify-between items-center">
+                                    <span class="text-xs">${name}</span>
+                                    <span class="${parseFloat(change) >= 0 ? 'text-emerald-400' : 'text-red-400'} text-xs">
+                                        ${parseFloat(change) >= 0 ? '+' : ''}${change}%
+                                    </span>
+                                </div>
+                                <div class="text-yellow-400 font-bold">₩${fmt(price)}만</div>
+                                <div class="text-[10px] text-gray-500">수익률 ${((char.rentalYield || 0.04) * 100).toFixed(1)}%</div>
+                            </div>
+                        `;
+                    }).join('')}
                 </div>
+                <div class="mt-3 pt-2 border-t border-gray-600 text-xs text-gray-400">
+                    ${inFastTrack ?
+                        '<span class="text-emerald-400">패스트트랙에서 대량 매수 가능</span>' :
+                        '부동산은 <span class="text-yellow-400">기회 칸</span>에서 구매'}
+                </div>
+                ${inFastTrack ? `
+                <button onclick="showBlockDealModal('realestate')"
+                    class="mt-2 w-full py-2 bg-blue-600 hover:bg-blue-700 rounded text-sm font-bold">
+                    🏢 블록딜 매수
+                </button>` : ''}
             </div>
 
             <!-- 주식 -->
@@ -258,7 +286,9 @@ function stakeCrypto(name) {
         stakingRate: annualRate,
         monthlyReward: monthlyReward,
         isStaking: true,
-        monthlyIncome: 0
+        monthlyIncome: 0,
+        stakingTurn: turn,  // 락업 시작 턴
+        lockupTurns: 1       // 1턴 후 매도 가능
     });
 
     updateUI();
@@ -302,6 +332,16 @@ function buyStableCoin() {
 // Sell investment
 function sellInvestment(idx) {
     const inv = gameState.investments[idx];
+
+    // 스테이킹 락업 체크 (1턴 후 매도 가능)
+    if (inv.isStaking && inv.stakingTurn !== undefined) {
+        const turnsStaked = turn - inv.stakingTurn;
+        const requiredTurns = inv.lockupTurns || 1;
+        if (turnsStaked < requiredTurns) {
+            alert(`스테이킹 락업 기간입니다.\n\n${requiredTurns}턴 후에 매도할 수 있습니다.\n현재: ${turnsStaked}턴 경과 / ${requiredTurns}턴 필요`);
+            return;
+        }
+    }
 
     if (inv.shares && inv.shares > 1) {
         // Stock with multiple shares

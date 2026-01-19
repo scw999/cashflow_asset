@@ -129,17 +129,29 @@ function rollDice() {
         diceBtn.classList.add('opacity-50', 'cursor-not-allowed');
     }
 
-    // Roll dice (1-6, or double if has double dice power)
-    let dice1 = Math.floor(Math.random() * 6) + 1;
-    let dice2 = Math.floor(Math.random() * 6) + 1;
-    let roll = dice1 + dice2;
+    // Roll dice: 쥐 레이스에서는 1개 (1-6), 패스트트랙에서는 2개 (2-12)
+    let roll;
+    let diceDisplay;
 
+    if (gameState.inFastTrack) {
+        // 패스트트랙: 주사위 2개
+        let dice1 = Math.floor(Math.random() * 6) + 1;
+        let dice2 = Math.floor(Math.random() * 6) + 1;
+        roll = dice1 + dice2;
+        diceDisplay = `🎲🎲 ${dice1} + ${dice2} = ${roll}`;
+    } else {
+        // 쥐 레이스: 주사위 1개
+        roll = Math.floor(Math.random() * 6) + 1;
+        diceDisplay = `🎲 ${roll}`;
+    }
+
+    // 기부 효과: 더블 다이스 (굴린 값 2배)
     if (player.doubleDice > 0) {
         roll *= 2;
         player.doubleDice--;
-        showNotification(`더블 다이스! ${dice1} + ${dice2} = ${roll / 2} × 2 = ${roll}`, 'success');
+        showNotification(`더블 다이스! ${diceDisplay} × 2 = ${roll}`, 'success');
     } else {
-        showNotification(`주사위: ${dice1} + ${dice2} = ${roll}`, 'info');
+        showNotification(`주사위: ${diceDisplay}`, 'info');
     }
 
     // Update market prices (random fluctuation on each roll)

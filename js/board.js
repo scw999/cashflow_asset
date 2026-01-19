@@ -408,6 +408,15 @@ function showPriceChangesNotification(changes) {
 
 // Show real estate opportunity
 function showRealEstateOpportunity() {
+    // 부동산 시세 업데이트 (부동산 칸에 도착시 등락)
+    const priceChanges = updateRealEstatePrices();
+
+    // 상승한 부동산 개수 계산
+    const upCount = priceChanges.filter(c => parseFloat(c.changePercent) > 0).length;
+    const downCount = priceChanges.filter(c => parseFloat(c.changePercent) < 0).length;
+    const marketTrend = upCount > downCount ? '상승세' : (upCount < downCount ? '하락세' : '보합');
+    const trendColor = upCount > downCount ? 'text-emerald-400' : (upCount < downCount ? 'text-red-400' : 'text-gray-400');
+
     const opportunity = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
     const content = document.getElementById('opportunityContent');
 
@@ -417,6 +426,12 @@ function showRealEstateOpportunity() {
                 <div class="text-3xl mb-2">🏠</div>
                 <h3 class="text-xl font-bold">${opportunity.name}</h3>
                 <p class="text-gray-400 text-sm">${opportunity.desc}</p>
+            </div>
+
+            <div class="p-2 bg-gray-800 rounded-lg text-center text-sm mb-2">
+                <span class="text-gray-400">부동산 시장: </span>
+                <span class="${trendColor} font-bold">${marketTrend}</span>
+                <span class="text-xs text-gray-500 ml-2">(${upCount}개 상승, ${downCount}개 하락)</span>
             </div>
 
             <div class="bg-gray-700/50 rounded-lg p-4 space-y-2">

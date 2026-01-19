@@ -255,9 +255,18 @@ function getPortfolioHTML() {
                                 ? `${i.shares}주`
                                 : (i.amount ? `${i.amount.toFixed(3)}개` : '');
 
-                            const stakingInfo = i.isStaking
-                                ? `<div class="text-xs text-purple-400">월 보상: +${i.monthlyReward.toFixed(4)} ${i.baseName}</div>`
-                                : '';
+                            let stakingInfo = '';
+                            if (i.isStaking) {
+                                const turnsStaked = turn - (i.stakingTurn || 0);
+                                const requiredTurns = i.lockupTurns || 1;
+                                const isLocked = turnsStaked < requiredTurns;
+                                stakingInfo = `
+                                    <div class="text-xs text-purple-400">월 보상: +${i.monthlyReward.toFixed(4)} ${i.baseName}</div>
+                                    <div class="text-xs ${isLocked ? 'text-yellow-400' : 'text-emerald-400'}">
+                                        ${isLocked ? `🔒 락업 중 (${turnsStaked}/${requiredTurns}턴)` : '🔓 매도 가능'}
+                                    </div>
+                                `;
+                            }
 
                             const incomeInfo = i.monthlyIncome > 0
                                 ? `<span class="text-xs text-emerald-400">월 ₩${fmt(i.monthlyIncome)}만</span>`

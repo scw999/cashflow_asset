@@ -5,8 +5,12 @@
 // Market prices (현재 가격)
 let marketPrices = { ...basePrices };
 
+// Real estate market prices (현재 부동산 가격)
+let realEstateMarketPrices = { ...realEstatePrices };
+
 // Price history for charts
 let priceHistory = {};
+let realEstatePriceHistory = {};
 
 // Initialize price history with fake historical data
 function initPriceHistory() {
@@ -23,6 +27,22 @@ function initPriceHistory() {
         }
         history.push(basePrices[name]);
         priceHistory[name] = history;
+    });
+
+    // Initialize real estate price history
+    realEstatePriceHistory = {};
+    Object.keys(realEstatePrices).forEach(name => {
+        let history = [];
+        let price = realEstatePrices[name];
+        for (let i = 0; i < 10; i++) {
+            const char = realEstateCharacteristics[name] || { volatility: 0.03 };
+            // 부동산은 대체로 상승 추세 (약간의 상승 바이어스)
+            const change = (Math.random() - 0.4) * char.volatility * 2;
+            price = Math.max(1000, price * (1 + change));
+            history.push(Math.round(price));
+        }
+        history.push(realEstatePrices[name]);
+        realEstatePriceHistory[name] = history;
     });
 }
 
@@ -241,6 +261,50 @@ function updateMarketPrices() {
         if (totalStockValue > 0) {
             player.assets.stocks = Math.round(totalStockValue * 100) / 100;
         }
+    });
+
+    return changes;
+}
+
+// Update real estate prices (called when landing on real estate space)
+function updateRealEstatePrices() {
+    const changes = [];
+
+    Object.keys(realEstateMarketPrices).forEach(name => {
+        const oldPrice = realEstateMarketPrices[name];
+        const char = realEstateCharacteristics[name] || { volatility: 0.03, beta: 1.0 };
+
+        // 부동산은 대체로 상승 추세 (60% 확률로 상승)
+        const trend = Math.random() < 0.6 ? 1 : -1;
+        let changePercent = trend * (Math.random() * char.volatility * 100);
+
+        // 경제 사이클에 따른 영향
+        if (economicCycle.phase === 'expansion') {
+            changePercent += 2; // 확장기엔 부동산 상승
+        } else if (economicCycle.phase === 'recession') {
+            changePercent -= 1; // 침체기엔 약간 하락
+        }
+
+        // 금리 영향 (고금리 = 부동산 하락)
+        if (economicCycle.interestRate > 4) {
+            changePercent -= (economicCycle.interestRate - 4) * 0.5;
+        }
+
+        // 변동폭 제한 (-5% ~ +8%)
+        changePercent = Math.max(-5, Math.min(8, changePercent));
+
+        const multiplier = 1 + (changePercent / 100);
+        realEstateMarketPrices[name] = Math.round(realEstateMarketPrices[name] * multiplier);
+
+        realEstatePriceHistory[name].push(realEstateMarketPrices[name]);
+        if (realEstatePriceHistory[name].length > 30) realEstatePriceHistory[name].shift();
+
+        changes.push({
+            name,
+            oldPrice,
+            newPrice: realEstateMarketPrices[name],
+            changePercent: changePercent.toFixed(1)
+        });
     });
 
     return changes;
