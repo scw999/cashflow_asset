@@ -489,7 +489,10 @@ function showDetailModal(type) {
                         </div>
                         `).join('')}
                     </div>
-                    <div class="text-xs text-gray-500 mt-2">* 투자부동산 매도 시 대출 자동 상환</div>
+                    <div class="p-2 mt-2 bg-yellow-900/30 border border-yellow-600/30 rounded text-xs">
+                        <span class="text-yellow-400">⚠️ 직접 상환 불가</span>
+                        <span class="text-gray-400"> - 부동산 매도 시에만 자동 상환됩니다</span>
+                    </div>
                 </div>` : ''}
 
                 <div class="p-3 bg-gray-800 rounded-lg">
