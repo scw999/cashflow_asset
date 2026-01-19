@@ -32,7 +32,9 @@ function saveGame() {
         marketPrices: { ...marketPrices },
         priceHistory: { ...priceHistory },
         realEstateMarketPrices: { ...realEstateMarketPrices },
-        realEstatePriceHistory: { ...realEstatePriceHistory }
+        realEstatePriceHistory: { ...realEstatePriceHistory },
+        economicCycle: { ...economicCycle },
+        interestRate: interestRate
     };
 
     try {
@@ -101,6 +103,14 @@ function loadGame() {
 
         if (data.realEstatePriceHistory) {
             realEstatePriceHistory = { ...data.realEstatePriceHistory };
+        }
+
+        // Load economic cycle state (코스톨라니 모형)
+        if (data.economicCycle) {
+            economicCycle = { ...data.economicCycle };
+        }
+        if (data.interestRate !== undefined) {
+            interestRate = data.interestRate;
         }
 
         // Hide setup modal and update UI
@@ -191,7 +201,9 @@ function exportGame() {
         marketPrices: { ...marketPrices },
         priceHistory: { ...priceHistory },
         realEstateMarketPrices: { ...realEstateMarketPrices },
-        realEstatePriceHistory: { ...realEstatePriceHistory }
+        realEstatePriceHistory: { ...realEstatePriceHistory },
+        economicCycle: { ...economicCycle },
+        interestRate: interestRate
     };
 
     const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
@@ -256,6 +268,14 @@ function importGame(event) {
 
             if (data.realEstatePriceHistory) {
                 realEstatePriceHistory = { ...data.realEstatePriceHistory };
+            }
+
+            // Load economic cycle state (코스톨라니 모형)
+            if (data.economicCycle) {
+                economicCycle = { ...data.economicCycle };
+            }
+            if (data.interestRate !== undefined) {
+                interestRate = data.interestRate;
             }
 
             document.getElementById('setupModal').classList.add('hidden');

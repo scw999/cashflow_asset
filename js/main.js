@@ -417,6 +417,26 @@ function showUrgentSaleOpportunity() {
     const discountedCost = Math.round(opportunity.cost * 0.8);  // 20% 할인
     const discountedDownPayment = Math.round(opportunity.downPayment * 0.8);
 
+    // 자산 매도 HTML 생성
+    const assetSellHtml = gameState.assets.cash < discountedDownPayment && (gameState.assets.stocks > 0 || gameState.assets.crypto > 0) ? `
+        <div class="p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg">
+            <p class="text-blue-400 text-sm font-bold mb-2">💼 자산 매도로 현금 마련</p>
+            <div class="space-y-2 text-sm">
+                ${gameState.assets.stocks > 0 ? `
+                <div class="flex justify-between items-center">
+                    <span>📈 주식/ETF: ₩${fmt(gameState.assets.stocks)}만</span>
+                    <button onclick="sellPortfolioForUrgentSale('stocks', ${discountedDownPayment}, '${JSON.stringify(opportunity).replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${discountedCost})"
+                        class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">매도</button>
+                </div>` : ''}
+                ${gameState.assets.crypto > 0 ? `
+                <div class="flex justify-between items-center">
+                    <span>💎 가상자산: ₩${fmt(gameState.assets.crypto)}만</span>
+                    <button onclick="sellPortfolioForUrgentSale('crypto', ${discountedDownPayment}, '${JSON.stringify(opportunity).replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${discountedCost})"
+                        class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs">매도</button>
+                </div>` : ''}
+            </div>
+        </div>` : '';
+
     showEventModal(
         '🔥 급매 기회!',
         `<div class="space-y-4">
@@ -447,8 +467,10 @@ function showUrgentSaleOpportunity() {
 
             <div class="text-sm text-gray-400">
                 보유 현금: ₩${fmt(gameState.assets.cash)}만
-                ${gameState.assets.cash < discountedDownPayment ? '<span class="text-red-400 ml-2">(계약금 부족)</span>' : ''}
+                ${gameState.assets.cash < discountedDownPayment ? `<span class="text-red-400 ml-2">(₩${fmt(discountedDownPayment - gameState.assets.cash)}만 부족)</span>` : ''}
             </div>
+
+            ${assetSellHtml}
         </div>`,
         gameState.assets.cash >= discountedDownPayment ? [
             {
@@ -457,6 +479,60 @@ function showUrgentSaleOpportunity() {
                 primary: true,
                 color: 'green'
             },
+            { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
+        ] : [
+            { text: '패스 (계약금 부족)', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }
+        ]
+    );
+}
+
+// 급매용 자산 매도
+function sellPortfolioForUrgentSale(assetType, neededAmount, opportunityJson, discountedCost) {
+    const opportunity = JSON.parse(opportunityJson.replace(/&quot;/g, '"'));
+    const shortage = neededAmount - gameState.assets.cash;
+
+    if (assetType === 'stocks' && gameState.assets.stocks > 0) {
+        const sellAmount = Math.min(gameState.assets.stocks, shortage + 100);
+        gameState.assets.cash += sellAmount;
+        gameState.assets.stocks -= sellAmount;
+        gameState.investments = gameState.investments.filter(inv => inv.type !== 'stocks' || inv.cost > sellAmount);
+        showNotification(`주식 ₩${fmt(sellAmount)}만 매도 완료!`, 'success');
+    } else if (assetType === 'crypto' && gameState.assets.crypto > 0) {
+        const sellAmount = Math.min(gameState.assets.crypto, shortage + 100);
+        gameState.assets.cash += sellAmount;
+        gameState.assets.crypto -= sellAmount;
+        gameState.investments = gameState.investments.filter(inv => inv.type !== 'crypto' || inv.cost > sellAmount);
+        showNotification(`가상자산 ₩${fmt(sellAmount)}만 매도 완료!`, 'success');
+    }
+
+    updateUI();
+    // 급매 모달 다시 표시
+    hideEventModal();
+    setTimeout(() => {
+        const discountedDownPayment = Math.round(opportunity.downPayment * 0.8);
+        showUrgentSaleOpportunityWithData(opportunity, discountedCost, discountedDownPayment);
+    }, 100);
+}
+
+// 데이터와 함께 급매 기회 표시
+function showUrgentSaleOpportunityWithData(opportunity, discountedCost, discountedDownPayment) {
+    showEventModal(
+        '🔥 급매 기회!',
+        `<div class="space-y-4">
+            <div class="text-center">
+                <div class="text-3xl mb-2">🏠</div>
+                <h3 class="text-xl font-bold">${opportunity.name}</h3>
+                <p class="text-orange-400 font-bold">급매 20% 할인!</p>
+            </div>
+            <div class="bg-gray-700/50 rounded-lg p-4 space-y-2">
+                <div class="flex justify-between"><span>급매가</span><span class="font-bold text-orange-400">₩${fmt(discountedCost)}만</span></div>
+                <div class="flex justify-between"><span>필요 계약금</span><span class="font-bold text-yellow-400">₩${fmt(discountedDownPayment)}만</span></div>
+                <div class="flex justify-between"><span>예상 월 임대수익</span><span class="font-bold text-emerald-400">₩${fmt(opportunity.monthlyIncome)}만</span></div>
+            </div>
+            <div class="text-sm text-gray-400">보유 현금: ₩${fmt(gameState.assets.cash)}만</div>
+        </div>`,
+        gameState.assets.cash >= discountedDownPayment ? [
+            { text: '급매 구매', action: `buyUrgentSaleProperty(${JSON.stringify(opportunity).replace(/"/g, '&quot;')}, ${discountedCost}, ${discountedDownPayment});`, primary: true, color: 'green' },
             { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
         ] : [
             { text: '패스 (계약금 부족)', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }
@@ -511,6 +587,26 @@ function showAuctionOpportunity() {
         discountedDownPayment: discountedDownPayment
     };
 
+    // 자산 매도 HTML 생성
+    const assetSellHtml = gameState.assets.cash < discountedDownPayment && (gameState.assets.stocks > 0 || gameState.assets.crypto > 0) ? `
+        <div class="p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg">
+            <p class="text-blue-400 text-sm font-bold mb-2">💼 자산 매도로 현금 마련</p>
+            <div class="space-y-2 text-sm">
+                ${gameState.assets.stocks > 0 ? `
+                <div class="flex justify-between items-center">
+                    <span>📈 주식/ETF: ₩${fmt(gameState.assets.stocks)}만</span>
+                    <button onclick="sellPortfolioForAuction('stocks', ${discountedDownPayment})"
+                        class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">매도</button>
+                </div>` : ''}
+                ${gameState.assets.crypto > 0 ? `
+                <div class="flex justify-between items-center">
+                    <span>💎 가상자산: ₩${fmt(gameState.assets.crypto)}만</span>
+                    <button onclick="sellPortfolioForAuction('crypto', ${discountedDownPayment})"
+                        class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs">매도</button>
+                </div>` : ''}
+            </div>
+        </div>` : '';
+
     showEventModal(
         '⚖️ 경매 기회!',
         `<div class="space-y-4">
@@ -547,8 +643,10 @@ function showAuctionOpportunity() {
 
             <div class="text-sm text-gray-400">
                 보유 현금: ₩${fmt(gameState.assets.cash)}만
-                ${gameState.assets.cash < discountedDownPayment ? '<span class="text-red-400 ml-2">(보증금 부족)</span>' : ''}
+                ${gameState.assets.cash < discountedDownPayment ? `<span class="text-red-400 ml-2">(₩${fmt(discountedDownPayment - gameState.assets.cash)}만 부족)</span>` : ''}
             </div>
+
+            ${assetSellHtml}
         </div>`,
         gameState.assets.cash >= discountedDownPayment ? [
             {
@@ -562,6 +660,30 @@ function showAuctionOpportunity() {
             { text: '패스 (보증금 부족)', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }
         ]
     );
+}
+
+// 경매용 자산 매도
+function sellPortfolioForAuction(assetType, neededAmount) {
+    const shortage = neededAmount - gameState.assets.cash;
+
+    if (assetType === 'stocks' && gameState.assets.stocks > 0) {
+        const sellAmount = Math.min(gameState.assets.stocks, shortage + 100);
+        gameState.assets.cash += sellAmount;
+        gameState.assets.stocks -= sellAmount;
+        gameState.investments = gameState.investments.filter(inv => inv.type !== 'stocks' || inv.cost > sellAmount);
+        showNotification(`주식 ₩${fmt(sellAmount)}만 매도 완료!`, 'success');
+    } else if (assetType === 'crypto' && gameState.assets.crypto > 0) {
+        const sellAmount = Math.min(gameState.assets.crypto, shortage + 100);
+        gameState.assets.cash += sellAmount;
+        gameState.assets.crypto -= sellAmount;
+        gameState.investments = gameState.investments.filter(inv => inv.type !== 'crypto' || inv.cost > sellAmount);
+        showNotification(`가상자산 ₩${fmt(sellAmount)}만 매도 완료!`, 'success');
+    }
+
+    updateUI();
+    // 경매 모달 다시 표시
+    hideEventModal();
+    setTimeout(() => showAuctionOpportunity(), 100);
 }
 
 // 경매 주사위 굴리기

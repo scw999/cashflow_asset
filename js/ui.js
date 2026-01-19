@@ -14,6 +14,12 @@ function updateUI() {
     document.getElementById('dashCashflow').textContent = `₩${fmt(getCashflow())}만`;
     document.getElementById('dashInterestRate').textContent = `${interestRate.toFixed(1)}%`;
 
+    // Economic cycle display (코스톨라니 달걀 모형)
+    const cycleElement = document.getElementById('dashEconomicCycle');
+    if (cycleElement && typeof CYCLE_PHASE_NAMES !== 'undefined') {
+        cycleElement.textContent = CYCLE_PHASE_NAMES[economicCycle.phase] || '🌱 회복기';
+    }
+
     // Income statement
     const totalIncome = Object.values(gameState.income).reduce((a, b) => a + b, 0);
     const passiveIncome = getPassiveIncome();

@@ -319,6 +319,122 @@ function getCreditRate() {
     return interestRate + CREDIT_RATE_SPREAD;
 }
 
+// ==========================================
+// 코스톨라니 달걀 모형 - 경기 사이클 시스템
+// ==========================================
+
+// 경기 사이클 단계: 회복기 → 호황기 → 후퇴기 → 불황기
+const CYCLE_PHASES = {
+    RECOVERY: 'recovery',    // 회복기: 금리 하락, 주식 상승 시작
+    BOOM: 'boom',            // 호황기: 금리 상승, 주식/부동산 고점
+    RECESSION: 'recession',  // 후퇴기: 금리 고점, 주식 하락
+    DEPRESSION: 'depression' // 불황기: 금리 하락, 채권 상승
+};
+
+// 현재 경기 사이클 상태
+let economicCycle = {
+    phase: CYCLE_PHASES.RECOVERY,
+    turnsInPhase: 0,
+    phaseDuration: 8 + Math.floor(Math.random() * 8)  // 8~15턴
+};
+
+// 사이클별 자산 수익률 특성 (월 기대 수익률 %)
+const CYCLE_ASSET_RETURNS = {
+    [CYCLE_PHASES.RECOVERY]: {
+        stocks: { base: 1.5, volatility: 2 },      // 주식 상승 시작
+        bonds: { base: -0.3, volatility: 0.5 },    // 채권 약세
+        realEstate: { base: 0.3, volatility: 1 },  // 부동산 보합
+        crypto: { base: 2, volatility: 5 },        // 가상자산 고변동
+        gold: { base: 0.2, volatility: 1 },        // 금 보합
+        interestTrend: -0.1                        // 금리 하락 추세
+    },
+    [CYCLE_PHASES.BOOM]: {
+        stocks: { base: 0.5, volatility: 3 },      // 주식 고점 변동성 증가
+        bonds: { base: -0.5, volatility: 0.5 },    // 채권 약세
+        realEstate: { base: 1.2, volatility: 1.5 },// 부동산 강세
+        crypto: { base: 1, volatility: 6 },        // 가상자산 고변동
+        gold: { base: 0.5, volatility: 1.5 },      // 금 상승
+        interestTrend: 0.15                        // 금리 상승 추세
+    },
+    [CYCLE_PHASES.RECESSION]: {
+        stocks: { base: -1.2, volatility: 4 },     // 주식 하락
+        bonds: { base: 0.5, volatility: 0.5 },     // 채권 강세
+        realEstate: { base: -0.5, volatility: 1.5 },// 부동산 약세
+        crypto: { base: -1.5, volatility: 7 },     // 가상자산 급락
+        gold: { base: 0.8, volatility: 2 },        // 금 안전자산 상승
+        interestTrend: 0.05                        // 금리 고점 유지
+    },
+    [CYCLE_PHASES.DEPRESSION]: {
+        stocks: { base: -0.3, volatility: 3 },     // 주식 바닥 다지기
+        bonds: { base: 0.8, volatility: 0.3 },     // 채권 강세
+        realEstate: { base: -0.8, volatility: 1 }, // 부동산 하락
+        crypto: { base: 0.5, volatility: 5 },      // 가상자산 회복 시작
+        gold: { base: 0.3, volatility: 1 },        // 금 보합
+        interestTrend: -0.2                        // 금리 하락
+    }
+};
+
+// 사이클 단계 이름
+const CYCLE_PHASE_NAMES = {
+    [CYCLE_PHASES.RECOVERY]: '🌱 회복기',
+    [CYCLE_PHASES.BOOM]: '🔥 호황기',
+    [CYCLE_PHASES.RECESSION]: '📉 후퇴기',
+    [CYCLE_PHASES.DEPRESSION]: '❄️ 불황기'
+};
+
+// 다음 사이클 단계
+function getNextPhase(currentPhase) {
+    const phases = [CYCLE_PHASES.RECOVERY, CYCLE_PHASES.BOOM, CYCLE_PHASES.RECESSION, CYCLE_PHASES.DEPRESSION];
+    const currentIndex = phases.indexOf(currentPhase);
+    return phases[(currentIndex + 1) % phases.length];
+}
+
+// 사이클 업데이트 (턴마다 호출)
+function updateEconomicCycle() {
+    economicCycle.turnsInPhase++;
+
+    // 사이클 전환 체크
+    if (economicCycle.turnsInPhase >= economicCycle.phaseDuration) {
+        const oldPhase = economicCycle.phase;
+        economicCycle.phase = getNextPhase(economicCycle.phase);
+        economicCycle.turnsInPhase = 0;
+        economicCycle.phaseDuration = 8 + Math.floor(Math.random() * 8);
+
+        // 사이클 전환 알림
+        showNotification(`경기 사이클 변화: ${CYCLE_PHASE_NAMES[oldPhase]} → ${CYCLE_PHASE_NAMES[economicCycle.phase]}`, 'info');
+    }
+
+    // 금리 조정
+    const cycleReturns = CYCLE_ASSET_RETURNS[economicCycle.phase];
+    const rateChange = cycleReturns.interestTrend + (Math.random() - 0.5) * 0.1;
+    interestRate = Math.max(0.5, Math.min(10, interestRate + rateChange));
+}
+
+// 자산 유형별 수익률 계산
+function getAssetReturn(assetType) {
+    const cycleReturns = CYCLE_ASSET_RETURNS[economicCycle.phase];
+    let assetConfig;
+
+    // 자산 유형 매핑
+    if (assetType.includes('ETF') || assetType.includes('삼성') || assetType.includes('애플') ||
+        assetType.includes('테슬라') || assetType.includes('엔비디아') || assetType.includes('SK') ||
+        assetType.includes('네이버')) {
+        assetConfig = cycleReturns.stocks;
+    } else if (assetType.includes('채권')) {
+        assetConfig = cycleReturns.bonds;
+    } else if (assetType.includes('비트코인') || assetType.includes('이더리움') || assetType.includes('솔라나')) {
+        assetConfig = cycleReturns.crypto;
+    } else if (assetType.includes('금') || assetType.includes('금 ETF')) {
+        assetConfig = cycleReturns.gold;
+    } else {
+        assetConfig = cycleReturns.stocks;  // 기본값
+    }
+
+    // 수익률 계산 (base + 랜덤 변동)
+    const randomFactor = (Math.random() - 0.5) * 2 * assetConfig.volatility;
+    return (assetConfig.base + randomFactor) / 100;
+}
+
 // 주사위 쿨다운 상태
 let diceRolling = false;
 

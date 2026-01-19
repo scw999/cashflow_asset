@@ -143,45 +143,37 @@ function getTotalLiabilities() {
     return Object.values(gameState.liabilities).reduce((a, b) => a + b, 0);
 }
 
-// 경제 사이클 업데이트
-function updateEconomicCycle() {
+// 코스톨라니 달걀 모형 기반 경제 사이클 업데이트
+function updateEconomicCycleKostolany() {
     economicCycle.turnsInPhase++;
 
-    const cycleInfo = cycleCharacteristics[economicCycle.phase];
-    const [minDuration, maxDuration] = cycleInfo.duration;
+    // 사이클 전환 체크
+    if (economicCycle.turnsInPhase >= economicCycle.phaseDuration) {
+        const oldPhase = economicCycle.phase;
+        const phases = [CYCLE_PHASES.RECOVERY, CYCLE_PHASES.BOOM, CYCLE_PHASES.RECESSION, CYCLE_PHASES.DEPRESSION];
+        const currentIndex = phases.indexOf(economicCycle.phase);
+        economicCycle.phase = phases[(currentIndex + 1) % phases.length];
+        economicCycle.turnsInPhase = 0;
+        economicCycle.phaseDuration = 8 + Math.floor(Math.random() * 8);  // 8~15턴
 
-    // Check if phase should change
-    if (economicCycle.turnsInPhase >= minDuration) {
-        const changeChance = (economicCycle.turnsInPhase - minDuration) / (maxDuration - minDuration);
-        if (Math.random() < changeChance) {
-            economicCycle.phase = cycleInfo.nextPhase;
-            economicCycle.turnsInPhase = 0;
-
-            // Adjust interest rate based on phase
-            if (economicCycle.phase === 'recession') {
-                economicCycle.interestRate = Math.max(0.5, economicCycle.interestRate - 0.5);
-            } else if (economicCycle.phase === 'expansion') {
-                economicCycle.interestRate = Math.min(6, economicCycle.interestRate + 0.25);
-            }
-        }
+        // 사이클 전환 알림
+        showNotification(`경기 사이클 변화: ${CYCLE_PHASE_NAMES[oldPhase]} → ${CYCLE_PHASE_NAMES[economicCycle.phase]}`, 'info');
     }
 
-    // Update market sentiment
-    if (economicCycle.phase === 'expansion' || economicCycle.phase === 'recovery') {
-        economicCycle.sentiment = Math.min(0.8, economicCycle.sentiment + (Math.random() * 0.1 - 0.03));
-    } else {
-        economicCycle.sentiment = Math.max(0.2, economicCycle.sentiment - (Math.random() * 0.1 - 0.03));
-    }
+    // 금리 조정 (사이클에 따라)
+    const cycleReturns = CYCLE_ASSET_RETURNS[economicCycle.phase];
+    const rateChange = cycleReturns.interestTrend + (Math.random() - 0.5) * 0.1;
+    interestRate = Math.max(0.5, Math.min(10, interestRate + rateChange));
 }
 
-// Update market prices with economic cycle and asset characteristics
+// Update market prices with Kostolany economic cycle and asset characteristics
 function updateMarketPrices() {
     const changes = [];
 
-    // Update economic cycle
-    updateEconomicCycle();
+    // Update economic cycle (코스톨라니 모형)
+    updateEconomicCycleKostolany();
 
-    const cycleInfo = cycleCharacteristics[economicCycle.phase];
+    const cycleReturns = CYCLE_ASSET_RETURNS[economicCycle.phase];
 
     // 먼저 기초 자산(S&P500 ETF, 나스닥100 ETF)의 변동률을 계산
     let sp500Change = 0;
@@ -192,10 +184,10 @@ function updateMarketPrices() {
         const oldPrice = marketPrices[name];
         const char = assetCharacteristics[name] || { type: 'etf', volatility: 0.05, beta: 1.0 };
 
-        let changePercent = (Math.random() - 0.5) * 2 * char.volatility;
-        let cycleBias = cycleInfo.stockBias * char.beta;
-        const sentimentEffect = (economicCycle.sentiment - 0.5) * 0.02;
-        changePercent += cycleBias + sentimentEffect;
+        // 코스톨라니 모형: 사이클에 따른 기대 수익률 + 변동성
+        const stocksReturn = cycleReturns.stocks;
+        let changePercent = (stocksReturn.base + (Math.random() - 0.5) * 2 * stocksReturn.volatility) / 100;
+        changePercent *= char.beta;
 
         marketPrices[name] = Math.max(0.1, marketPrices[name] * (1 + changePercent));
         marketPrices[name] = Math.round(marketPrices[name] * 100) / 100;
@@ -254,35 +246,34 @@ function updateMarketPrices() {
         const oldPrice = marketPrices[name];
         const char = assetCharacteristics[name] || { type: 'stock', volatility: 0.1, beta: 1.0 };
 
-        // Base random change
-        let changePercent = (Math.random() - 0.5) * 2 * char.volatility;
-
-        // Apply economic cycle bias based on asset type
-        let cycleBias = 0;
+        // 코스톨라니 모형: 자산 유형에 따른 사이클별 수익률 적용
+        let assetReturn;
         if (char.type === 'stock' || char.type === 'etf') {
-            cycleBias = cycleInfo.stockBias * char.beta;
+            assetReturn = cycleReturns.stocks;
         } else if (char.type === 'crypto') {
-            cycleBias = cycleInfo.cryptoBias * char.beta;
+            assetReturn = cycleReturns.crypto;
         } else if (char.type === 'bond') {
-            cycleBias = cycleInfo.bondBias;
+            assetReturn = cycleReturns.bonds;
         } else if (char.type === 'commodity') {
-            cycleBias = cycleInfo.commodityBias;
-            // Safe haven assets (gold) benefit in recession
-            if (char.safeHaven && economicCycle.phase === 'recession') {
-                cycleBias += 0.02;
+            // 금(안전자산)은 특별 처리
+            if (char.safeHaven) {
+                assetReturn = cycleReturns.gold;
+            } else {
+                // 다른 원자재는 주식과 유사하게 동작
+                assetReturn = { base: cycleReturns.stocks.base * 0.5, volatility: cycleReturns.stocks.volatility * 1.5 };
             }
+        } else {
+            assetReturn = cycleReturns.stocks;  // 기본값
         }
 
-        // Apply market sentiment
-        const sentimentEffect = (economicCycle.sentiment - 0.5) * 0.02;
+        // 기대 수익률 + 랜덤 변동 (변동성 범위 내)
+        let changePercent = (assetReturn.base + (Math.random() - 0.5) * 2 * assetReturn.volatility) / 100;
+        changePercent *= char.beta;
 
-        // Apply interest rate effect (higher rates = lower prices for growth assets)
-        let rateEffect = 0;
+        // 금리 효과 (고금리일수록 성장자산 불리)
         if (char.type === 'crypto' || (char.type === 'stock' && char.beta > 1.2)) {
-            rateEffect = -((economicCycle.interestRate - 3) * 0.005);
+            changePercent -= (interestRate - 3) * 0.003;
         }
-
-        changePercent += cycleBias + sentimentEffect + rateEffect;
 
         // Apply change
         marketPrices[name] = Math.max(0.1, marketPrices[name] * (1 + changePercent));
@@ -353,25 +344,20 @@ function updateMarketPrices() {
 // Update real estate prices (called when landing on real estate space - bigger change)
 function updateRealEstatePrices() {
     const changes = [];
+    const cycleReturns = CYCLE_ASSET_RETURNS[economicCycle.phase];
+    const realEstateReturn = cycleReturns.realEstate;
 
     Object.keys(realEstateMarketPrices).forEach(name => {
         const oldPrice = realEstateMarketPrices[name];
         const char = realEstateCharacteristics[name] || { volatility: 0.03, beta: 1.0 };
 
-        // 부동산은 대체로 상승 추세 (60% 확률로 상승)
-        const trend = Math.random() < 0.6 ? 1 : -1;
-        let changePercent = trend * (Math.random() * char.volatility * 100);
-
-        // 경제 사이클에 따른 영향
-        if (economicCycle.phase === 'expansion') {
-            changePercent += 2; // 확장기엔 부동산 상승
-        } else if (economicCycle.phase === 'recession') {
-            changePercent -= 1; // 침체기엔 약간 하락
-        }
+        // 코스톨라니 모형: 부동산 사이클별 기대 수익률 적용
+        let changePercent = (realEstateReturn.base + (Math.random() - 0.5) * 2 * realEstateReturn.volatility * 2);
+        changePercent *= char.beta;
 
         // 금리 영향 (고금리 = 부동산 하락)
-        if (economicCycle.interestRate > 4) {
-            changePercent -= (economicCycle.interestRate - 4) * 0.5;
+        if (interestRate > 4) {
+            changePercent -= (interestRate - 4) * 0.8;
         }
 
         // 변동폭 제한 (-5% ~ +8%)
@@ -397,20 +383,20 @@ function updateRealEstatePrices() {
 // 매 턴마다 부동산 시세 업데이트 (주식처럼 작은 변동)
 function updateRealEstatePricesEveryTurn() {
     const changes = [];
+    const cycleReturns = CYCLE_ASSET_RETURNS[economicCycle.phase];
+    const realEstateReturn = cycleReturns.realEstate;
 
     Object.keys(realEstateMarketPrices).forEach(name => {
         const oldPrice = realEstateMarketPrices[name];
         const char = realEstateCharacteristics[name] || { volatility: 0.03, beta: 1.0 };
 
-        // 매 턴 작은 변동 (±2% 이내)
-        const trend = Math.random() < 0.55 ? 1 : -1;  // 55% 확률로 상승
-        let changePercent = trend * (Math.random() * char.volatility * 50);
+        // 코스톨라니 모형: 매 턴 작은 변동 (사이클 기반)
+        let changePercent = (realEstateReturn.base * 0.3 + (Math.random() - 0.5) * realEstateReturn.volatility * 0.5);
+        changePercent *= char.beta;
 
-        // 경제 사이클에 따른 영향 (작게)
-        if (economicCycle.phase === 'expansion') {
-            changePercent += 0.5;
-        } else if (economicCycle.phase === 'recession') {
-            changePercent -= 0.3;
+        // 금리 영향 (매 턴 작게)
+        if (interestRate > 4) {
+            changePercent -= (interestRate - 4) * 0.2;
         }
 
         // 변동폭 제한 (-2% ~ +3%)
