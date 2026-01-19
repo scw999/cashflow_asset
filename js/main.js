@@ -393,16 +393,19 @@ function showAuctionOpportunity() {
 
             <div class="text-sm text-gray-400">
                 보유 현금: ₩${fmt(gameState.assets.cash)}만
+                ${gameState.assets.cash < discountedDownPayment ? '<span class="text-red-400 ml-2">(보증금 부족)</span>' : ''}
             </div>
         </div>`,
-        [
+        gameState.assets.cash >= discountedDownPayment ? [
             {
                 text: '🎲 경매 참여',
                 action: `rollForAuction();`,
-                primary: gameState.assets.cash >= discountedDownPayment,
+                primary: true,
                 color: 'green'
             },
             { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
+        ] : [
+            { text: '패스 (보증금 부족)', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }
         ]
     );
 }

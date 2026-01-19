@@ -458,6 +458,12 @@ function showRealEstateOpportunity() {
                 <span class="text-xs text-gray-500 ml-2">(${upCount}개 상승, ${downCount}개 하락)</span>
             </div>
 
+            <div class="p-2 bg-purple-900/30 border border-purple-500/30 rounded-lg text-center text-sm">
+                <span class="text-purple-400">⚖️ 경매 카운트: </span>
+                <span class="font-bold ${getPlayer().auctionCount >= 3 ? 'text-emerald-400' : 'text-yellow-400'}">${getPlayer().auctionCount || 0} / 3</span>
+                <span class="text-xs text-gray-500 ml-1">${getPlayer().auctionCount >= 3 ? '(경매 가능!)' : `(${3 - (getPlayer().auctionCount || 0)}회 더 필요)`}</span>
+            </div>
+
             <div class="bg-gray-700/50 rounded-lg p-4 space-y-2">
                 <div class="flex justify-between">
                     <span>매매가</span>
