@@ -722,12 +722,13 @@ function buyUrgentSaleProperty(opportunity, discountedCost, discountedDownPaymen
         return;
     }
 
+    const loanAmount = discountedCost - discountedDownPayment;
+    const monthlyLoanPayment = Math.round(loanAmount * 0.04 / 12);
+
     gameState.assets.cash -= discountedDownPayment;
     gameState.assets.realEstate += discountedCost;
-    gameState.liabilities.mortgage += (discountedCost - discountedDownPayment);
+    // 투자부동산 담보대출은 별도 관리 (liabilities.mortgage에 추가하지 않음)
     gameState.income.rental += opportunity.monthlyIncome;
-
-    const monthlyLoanPayment = Math.round((discountedCost - discountedDownPayment) * 0.04 / 12);
     gameState.expenses.loan += monthlyLoanPayment;
 
     gameState.investments.push({
@@ -735,8 +736,10 @@ function buyUrgentSaleProperty(opportunity, discountedCost, discountedDownPaymen
         name: opportunity.name + ' (급매)',
         cost: discountedCost,
         downPayment: discountedDownPayment,
-        loan: discountedCost - discountedDownPayment,
-        monthlyIncome: opportunity.monthlyIncome
+        loan: loanAmount,
+        monthlyLoanPayment: monthlyLoanPayment,
+        monthlyIncome: opportunity.monthlyIncome,
+        purchaseTurn: turn
     });
 
     hideEventModal();
@@ -991,12 +994,13 @@ function completeAuctionPurchase() {
         return;
     }
 
+    const loanAmount = discountedCost - discountedDownPayment;
+    const monthlyLoanPayment = Math.round(loanAmount * 0.04 / 12);
+
     gameState.assets.cash -= discountedDownPayment;
     gameState.assets.realEstate += discountedCost;
-    gameState.liabilities.mortgage += (discountedCost - discountedDownPayment);
+    // 투자부동산 담보대출은 별도 관리 (liabilities.mortgage에 추가하지 않음)
     gameState.income.rental += opportunity.monthlyIncome;
-
-    const monthlyLoanPayment = Math.round((discountedCost - discountedDownPayment) * 0.04 / 12);
     gameState.expenses.loan += monthlyLoanPayment;
 
     gameState.investments.push({
@@ -1004,8 +1008,10 @@ function completeAuctionPurchase() {
         name: opportunity.name + ' (경매)',
         cost: discountedCost,
         downPayment: discountedDownPayment,
-        loan: discountedCost - discountedDownPayment,
-        monthlyIncome: opportunity.monthlyIncome
+        loan: loanAmount,
+        monthlyLoanPayment: monthlyLoanPayment,
+        monthlyIncome: opportunity.monthlyIncome,
+        purchaseTurn: turn
     });
 
     window.currentAuctionOpportunity = null;
@@ -1077,13 +1083,13 @@ function sellToBuyer(investmentIdx, offerPrice) {
 
     if (inv.loan) {
         gameState.assets.cash -= inv.loan;  // 대출 상환
-        gameState.liabilities.mortgage -= inv.loan;
-        const monthlyLoanPayment = Math.round(inv.loan * 0.04 / 12);
-        gameState.expenses.loan -= monthlyLoanPayment;
+        // 투자부동산 담보대출은 별도 관리되므로 liabilities.mortgage에서 차감하지 않음
+        const monthlyLoanPayment = inv.monthlyLoanPayment || Math.round(inv.loan * 0.04 / 12);
+        gameState.expenses.loan = Math.max(0, gameState.expenses.loan - monthlyLoanPayment);
     }
 
     if (inv.monthlyIncome) {
-        gameState.income.rental -= inv.monthlyIncome;
+        gameState.income.rental = Math.max(0, gameState.income.rental - inv.monthlyIncome);
     }
 
     gameState.investments.splice(investmentIdx, 1);

@@ -140,7 +140,19 @@ function getTotalAssets() {
 }
 
 function getTotalLiabilities() {
-    return Object.values(gameState.liabilities).reduce((a, b) => a + b, 0);
+    const baseLiabilities = Object.values(gameState.liabilities).reduce((a, b) => a + b, 0);
+    // 투자부동산 담보대출 추가 (investments에서 계산)
+    const investmentLoan = gameState.investments
+        .filter(inv => inv.type === 'realEstate' && inv.loan > 0)
+        .reduce((sum, inv) => sum + inv.loan, 0);
+    return baseLiabilities + investmentLoan;
+}
+
+// 투자부동산 담보대출 총액 계산
+function getInvestmentLoan() {
+    return gameState.investments
+        .filter(inv => inv.type === 'realEstate' && inv.loan > 0)
+        .reduce((sum, inv) => sum + inv.loan, 0);
 }
 
 // 코스톨라니 달걀 모형 기반 경제 사이클 업데이트 (이벤트 기반)

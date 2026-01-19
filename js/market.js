@@ -547,15 +547,19 @@ function sellInvestment(idx) {
         }
     } else if (inv.amount && inv.amount > 0) {
         // Crypto with amount
-        let amountToSell = parseFloat(prompt(`${inv.name} ${inv.amount.toFixed(3)}개 보유중\n몇 개를 매도하시겠습니까?`, inv.amount.toFixed(3)));
+        let amountToSell = parseFloat(prompt(`${inv.name} ${inv.amount.toFixed(4)}개 보유중\n몇 개를 매도하시겠습니까?\n(전량 매도: ${inv.amount.toFixed(4)})`, inv.amount.toFixed(4)));
         if (!amountToSell || amountToSell <= 0) return;
 
-        // 부동소수점 오차 허용 (전량 매도 시 정확히 맞추기)
-        if (Math.abs(amountToSell - inv.amount) < 0.0001) {
+        // 부동소수점 오차 허용 (전량 매도 시 정확히 맞추기) - 0.002 이하 차이면 전량 매도
+        if (Math.abs(amountToSell - inv.amount) < 0.002) {
             amountToSell = inv.amount;  // 전량 매도로 처리
         }
+        // 남은 수량이 0.001 이하면 전량 매도로 처리
+        if (inv.amount - amountToSell < 0.001 && inv.amount - amountToSell > 0) {
+            amountToSell = inv.amount;
+        }
 
-        if (amountToSell > inv.amount + 0.0001) {
+        if (amountToSell > inv.amount + 0.001) {
             alert('보유 수량보다 많이 매도할 수 없습니다.');
             return;
         }
@@ -582,7 +586,8 @@ function sellInvestment(idx) {
         inv.amount -= amountToSell;
         inv.cost -= soldCost;
 
-        if (inv.amount <= 0.0001) {
+        // 0.001 이하 남은 경우 정리 (부동소수점 오차 포함)
+        if (inv.amount <= 0.001) {
             gameState.investments.splice(idx, 1);
         }
     } else {
@@ -602,13 +607,14 @@ function sellInvestment(idx) {
         if (inv.type === 'realEstate') {
             gameState.assets.realEstate -= inv.cost;
             if (inv.loan) {
-                gameState.liabilities.mortgage -= inv.loan;
-                // Remove loan payment
+                // 대출금 상환 (투자부동산 담보대출은 별도 관리되므로 liabilities.mortgage에서 차감하지 않음)
+                gameState.assets.cash -= inv.loan;  // 대출 상환으로 현금 차감
+                // Remove loan payment (음수가 되지 않도록 보호)
                 const monthlyLoanPayment = Math.round(inv.loan * 0.04 / 12);
-                gameState.expenses.loan -= monthlyLoanPayment;
+                gameState.expenses.loan = Math.max(0, gameState.expenses.loan - monthlyLoanPayment);
             }
             if (inv.monthlyIncome) {
-                gameState.income.rental -= inv.monthlyIncome;
+                gameState.income.rental = Math.max(0, gameState.income.rental - inv.monthlyIncome);
             }
         } else if (inv.type === 'stocks') {
             gameState.assets.stocks -= inv.cost;

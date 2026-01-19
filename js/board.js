@@ -565,14 +565,14 @@ function sellToBuyerFromOpportunity(investmentIdx, offerPrice) {
     gameState.assets.realEstate -= inv.cost;
 
     if (inv.loan) {
-        gameState.assets.cash -= inv.loan;
-        gameState.liabilities.mortgage -= inv.loan;
-        const monthlyLoanPayment = Math.round(inv.loan * 0.04 / 12);
-        gameState.expenses.loan -= monthlyLoanPayment;
+        gameState.assets.cash -= inv.loan;  // 대출 상환
+        // 투자부동산 담보대출은 별도 관리되므로 liabilities.mortgage에서 차감하지 않음
+        const monthlyLoanPayment = inv.monthlyLoanPayment || Math.round(inv.loan * 0.04 / 12);
+        gameState.expenses.loan = Math.max(0, gameState.expenses.loan - monthlyLoanPayment);
     }
 
     if (inv.monthlyIncome) {
-        gameState.income.rental -= inv.monthlyIncome;
+        gameState.income.rental = Math.max(0, gameState.income.rental - inv.monthlyIncome);
     }
 
     gameState.investments.splice(investmentIdx, 1);
@@ -661,13 +661,13 @@ function buyRealEstateOpportunity(opportunity) {
         return;
     }
 
+    const loanAmount = opportunity.cost - opportunity.downPayment;
+    const monthlyLoanPayment = Math.round(loanAmount * 0.04 / 12);
+
     gameState.assets.cash -= opportunity.downPayment;
     gameState.assets.realEstate += opportunity.cost;
-    gameState.liabilities.mortgage += (opportunity.cost - opportunity.downPayment);
+    // 투자부동산 담보대출은 별도 관리 (liabilities.mortgage에 추가하지 않음)
     gameState.income.rental += opportunity.monthlyIncome;
-
-    // Add monthly loan payment
-    const monthlyLoanPayment = Math.round((opportunity.cost - opportunity.downPayment) * 0.04 / 12);
     gameState.expenses.loan += monthlyLoanPayment;
 
     gameState.investments.push({
@@ -675,8 +675,10 @@ function buyRealEstateOpportunity(opportunity) {
         name: opportunity.name,
         cost: opportunity.cost,
         downPayment: opportunity.downPayment,
-        loan: opportunity.cost - opportunity.downPayment,
-        monthlyIncome: opportunity.monthlyIncome
+        loan: loanAmount,
+        monthlyLoanPayment: monthlyLoanPayment,
+        monthlyIncome: opportunity.monthlyIncome,
+        purchaseTurn: turn
     });
 
     closeOpportunityModalOnly();

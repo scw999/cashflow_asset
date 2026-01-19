@@ -88,7 +88,14 @@ function updateSummaryLists() {
     const liabList = document.getElementById('liabilitySummaryList');
     if (liabList) {
         const liabs = [];
-        if (gameState.liabilities.mortgage > 0) liabs.push({ name: '주택대출', value: gameState.liabilities.mortgage, icon: '🏦' });
+        if (gameState.liabilities.mortgage > 0) liabs.push({ name: '주택담보대출', value: gameState.liabilities.mortgage, icon: '🏦' });
+
+        // 투자부동산 담보대출 계산 (investments에서)
+        const investmentLoan = gameState.investments
+            .filter(inv => inv.type === 'realEstate' && inv.loan > 0)
+            .reduce((sum, inv) => sum + inv.loan, 0);
+        if (investmentLoan > 0) liabs.push({ name: '투자부동산 담보대출', value: investmentLoan, icon: '🏠' });
+
         if (gameState.liabilities.credit > 0) liabs.push({ name: '신용대출', value: gameState.liabilities.credit, icon: '💳' });
         if (gameState.liabilities.student > 0) liabs.push({ name: '학자금', value: gameState.liabilities.student, icon: '🎓' });
         if (gameState.liabilities.other > 0) liabs.push({ name: '기타부채', value: gameState.liabilities.other, icon: '📋' });
@@ -429,6 +436,13 @@ function showDetailModal(type) {
         const studentRate = interestRate + 1.5;  // 학자금 금리
         const otherRate = interestRate + 3.0;    // 기타대출 금리
 
+        // 투자부동산 담보대출 계산
+        const investmentLoan = typeof getInvestmentLoan === 'function' ? getInvestmentLoan() : 0;
+        const investmentLoanPayment = Math.round(investmentLoan * mortgageRate / 100 / 12);
+
+        // 개별 투자부동산 대출 목록
+        const realEstateLoans = gameState.investments.filter(inv => inv.type === 'realEstate' && inv.loan > 0);
+
         html = `
             <div class="space-y-3">
                 <div class="p-3 bg-cyan-900/30 rounded-lg mb-3">
@@ -446,7 +460,7 @@ function showDetailModal(type) {
 
                 <div class="p-3 bg-gray-800 rounded-lg">
                     <div class="flex justify-between items-center mb-1">
-                        <span>🏦 주택담보대출</span>
+                        <span>🏦 주택담보대출 (거주용)</span>
                         <span class="${gameState.liabilities.mortgage > 0 ? 'text-red-400' : 'text-gray-500'} font-bold">₩${fmt(gameState.liabilities.mortgage)}만</span>
                     </div>
                     <div class="text-xs text-cyan-400 mb-2">연 ${mortgageRate.toFixed(1)}% (월 이자: ₩${fmt(Math.round(gameState.liabilities.mortgage * mortgageRate / 100 / 12))}만)</div>
@@ -456,6 +470,27 @@ function showDetailModal(type) {
                         <button onclick="repayDebt('mortgage')" class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-sm">상환</button>
                     </div>` : '<div class="text-xs text-gray-500">부채 없음</div>'}
                 </div>
+
+                ${realEstateLoans.length > 0 ? `
+                <div class="p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg">
+                    <div class="flex justify-between items-center mb-2">
+                        <span class="font-bold text-blue-400">🏠 투자부동산 담보대출</span>
+                        <span class="text-red-400 font-bold">₩${fmt(investmentLoan)}만</span>
+                    </div>
+                    <div class="text-xs text-cyan-400 mb-2">총 월 이자: ₩${fmt(investmentLoanPayment)}만</div>
+                    <div class="space-y-2 text-sm max-h-40 overflow-y-auto">
+                        ${realEstateLoans.map((inv, idx) => `
+                        <div class="p-2 bg-gray-800 rounded">
+                            <div class="flex justify-between">
+                                <span class="text-gray-300">${inv.name}</span>
+                                <span class="text-orange-400">₩${fmt(inv.loan)}만</span>
+                            </div>
+                            <div class="text-xs text-gray-500">월 이자: ₩${fmt(inv.monthlyLoanPayment || Math.round(inv.loan * 0.04 / 12))}만 | 월 수익: ₩${fmt(inv.monthlyIncome || 0)}만</div>
+                        </div>
+                        `).join('')}
+                    </div>
+                    <div class="text-xs text-gray-500 mt-2">* 투자부동산 매도 시 대출 자동 상환</div>
+                </div>` : ''}
 
                 <div class="p-3 bg-gray-800 rounded-lg">
                     <div class="flex justify-between items-center mb-1">
