@@ -265,6 +265,7 @@ function applyPreset(presetName) {
     Object.assign(player.assets, preset.assets);
     Object.assign(player.liabilities, preset.liabilities);
     player.investments = []; // Start with no investments
+    player.childcareCost = preset.childcareCost || 30;  // 직업별 양육비 설정
 
     loadSetupPlayerData();
 

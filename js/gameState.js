@@ -72,8 +72,11 @@ function createPlayer() {
         liabilities: { mortgage: 0, credit: 0, student: 0, other: 0 },
         investments: [],
         children: 0,
+        childcareCost: 30,  // 직업별 양육비 (기본값 30만원)
         skipTurns: 0,
-        doubleDice: 0
+        doubleDice: 0,
+        urgentSaleCount: 0,  // 급매 칸 밟은 횟수 (2회 필요)
+        auctionCount: 0      // 경매 칸 밟은 횟수 (3회 필요)
     };
 }
 
@@ -110,7 +113,9 @@ const gameState = {
 // Calculation functions
 function getCashflow() {
     const totalIncome = Object.values(gameState.income).reduce((a, b) => a + b, 0);
-    const totalExpense = Object.values(gameState.expenses).reduce((a, b) => a + b, 0) + gameState.children * 30;
+    const player = getPlayer();
+    const childcareCost = player.childcareCost || 30;  // 직업별 양육비
+    const totalExpense = Object.values(gameState.expenses).reduce((a, b) => a + b, 0) + gameState.children * childcareCost;
     return totalIncome - totalExpense;
 }
 
@@ -119,7 +124,15 @@ function getPassiveIncome() {
 }
 
 function getTotalExpenses() {
-    return Object.values(gameState.expenses).reduce((a, b) => a + b, 0) + gameState.children * 30;
+    const player = getPlayer();
+    const childcareCost = player.childcareCost || 30;  // 직업별 양육비
+    return Object.values(gameState.expenses).reduce((a, b) => a + b, 0) + gameState.children * childcareCost;
+}
+
+// 양육비 계산 (표시용)
+function getChildcareCost() {
+    const player = getPlayer();
+    return (player.childcareCost || 30) * gameState.children;
 }
 
 function getTotalAssets() {
@@ -170,7 +183,74 @@ function updateMarketPrices() {
 
     const cycleInfo = cycleCharacteristics[economicCycle.phase];
 
+    // 먼저 기초 자산(S&P500 ETF, 나스닥100 ETF)의 변동률을 계산
+    let sp500Change = 0;
+    let nasdaqChange = 0;
+
+    // 기초자산 먼저 업데이트
+    ['S&P500 ETF', '나스닥100 ETF'].forEach(name => {
+        const oldPrice = marketPrices[name];
+        const char = assetCharacteristics[name] || { type: 'etf', volatility: 0.05, beta: 1.0 };
+
+        let changePercent = (Math.random() - 0.5) * 2 * char.volatility;
+        let cycleBias = cycleInfo.stockBias * char.beta;
+        const sentimentEffect = (economicCycle.sentiment - 0.5) * 0.02;
+        changePercent += cycleBias + sentimentEffect;
+
+        marketPrices[name] = Math.max(0.1, marketPrices[name] * (1 + changePercent));
+        marketPrices[name] = Math.round(marketPrices[name] * 100) / 100;
+
+        priceHistory[name].push(marketPrices[name]);
+        if (priceHistory[name].length > 30) priceHistory[name].shift();
+
+        const actualChange = ((marketPrices[name] - oldPrice) / oldPrice * 100);
+
+        if (name === 'S&P500 ETF') sp500Change = actualChange;
+        if (name === '나스닥100 ETF') nasdaqChange = actualChange;
+
+        changes.push({
+            name,
+            oldPrice,
+            newPrice: marketPrices[name],
+            changePercent: actualChange.toFixed(1)
+        });
+    });
+
+    // 레버리지/인버스 ETF는 기초자산에 연동
+    const leveragedETFs = {
+        'S&P500 2X ETF': { base: sp500Change, leverage: 2 },
+        '나스닥 3X ETF': { base: nasdaqChange, leverage: 3 },
+        'S&P500 인버스': { base: sp500Change, leverage: -1 },
+        '나스닥 인버스 2X': { base: nasdaqChange, leverage: -2 }
+    };
+
+    Object.keys(leveragedETFs).forEach(name => {
+        const oldPrice = marketPrices[name];
+        const { base, leverage } = leveragedETFs[name];
+
+        // 레버리지 적용 (기초자산 변동률 × 레버리지 배수)
+        const changePercent = (base * leverage) / 100;
+
+        marketPrices[name] = Math.max(0.1, marketPrices[name] * (1 + changePercent));
+        marketPrices[name] = Math.round(marketPrices[name] * 100) / 100;
+
+        priceHistory[name].push(marketPrices[name]);
+        if (priceHistory[name].length > 30) priceHistory[name].shift();
+
+        changes.push({
+            name,
+            oldPrice,
+            newPrice: marketPrices[name],
+            changePercent: (base * leverage).toFixed(1)
+        });
+    });
+
+    // 나머지 자산들 업데이트 (기초 ETF 및 레버리지 ETF 제외)
+    const skipAssets = ['S&P500 ETF', '나스닥100 ETF', 'S&P500 2X ETF', '나스닥 3X ETF', 'S&P500 인버스', '나스닥 인버스 2X'];
+
     Object.keys(marketPrices).forEach(name => {
+        if (skipAssets.includes(name)) return;
+
         const oldPrice = marketPrices[name];
         const char = assetCharacteristics[name] || { type: 'stock', volatility: 0.1, beta: 1.0 };
 
@@ -219,6 +299,10 @@ function updateMarketPrices() {
         });
     });
 
+    // 부동산 시세도 매 턴 업데이트 (주식처럼)
+    const realEstateChanges = updateRealEstatePricesEveryTurn();
+    changes.push(...realEstateChanges);
+
     // Update all players' investment values based on new prices
     players.forEach(player => {
         let totalStockValue = 0;
@@ -266,7 +350,7 @@ function updateMarketPrices() {
     return changes;
 }
 
-// Update real estate prices (called when landing on real estate space)
+// Update real estate prices (called when landing on real estate space - bigger change)
 function updateRealEstatePrices() {
     const changes = [];
 
@@ -292,6 +376,45 @@ function updateRealEstatePrices() {
 
         // 변동폭 제한 (-5% ~ +8%)
         changePercent = Math.max(-5, Math.min(8, changePercent));
+
+        const multiplier = 1 + (changePercent / 100);
+        realEstateMarketPrices[name] = Math.round(realEstateMarketPrices[name] * multiplier);
+
+        realEstatePriceHistory[name].push(realEstateMarketPrices[name]);
+        if (realEstatePriceHistory[name].length > 30) realEstatePriceHistory[name].shift();
+
+        changes.push({
+            name,
+            oldPrice,
+            newPrice: realEstateMarketPrices[name],
+            changePercent: changePercent.toFixed(1)
+        });
+    });
+
+    return changes;
+}
+
+// 매 턴마다 부동산 시세 업데이트 (주식처럼 작은 변동)
+function updateRealEstatePricesEveryTurn() {
+    const changes = [];
+
+    Object.keys(realEstateMarketPrices).forEach(name => {
+        const oldPrice = realEstateMarketPrices[name];
+        const char = realEstateCharacteristics[name] || { volatility: 0.03, beta: 1.0 };
+
+        // 매 턴 작은 변동 (±2% 이내)
+        const trend = Math.random() < 0.55 ? 1 : -1;  // 55% 확률로 상승
+        let changePercent = trend * (Math.random() * char.volatility * 50);
+
+        // 경제 사이클에 따른 영향 (작게)
+        if (economicCycle.phase === 'expansion') {
+            changePercent += 0.5;
+        } else if (economicCycle.phase === 'recession') {
+            changePercent -= 0.3;
+        }
+
+        // 변동폭 제한 (-2% ~ +3%)
+        changePercent = Math.max(-2, Math.min(3, changePercent));
 
         const multiplier = 1 + (changePercent / 100);
         realEstateMarketPrices[name] = Math.round(realEstateMarketPrices[name] * multiplier);

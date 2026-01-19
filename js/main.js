@@ -288,9 +288,55 @@ function handlePayday() {
 
 // Opportunity handler
 function handleOpportunity(space) {
-    // Real estate opportunities only appear on real estate spaces
-    if (space.name.includes('부동산') || space.name.includes('경매') || space.name.includes('원룸') || space.name.includes('상가')) {
-        showRealEstateOpportunity();
+    const player = getPlayer();
+
+    // 급매 물건 - 2회 밟으면 할인 구매 가능
+    if (space.subType === 'urgentSale') {
+        player.urgentSaleCount = (player.urgentSaleCount || 0) + 1;
+
+        if (player.urgentSaleCount >= 2) {
+            // 급매 조건 충족! 할인 구매
+            showUrgentSaleOpportunity();
+        } else {
+            showEventModal(
+                '🏠 급매 물건 발견!',
+                `<p class="text-lg">급매 물건 정보를 수집 중입니다...</p>
+                 <p class="mt-3 p-3 bg-blue-900/30 rounded-lg">
+                    <span class="text-blue-400 font-bold">발품 진행도: ${player.urgentSaleCount}/2</span>
+                 </p>
+                 <p class="mt-2 text-gray-400 text-sm">급매 칸을 한 번 더 밟으면 시세보다 20% 할인된 가격에 매입할 수 있습니다!</p>`,
+                [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
+            );
+        }
+        return;
+    }
+
+    // 경매 물건 - 3회 밟으면 경매 구매 가능
+    if (space.subType === 'auction') {
+        player.auctionCount = (player.auctionCount || 0) + 1;
+
+        if (player.auctionCount >= 3) {
+            // 경매 조건 충족! 대폭 할인 구매
+            showAuctionOpportunity();
+        } else {
+            showEventModal(
+                '🏠 경매 물건 조사!',
+                `<p class="text-lg">경매 물건을 조사하고 있습니다...</p>
+                 <p class="mt-3 p-3 bg-cyan-900/30 rounded-lg">
+                    <span class="text-cyan-400 font-bold">경매 준비도: ${player.auctionCount}/3</span>
+                 </p>
+                 <p class="mt-2 text-gray-400 text-sm">경매 칸을 ${3 - player.auctionCount}번 더 밟으면 시세보다 30% 할인된 경매가로 낙찰받을 수 있습니다!</p>`,
+                [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
+            );
+        }
+        return;
+    }
+
+    // Real estate opportunities - 일반 부동산 칸
+    if (space.name.includes('부동산') || space.name.includes('원룸') || space.name.includes('상가') ||
+        space.name.includes('오피스텔') || space.name.includes('빌라') || space.name.includes('다가구')) {
+        // 부동산 칸에서는 다양한 이벤트 발생
+        handleRealEstateEvent();
     } else if (space.name.includes('주식') || space.name.includes('ETF')) {
         // 주식/ETF 투자 기회 - 랜덤 이벤트
         handleStockEvent();
@@ -309,6 +355,329 @@ function handleOpportunity(space) {
             ]
         );
     }
+}
+
+// 부동산 이벤트 핸들러 (구매, 매수자 등장 등)
+function handleRealEstateEvent() {
+    const realEstateInvestments = gameState.investments.filter(inv => inv.type === 'realEstate');
+
+    // 이벤트 랜덤 선택 (보유 부동산 있으면 매수자 등장 이벤트 추가)
+    const events = [
+        { type: 'purchase', weight: 60 },  // 일반 구매 기회
+        { type: 'marketInfo', weight: 20 } // 시장 정보만 보기
+    ];
+
+    if (realEstateInvestments.length > 0) {
+        events.push({ type: 'buyer', weight: 20 }); // 매수자 등장
+    }
+
+    // 가중치 기반 랜덤 선택
+    const totalWeight = events.reduce((sum, e) => sum + e.weight, 0);
+    let random = Math.random() * totalWeight;
+    let selectedEvent = events[0];
+
+    for (const event of events) {
+        random -= event.weight;
+        if (random <= 0) {
+            selectedEvent = event;
+            break;
+        }
+    }
+
+    switch (selectedEvent.type) {
+        case 'purchase':
+            showRealEstateOpportunity();
+            break;
+        case 'buyer':
+            showBuyerOpportunity(realEstateInvestments);
+            break;
+        case 'marketInfo':
+            showRealEstateMarketInfo();
+            break;
+    }
+}
+
+// 급매 기회 (20% 할인)
+function showUrgentSaleOpportunity() {
+    const player = getPlayer();
+    player.urgentSaleCount = 0;  // 카운트 리셋
+
+    // 부동산 시세 업데이트
+    updateRealEstatePrices();
+
+    const opportunity = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
+    const discountedCost = Math.round(opportunity.cost * 0.8);
+    const discountedDownPayment = Math.round(opportunity.downPayment * 0.8);
+
+    showEventModal(
+        '🔥 급매 낙찰!',
+        `<div class="space-y-4">
+            <div class="text-center">
+                <div class="text-3xl mb-2">🏠</div>
+                <h3 class="text-xl font-bold">${opportunity.name}</h3>
+                <p class="text-emerald-400 font-bold">급매 20% 할인!</p>
+            </div>
+
+            <div class="bg-gray-700/50 rounded-lg p-4 space-y-2">
+                <div class="flex justify-between">
+                    <span>시세</span>
+                    <span class="line-through text-gray-500">₩${fmt(opportunity.cost)}만</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>급매가</span>
+                    <span class="font-bold text-emerald-400">₩${fmt(discountedCost)}만</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>필요 계약금</span>
+                    <span class="font-bold text-yellow-400">₩${fmt(discountedDownPayment)}만</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>예상 월 임대수익</span>
+                    <span class="font-bold text-emerald-400">₩${fmt(opportunity.monthlyIncome)}만</span>
+                </div>
+            </div>
+
+            <div class="text-sm text-gray-400">
+                보유 현금: ₩${fmt(gameState.assets.cash)}만
+            </div>
+        </div>`,
+        [
+            {
+                text: '급매 구매',
+                action: `buyUrgentSaleProperty(${JSON.stringify(opportunity).replace(/"/g, '&quot;')}, ${discountedCost}, ${discountedDownPayment});`,
+                primary: gameState.assets.cash >= discountedDownPayment
+            },
+            { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
+        ]
+    );
+}
+
+function buyUrgentSaleProperty(opportunity, discountedCost, discountedDownPayment) {
+    if (gameState.assets.cash < discountedDownPayment) {
+        alert('계약금이 부족합니다!');
+        return;
+    }
+
+    gameState.assets.cash -= discountedDownPayment;
+    gameState.assets.realEstate += discountedCost;
+    gameState.liabilities.mortgage += (discountedCost - discountedDownPayment);
+    gameState.income.rental += opportunity.monthlyIncome;
+
+    const monthlyLoanPayment = Math.round((discountedCost - discountedDownPayment) * 0.04 / 12);
+    gameState.expenses.loan += monthlyLoanPayment;
+
+    gameState.investments.push({
+        type: 'realEstate',
+        name: opportunity.name + ' (급매)',
+        cost: discountedCost,
+        downPayment: discountedDownPayment,
+        loan: discountedCost - discountedDownPayment,
+        monthlyIncome: opportunity.monthlyIncome
+    });
+
+    hideEventModal();
+    showNotification(`${opportunity.name} 급매 매입 완료! 20% 할인!`, 'success');
+    nextTurn();
+    updateUI();
+}
+
+// 경매 기회 (30% 할인)
+function showAuctionOpportunity() {
+    const player = getPlayer();
+    player.auctionCount = 0;  // 카운트 리셋
+
+    updateRealEstatePrices();
+
+    const opportunity = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
+    const discountedCost = Math.round(opportunity.cost * 0.7);
+    const discountedDownPayment = Math.round(opportunity.downPayment * 0.7);
+
+    showEventModal(
+        '⚖️ 경매 낙찰!',
+        `<div class="space-y-4">
+            <div class="text-center">
+                <div class="text-3xl mb-2">🏛️</div>
+                <h3 class="text-xl font-bold">${opportunity.name}</h3>
+                <p class="text-cyan-400 font-bold">경매 30% 할인!</p>
+            </div>
+
+            <div class="bg-gray-700/50 rounded-lg p-4 space-y-2">
+                <div class="flex justify-between">
+                    <span>감정가</span>
+                    <span class="line-through text-gray-500">₩${fmt(opportunity.cost)}만</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>낙찰가</span>
+                    <span class="font-bold text-cyan-400">₩${fmt(discountedCost)}만</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>필요 보증금</span>
+                    <span class="font-bold text-yellow-400">₩${fmt(discountedDownPayment)}만</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>예상 월 임대수익</span>
+                    <span class="font-bold text-emerald-400">₩${fmt(opportunity.monthlyIncome)}만</span>
+                </div>
+            </div>
+
+            <div class="text-sm text-gray-400">
+                보유 현금: ₩${fmt(gameState.assets.cash)}만
+            </div>
+        </div>`,
+        [
+            {
+                text: '낙찰받기',
+                action: `buyAuctionProperty(${JSON.stringify(opportunity).replace(/"/g, '&quot;')}, ${discountedCost}, ${discountedDownPayment});`,
+                primary: gameState.assets.cash >= discountedDownPayment
+            },
+            { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
+        ]
+    );
+}
+
+function buyAuctionProperty(opportunity, discountedCost, discountedDownPayment) {
+    if (gameState.assets.cash < discountedDownPayment) {
+        alert('보증금이 부족합니다!');
+        return;
+    }
+
+    gameState.assets.cash -= discountedDownPayment;
+    gameState.assets.realEstate += discountedCost;
+    gameState.liabilities.mortgage += (discountedCost - discountedDownPayment);
+    gameState.income.rental += opportunity.monthlyIncome;
+
+    const monthlyLoanPayment = Math.round((discountedCost - discountedDownPayment) * 0.04 / 12);
+    gameState.expenses.loan += monthlyLoanPayment;
+
+    gameState.investments.push({
+        type: 'realEstate',
+        name: opportunity.name + ' (경매)',
+        cost: discountedCost,
+        downPayment: discountedDownPayment,
+        loan: discountedCost - discountedDownPayment,
+        monthlyIncome: opportunity.monthlyIncome
+    });
+
+    hideEventModal();
+    showNotification(`${opportunity.name} 경매 낙찰! 30% 할인!`, 'success');
+    nextTurn();
+    updateUI();
+}
+
+// 매수자 등장 (프리미엄에 매도)
+function showBuyerOpportunity(realEstateInvestments) {
+    const targetProperty = realEstateInvestments[Math.floor(Math.random() * realEstateInvestments.length)];
+    const premium = 10 + Math.floor(Math.random() * 20);  // 10~30% 프리미엄
+    const offerPrice = Math.round(targetProperty.cost * (1 + premium / 100));
+
+    showEventModal(
+        '🤵 매수자 등장!',
+        `<div class="space-y-4">
+            <p class="text-lg">당신의 부동산에 관심있는 매수자가 나타났습니다!</p>
+
+            <div class="bg-gray-700/50 rounded-lg p-4 space-y-2">
+                <div class="flex justify-between">
+                    <span>매물</span>
+                    <span class="font-bold">${targetProperty.name}</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>매입가</span>
+                    <span>₩${fmt(targetProperty.cost)}만</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>제시가</span>
+                    <span class="font-bold text-emerald-400">₩${fmt(offerPrice)}만 (+${premium}%)</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>대출 잔액</span>
+                    <span class="text-orange-400">₩${fmt(targetProperty.loan || 0)}만</span>
+                </div>
+                <div class="border-t border-gray-600 my-2"></div>
+                <div class="flex justify-between">
+                    <span>예상 순이익</span>
+                    <span class="font-bold text-yellow-400">₩${fmt(offerPrice - (targetProperty.loan || 0))}만</span>
+                </div>
+            </div>
+        </div>`,
+        [
+            {
+                text: '매도하기',
+                action: `sellToBuyer(${gameState.investments.indexOf(targetProperty)}, ${offerPrice});`,
+                primary: true
+            },
+            { text: '거절', action: 'hideEventModal(); nextTurn(); updateUI();' }
+        ]
+    );
+}
+
+function sellToBuyer(investmentIdx, offerPrice) {
+    const inv = gameState.investments[investmentIdx];
+    if (!inv) {
+        hideEventModal();
+        nextTurn();
+        updateUI();
+        return;
+    }
+
+    // 부동산 매도 처리
+    const profit = offerPrice - inv.cost;
+    gameState.assets.cash += offerPrice;
+    gameState.assets.realEstate -= inv.cost;
+
+    if (inv.loan) {
+        gameState.assets.cash -= inv.loan;  // 대출 상환
+        gameState.liabilities.mortgage -= inv.loan;
+        const monthlyLoanPayment = Math.round(inv.loan * 0.04 / 12);
+        gameState.expenses.loan -= monthlyLoanPayment;
+    }
+
+    if (inv.monthlyIncome) {
+        gameState.income.rental -= inv.monthlyIncome;
+    }
+
+    gameState.investments.splice(investmentIdx, 1);
+
+    hideEventModal();
+    showNotification(`${inv.name} 매도 완료! 수익 +₩${fmt(profit)}만`, 'success');
+    nextTurn();
+    updateUI();
+}
+
+// 부동산 시장 정보만 보기
+function showRealEstateMarketInfo() {
+    const priceChanges = updateRealEstatePrices();
+
+    const upCount = priceChanges.filter(c => parseFloat(c.changePercent) > 0).length;
+    const downCount = priceChanges.filter(c => parseFloat(c.changePercent) < 0).length;
+    const marketTrend = upCount > downCount ? '상승세' : (upCount < downCount ? '하락세' : '보합');
+    const trendColor = upCount > downCount ? 'text-emerald-400' : (upCount < downCount ? 'text-red-400' : 'text-gray-400');
+
+    showEventModal(
+        '🏠 부동산 시장 동향',
+        `<div class="space-y-4">
+            <p class="text-center">
+                <span class="text-gray-400">현재 부동산 시장: </span>
+                <span class="${trendColor} font-bold text-xl">${marketTrend}</span>
+            </p>
+
+            <div class="bg-gray-800 rounded-lg p-3 max-h-48 overflow-y-auto space-y-1">
+                ${priceChanges.map(c => `
+                    <div class="flex justify-between text-sm">
+                        <span>${c.name}</span>
+                        <span class="${parseFloat(c.changePercent) >= 0 ? 'text-emerald-400' : 'text-red-400'}">
+                            ${parseFloat(c.changePercent) >= 0 ? '+' : ''}${c.changePercent}%
+                        </span>
+                    </div>
+                `).join('')}
+            </div>
+
+            <p class="text-sm text-gray-400">투자 탭에서 현재 시세를 확인할 수 있습니다.</p>
+        </div>`,
+        [
+            { text: '투자하러 가기', action: 'goToMarketTab();', primary: true },
+            { text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();' }
+        ]
+    );
 }
 
 // 주식/ETF 이벤트 핸들러
@@ -717,20 +1086,43 @@ function handleDoodad() {
     );
 }
 
-// Baby handler
+// Baby handler (최대 3명까지, 직업별 양육비)
 function handleBaby() {
+    const player = getPlayer();
+    const childcareCost = player.childcareCost || 30;
+    const MAX_CHILDREN = 3;
+
+    // 이미 3명이면 더 이상 추가 안됨
+    if (gameState.children >= MAX_CHILDREN) {
+        showEventModal(
+            '👶 출산 소식!',
+            `<p class="text-lg">아기가 태어날 뻔했지만...</p>
+             <p class="text-yellow-400 font-bold mt-2">이미 자녀가 ${MAX_CHILDREN}명입니다!</p>
+             <p class="text-gray-400 mt-2">더 이상 자녀를 가질 수 없습니다.</p>
+             <div class="mt-3 p-3 bg-gray-800 rounded-lg text-sm">
+                <div class="flex justify-between"><span>현재 자녀수</span><span>${gameState.children}명</span></div>
+                <div class="flex justify-between"><span>월 양육비</span><span class="text-red-400">₩${fmt(childcareCost * gameState.children)}만</span></div>
+             </div>`,
+            [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
+        );
+        return;
+    }
+
+    const oldExpenses = getTotalExpenses();
     gameState.children++;
+    const newExpenses = getTotalExpenses();
 
     showEventModal(
         '👶 아기 탄생!',
         `<p class="text-lg">축하합니다! 아기가 태어났습니다!</p>
-         <p class="text-yellow-400 font-bold">자녀수: ${gameState.children}명</p>
-         <p class="text-red-400 mt-2">월 지출 +₩30만 (양육비)</p>
+         <p class="text-yellow-400 font-bold">자녀수: ${gameState.children}명 / ${MAX_CHILDREN}명</p>
+         <p class="text-red-400 mt-2">월 지출 +₩${fmt(childcareCost)}만 (양육비)</p>
          <div class="mt-3 p-3 bg-gray-800 rounded-lg text-sm">
-            <div class="flex justify-between"><span>기존 지출</span><span>₩${fmt(getTotalExpenses() - 30)}만</span></div>
-            <div class="flex justify-between text-red-400"><span>양육비 추가</span><span>+₩30만</span></div>
+            <div class="flex justify-between"><span>기존 지출</span><span>₩${fmt(oldExpenses)}만</span></div>
+            <div class="flex justify-between text-red-400"><span>양육비 추가 (${player.job || '기본'})</span><span>+₩${fmt(childcareCost)}만</span></div>
             <div class="border-t border-gray-600 my-2"></div>
-            <div class="flex justify-between font-bold"><span>새 총 지출</span><span>₩${fmt(getTotalExpenses())}만</span></div>
+            <div class="flex justify-between font-bold"><span>새 총 지출</span><span>₩${fmt(newExpenses)}만</span></div>
+            <div class="flex justify-between text-gray-400"><span>총 양육비</span><span>₩${fmt(childcareCost * gameState.children)}만/월</span></div>
          </div>`,
         [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
     );

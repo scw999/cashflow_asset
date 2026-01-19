@@ -23,11 +23,16 @@ function saveGame() {
             liabilities: { ...p.liabilities },
             investments: [...p.investments],
             children: p.children,
+            childcareCost: p.childcareCost,
             skipTurns: p.skipTurns,
-            doubleDice: p.doubleDice
+            doubleDice: p.doubleDice,
+            urgentSaleCount: p.urgentSaleCount,
+            auctionCount: p.auctionCount
         })),
         marketPrices: { ...marketPrices },
-        priceHistory: { ...priceHistory }
+        priceHistory: { ...priceHistory },
+        realEstateMarketPrices: { ...realEstateMarketPrices },
+        realEstatePriceHistory: { ...realEstatePriceHistory }
     };
 
     try {
@@ -75,8 +80,11 @@ function loadGame() {
             liabilities: { ...p.liabilities },
             investments: [...(p.investments || [])],
             children: p.children || 0,
+            childcareCost: p.childcareCost || 30,
             skipTurns: p.skipTurns || 0,
-            doubleDice: p.doubleDice || 0
+            doubleDice: p.doubleDice || 0,
+            urgentSaleCount: p.urgentSaleCount || 0,
+            auctionCount: p.auctionCount || 0
         }));
 
         if (data.marketPrices) {
@@ -85,6 +93,14 @@ function loadGame() {
 
         if (data.priceHistory) {
             priceHistory = { ...data.priceHistory };
+        }
+
+        if (data.realEstateMarketPrices) {
+            realEstateMarketPrices = { ...data.realEstateMarketPrices };
+        }
+
+        if (data.realEstatePriceHistory) {
+            realEstatePriceHistory = { ...data.realEstatePriceHistory };
         }
 
         // Hide setup modal and update UI
@@ -166,11 +182,16 @@ function exportGame() {
             liabilities: { ...p.liabilities },
             investments: [...p.investments],
             children: p.children,
+            childcareCost: p.childcareCost,
             skipTurns: p.skipTurns,
-            doubleDice: p.doubleDice
+            doubleDice: p.doubleDice,
+            urgentSaleCount: p.urgentSaleCount,
+            auctionCount: p.auctionCount
         })),
         marketPrices: { ...marketPrices },
-        priceHistory: { ...priceHistory }
+        priceHistory: { ...priceHistory },
+        realEstateMarketPrices: { ...realEstateMarketPrices },
+        realEstatePriceHistory: { ...realEstatePriceHistory }
     };
 
     const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
@@ -227,6 +248,14 @@ function importGame(event) {
 
             if (data.priceHistory) {
                 priceHistory = { ...data.priceHistory };
+            }
+
+            if (data.realEstateMarketPrices) {
+                realEstateMarketPrices = { ...data.realEstateMarketPrices };
+            }
+
+            if (data.realEstatePriceHistory) {
+                realEstatePriceHistory = { ...data.realEstatePriceHistory };
             }
 
             document.getElementById('setupModal').classList.add('hidden');

@@ -138,6 +138,7 @@ const assetCharacteristics = {
 
 // Job Presets - 모든 직업의 난이도를 비슷하게 조정
 // 핵심: 소득이 높으면 지출도 높고 빚도 많음, 모든 직업이 현금만 보유
+// childcareCost: 아이 1명당 양육비 (직업별 차등)
 const presets = {
     '사회초년생': {
         job: '신입사원',
@@ -145,6 +146,7 @@ const presets = {
         expenses: { housing: 50, living: 80, loan: 20, tax: 40 },
         assets: { cash: 500, realEstate: 0, stocks: 0, crypto: 0 },
         liabilities: { mortgage: 0, credit: 0, student: 2000, other: 0 },
+        childcareCost: 25,
         description: '갓 취업한 신입사원. 학자금 대출이 있지만 지출은 적음.'
     },
     '직장인5년차': {
@@ -153,6 +155,7 @@ const presets = {
         expenses: { housing: 80, living: 120, loan: 40, tax: 60 },
         assets: { cash: 2000, realEstate: 0, stocks: 0, crypto: 0 },
         liabilities: { mortgage: 0, credit: 1500, student: 500, other: 0 },
+        childcareCost: 35,
         description: '경력 5년차 직장인. 소득은 늘었지만 지출도 함께 증가.'
     },
     '공무원': {
@@ -161,6 +164,7 @@ const presets = {
         expenses: { housing: 60, living: 90, loan: 30, tax: 30 },
         assets: { cash: 1500, realEstate: 0, stocks: 0, crypto: 0 },
         liabilities: { mortgage: 0, credit: 500, student: 1000, other: 0 },
+        childcareCost: 30,
         description: '안정적인 공무원. 소득과 지출 모두 보통 수준.'
     },
     '자영업자': {
@@ -169,6 +173,7 @@ const presets = {
         expenses: { housing: 80, living: 100, loan: 80, tax: 70 },
         assets: { cash: 1000, realEstate: 0, stocks: 0, crypto: 0 },
         liabilities: { mortgage: 0, credit: 2000, student: 0, other: 3000 },
+        childcareCost: 40,
         description: '카페 운영 자영업자. 소득 변동이 크고 사업자금 대출 있음.'
     },
     '의사': {
@@ -177,6 +182,7 @@ const presets = {
         expenses: { housing: 200, living: 300, loan: 250, tax: 300 },
         assets: { cash: 3000, realEstate: 0, stocks: 0, crypto: 0 },
         liabilities: { mortgage: 5000, credit: 3000, student: 8000, other: 0 },
+        childcareCost: 100,
         description: '고소득 전문의. 하지만 학자금과 개업 비용으로 부채가 많음.'
     },
     '변호사': {
@@ -185,6 +191,7 @@ const presets = {
         expenses: { housing: 150, living: 250, loan: 200, tax: 200 },
         assets: { cash: 2500, realEstate: 0, stocks: 0, crypto: 0 },
         liabilities: { mortgage: 3000, credit: 2000, student: 5000, other: 0 },
+        childcareCost: 80,
         description: '고소득 변호사. 학자금 대출과 사무실 비용으로 부채 있음.'
     },
     '간호사': {
@@ -193,6 +200,7 @@ const presets = {
         expenses: { housing: 60, living: 100, loan: 30, tax: 50 },
         assets: { cash: 1200, realEstate: 0, stocks: 0, crypto: 0 },
         liabilities: { mortgage: 0, credit: 500, student: 1500, other: 0 },
+        childcareCost: 35,
         description: '야근 수당 포함 간호사. 안정적이지만 시간이 부족함.'
     },
     '프리랜서': {
@@ -201,36 +209,43 @@ const presets = {
         expenses: { housing: 70, living: 110, loan: 50, tax: 80 },
         assets: { cash: 1500, realEstate: 0, stocks: 0, crypto: 0 },
         liabilities: { mortgage: 0, credit: 1000, student: 1000, other: 500 },
+        childcareCost: 45,
         description: '자유로운 IT 프리랜서. 소득이 불안정하지만 유동성이 높음.'
     }
 };
 
-// Rat Race Spaces
+// Rat Race Spaces (부동산 칸 확대)
 const ratRaceSpaces = [
     { type: 'payday', name: '💰월급날', color: '#10b981' },
     { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
     { type: 'market', name: '📈시장상승', color: '#22c55e' },
     { type: 'doodad', name: '🛒충동지출', color: '#ef4444' },
     { type: 'opportunity', name: '📊주식', color: '#8b5cf6' },
-    { type: 'charity', name: '❤️기부', color: '#ec4899' },
+    { type: 'opportunity', name: '🏠급매물건', subType: 'urgentSale', color: '#0ea5e9' },
     { type: 'payday', name: '💰월급날', color: '#10b981' },
     { type: 'opportunity', name: '💎가상자산', color: '#f59e0b' },
     { type: 'market', name: '📉시장하락', color: '#dc2626' },
     { type: 'baby', name: '👶아기탄생', color: '#f472b6' },
     { type: 'opportunity', name: '🏢상가투자', color: '#06b6d4' },
-    { type: 'doodad', name: '🛒충동지출', color: '#ef4444' },
-    { type: 'payday', name: '💰월급날', color: '#10b981' },
-    { type: 'opportunity', name: '🏠경매물건', color: '#0891b2' },
-    { type: 'layoff', name: '😢해고', color: '#991b1b' },
-    { type: 'opportunity', name: '📊ETF', color: '#7c3aed' },
-    { type: 'market', name: '📈시장상승', color: '#22c55e' },
-    { type: 'doodad', name: '🛒충동지출', color: '#ef4444' },
-    { type: 'payday', name: '💰월급날', color: '#10b981' },
-    { type: 'opportunity', name: '🏠원룸', color: '#2563eb' },
     { type: 'charity', name: '❤️기부', color: '#ec4899' },
+    { type: 'payday', name: '💰월급날', color: '#10b981' },
+    { type: 'opportunity', name: '🏠경매물건', subType: 'auction', color: '#0891b2' },
+    { type: 'doodad', name: '🛒충동지출', color: '#ef4444' },
+    { type: 'opportunity', name: '📊ETF', color: '#7c3aed' },
+    { type: 'opportunity', name: '🏠오피스텔', color: '#3b82f6' },
+    { type: 'market', name: '📈시장상승', color: '#22c55e' },
+    { type: 'payday', name: '💰월급날', color: '#10b981' },
+    { type: 'opportunity', name: '🏠급매물건', subType: 'urgentSale', color: '#0ea5e9' },
+    { type: 'layoff', name: '😢해고', color: '#991b1b' },
     { type: 'opportunity', name: '💰스테이킹', color: '#d97706' },
+    { type: 'doodad', name: '🛒충동지출', color: '#ef4444' },
+    { type: 'opportunity', name: '🏠빌라', color: '#2563eb' },
+    { type: 'payday', name: '💰월급날', color: '#10b981' },
+    { type: 'opportunity', name: '🏠경매물건', subType: 'auction', color: '#0891b2' },
+    { type: 'market', name: '📉시장하락', color: '#dc2626' },
     { type: 'baby', name: '👶아기탄생', color: '#f472b6' },
-    { type: 'market', name: '📉시장하락', color: '#dc2626' }
+    { type: 'opportunity', name: '🏠원룸', color: '#2563eb' },
+    { type: 'opportunity', name: '🏠다가구', color: '#3b82f6' }
 ];
 
 // Fast Track Spaces (사업 투자 + 꿈 + 월급날)
