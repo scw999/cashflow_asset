@@ -83,6 +83,79 @@ function hideAssetChartModal() {
     document.getElementById('assetChartModal').classList.add('hidden');
 }
 
+// Show real estate price chart modal
+function showRealEstateChart(propertyType) {
+    const modal = document.getElementById('assetChartModal');
+    const title = document.getElementById('assetChartTitle');
+    const currentPriceEl = document.getElementById('assetCurrentPrice');
+    const priceChangeEl = document.getElementById('assetPriceChange');
+
+    title.textContent = `🏠 ${propertyType} 시세 차트`;
+
+    const history = realEstatePriceHistory[propertyType] || [];
+    const currentPrice = realEstateMarketPrices[propertyType] || history[history.length - 1] || 0;
+    const startPrice = history[0] || currentPrice;
+    const totalChange = startPrice > 0 ? ((currentPrice - startPrice) / startPrice * 100).toFixed(1) : '0.0';
+
+    currentPriceEl.textContent = `₩${fmt(currentPrice)}만`;
+    priceChangeEl.innerHTML = `<span class="${parseFloat(totalChange) >= 0 ? 'text-emerald-400' : 'text-red-400'}">${parseFloat(totalChange) >= 0 ? '▲' : '▼'} ${Math.abs(parseFloat(totalChange))}%</span>`;
+
+    modal.classList.remove('hidden');
+
+    // Draw chart
+    setTimeout(() => {
+        const ctx = document.getElementById('assetPriceChart');
+        if (assetChartInstance) assetChartInstance.destroy();
+
+        const labels = history.map((_, i) => {
+            if (i === 0) return '과거';
+            if (i === history.length - 1) return '현재';
+            return `${history.length - i - 1}턴전`;
+        });
+
+        assetChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '시세 (만원)',
+                    data: [...history],
+                    borderColor: parseFloat(totalChange) >= 0 ? '#3b82f6' : '#ef4444',
+                    backgroundColor: parseFloat(totalChange) >= 0 ? 'rgba(59, 130, 246, 0.2)' : 'rgba(239, 68, 68, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `₩${fmt(ctx.raw)}만`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#9ca3af',
+                            callback: v => '₩' + fmt(v)
+                        },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    }
+                }
+            }
+        });
+    }, 100);
+}
+
 // Simulation tab HTML
 function getSimulationHTML() {
     return `
@@ -238,7 +311,14 @@ function getPortfolioHTML() {
                         : inv.map((i, idx) => {
                             let currentValue, pnl, pnlPct;
 
-                            if (i.amount && i.baseName && marketPrices[i.baseName]) {
+                            if (i.type === 'realEstate') {
+                                // 부동산: 시장 가격 기반 현재 가치 계산
+                                const basePropertyType = i.name.replace(/\s*\((급매|경매)\)$/, '');
+                                const marketPrice = realEstateMarketPrices[basePropertyType] || i.cost;
+                                // 매입가 대비 시장가 비율로 현재 가치 산정
+                                const priceRatio = i.cost > 0 ? marketPrice / (realEstatePrices[basePropertyType] || i.cost) : 1;
+                                currentValue = Math.round(i.cost * priceRatio);
+                            } else if (i.amount && i.baseName && marketPrices[i.baseName]) {
                                 currentValue = Math.round(i.amount * marketPrices[i.baseName] * 100) / 100;
                             } else if (i.amount && marketPrices[i.name]) {
                                 currentValue = Math.round(i.amount * marketPrices[i.name] * 100) / 100;
@@ -278,9 +358,23 @@ function getPortfolioHTML() {
                                 ? `<span class="text-xs text-emerald-400">월 ₩${fmt(i.monthlyIncome)}만</span>`
                                 : '';
 
+                            // 부동산인 경우 기본 유형 추출 (급매, 경매 등 접미사 제거)
+                            let chartAction = '';
+                            let roiInfo = '';
+                            if (i.type === 'realEstate') {
+                                const basePropertyType = i.name.replace(/\s*\((급매|경매)\)$/, '');
+                                chartAction = `showRealEstateChart('${basePropertyType}')`;
+                                // 부동산 ROI 정보
+                                const roiPct = i.downPayment > 0 ? ((i.monthlyIncome * 12 / i.downPayment) * 100).toFixed(1) : '0';
+                                const capRate = i.cost > 0 ? ((i.monthlyIncome * 12 / i.cost) * 100).toFixed(1) : '0';
+                                roiInfo = `<div class="text-xs text-cyan-400">ROI: ${roiPct}% | Cap: ${capRate}%</div>`;
+                            } else {
+                                chartAction = `showAssetChart('${i.baseName || i.name}')`;
+                            }
+
                             return `
                                 <div class="flex justify-between items-center p-2 bg-gray-700/50 rounded-lg text-sm">
-                                    <div class="flex-1 cursor-pointer hover:text-yellow-400" onclick="showAssetChart('${i.baseName || i.name}')">
+                                    <div class="flex-1 cursor-pointer hover:text-yellow-400" onclick="${chartAction}">
                                         <span class="font-bold">${i.name}</span>
                                         ${displayAmount ? `<span class="text-gray-400 ml-1">${displayAmount}</span>` : ''}
                                         <div class="text-xs text-gray-400">
@@ -289,12 +383,13 @@ function getPortfolioHTML() {
                                                 (${pnl >= 0 ? '+' : ''}${pnlPct}%)
                                             </span>
                                         </div>
+                                        ${roiInfo}
                                         ${stakingInfo}
                                     </div>
                                     <div class="flex items-center gap-2">
                                         ${incomeInfo}
-                                        <button onclick="showAssetChart('${i.baseName || i.name}')"
-                                            class="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">📈</button>
+                                        <button onclick="${chartAction}"
+                                            class="px-2 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">${i.type === 'realEstate' ? '🏠' : '📈'}</button>
                                         <button onclick="sellInvestment(${idx})"
                                             class="px-2 py-1 bg-red-600 hover:bg-red-700 rounded text-xs">매도</button>
                                     </div>

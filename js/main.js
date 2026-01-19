@@ -488,6 +488,15 @@ function showUrgentSaleOpportunity() {
                     <span>예상 월 임대수익</span>
                     <span class="font-bold text-emerald-400">₩${fmt(opportunity.monthlyIncome)}만</span>
                 </div>
+                <div class="border-t border-gray-600 my-2"></div>
+                <div class="flex justify-between">
+                    <span>📊 ROI (계약금 대비)</span>
+                    <span class="font-bold text-cyan-400">${((opportunity.monthlyIncome * 12 / discountedDownPayment) * 100).toFixed(1)}%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>📊 Cap Rate (총가 대비)</span>
+                    <span class="font-bold text-blue-400">${((opportunity.monthlyIncome * 12 / discountedCost) * 100).toFixed(1)}%</span>
+                </div>
             </div>
 
             <div class="text-sm text-gray-400">
@@ -589,6 +598,9 @@ function showUrgentSaleOpportunityWithData(opportunity, discountedCost, discount
                 <div class="flex justify-between"><span>급매가</span><span class="font-bold text-orange-400">₩${fmt(discountedCost)}만</span></div>
                 <div class="flex justify-between"><span>필요 계약금</span><span class="font-bold text-yellow-400">₩${fmt(discountedDownPayment)}만</span></div>
                 <div class="flex justify-between"><span>예상 월 임대수익</span><span class="font-bold text-emerald-400">₩${fmt(opportunity.monthlyIncome)}만</span></div>
+                <div class="border-t border-gray-600 my-2"></div>
+                <div class="flex justify-between"><span>📊 ROI (계약금 대비)</span><span class="font-bold text-cyan-400">${((opportunity.monthlyIncome * 12 / discountedDownPayment) * 100).toFixed(1)}%</span></div>
+                <div class="flex justify-between"><span>📊 Cap Rate (총가 대비)</span><span class="font-bold text-blue-400">${((opportunity.monthlyIncome * 12 / discountedCost) * 100).toFixed(1)}%</span></div>
             </div>
             <div class="text-sm text-gray-400">보유 현금: ₩${fmt(gameState.assets.cash)}만</div>
         </div>`,
@@ -697,6 +709,15 @@ function showAuctionOpportunity() {
                 <div class="flex justify-between">
                     <span>예상 월 임대수익</span>
                     <span class="font-bold text-emerald-400">₩${fmt(opportunity.monthlyIncome)}만</span>
+                </div>
+                <div class="border-t border-gray-600 my-2"></div>
+                <div class="flex justify-between">
+                    <span>📊 ROI (보증금 대비)</span>
+                    <span class="font-bold text-cyan-400">${((opportunity.monthlyIncome * 12 / discountedDownPayment) * 100).toFixed(1)}%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>📊 Cap Rate (총가 대비)</span>
+                    <span class="font-bold text-blue-400">${((opportunity.monthlyIncome * 12 / discountedCost) * 100).toFixed(1)}%</span>
                 </div>
             </div>
 

@@ -491,6 +491,15 @@ function showRealEstateOpportunity() {
                     <span>대출금</span>
                     <span class="text-orange-400">₩${fmt(opportunity.cost - opportunity.downPayment)}만</span>
                 </div>
+                <div class="border-t border-gray-600 my-2"></div>
+                <div class="flex justify-between">
+                    <span>📊 ROI (계약금 대비)</span>
+                    <span class="font-bold text-cyan-400">${((opportunity.monthlyIncome * 12 / opportunity.downPayment) * 100).toFixed(1)}%</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>📊 Cap Rate (총가 대비)</span>
+                    <span class="font-bold text-blue-400">${((opportunity.monthlyIncome * 12 / opportunity.cost) * 100).toFixed(1)}%</span>
+                </div>
             </div>
 
             <div class="text-sm text-gray-400">
