@@ -34,7 +34,8 @@ function saveGame() {
         realEstateMarketPrices: { ...realEstateMarketPrices },
         realEstatePriceHistory: { ...realEstatePriceHistory },
         economicCycle: { ...economicCycle },
-        interestRate: interestRate
+        interestRate: interestRate,
+        interestRateHistory: [...interestRateHistory]
     };
 
     try {
@@ -111,6 +112,9 @@ function loadGame() {
         }
         if (data.interestRate !== undefined) {
             interestRate = data.interestRate;
+        }
+        if (data.interestRateHistory) {
+            interestRateHistory = [...data.interestRateHistory];
         }
 
         // Hide setup modal and update UI
@@ -203,7 +207,8 @@ function exportGame() {
         realEstateMarketPrices: { ...realEstateMarketPrices },
         realEstatePriceHistory: { ...realEstatePriceHistory },
         economicCycle: { ...economicCycle },
-        interestRate: interestRate
+        interestRate: interestRate,
+        interestRateHistory: [...interestRateHistory]
     };
 
     const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
@@ -276,6 +281,9 @@ function importGame(event) {
             }
             if (data.interestRate !== undefined) {
                 interestRate = data.interestRate;
+            }
+            if (data.interestRateHistory) {
+                interestRateHistory = [...data.interestRateHistory];
             }
 
             document.getElementById('setupModal').classList.add('hidden');

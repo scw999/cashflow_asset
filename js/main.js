@@ -169,25 +169,114 @@ function rollDice() {
 
     // Move player
     const spaces = gameState.inFastTrack ? fastTrackSpaces : ratRaceSpaces;
-    gameState.position = (gameState.position + roll) % spaces.length;
+    const oldPosition = gameState.position;
+    const newPosition = (gameState.position + roll) % spaces.length;
+
+    // 월급칸을 지나가는지 확인 (착지 제외, 지나가기만)
+    const passedPaydays = findPassedPaydays(oldPosition, newPosition, roll, spaces);
+
+    gameState.position = newPosition;
 
     // Draw board with animation
     drawBoard();
 
-    // Process landing after a delay
-    setTimeout(() => {
-        const space = spaces[gameState.position];
-        handleSpaceLanding(space);
-
-        // Reset cooldown after event is handled
+    // 지나간 월급칸이 있으면 먼저 처리
+    if (passedPaydays.length > 0 && !gameState.inFastTrack) {
         setTimeout(() => {
-            diceRolling = false;
-            if (diceBtn) {
-                diceBtn.disabled = false;
-                diceBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+            showPassedPaydayModal(passedPaydays.length, () => {
+                // 월급칸 처리 후 착지 처리
+                const space = spaces[gameState.position];
+                handleSpaceLanding(space);
+                resetDiceButton(diceBtn);
+            });
+        }, 800);
+    } else {
+        // Process landing after a delay
+        setTimeout(() => {
+            const space = spaces[gameState.position];
+            handleSpaceLanding(space);
+            resetDiceButton(diceBtn);
+        }, 800);
+    }
+}
+
+// 주사위 버튼 리셋
+function resetDiceButton(diceBtn) {
+    setTimeout(() => {
+        diceRolling = false;
+        if (diceBtn) {
+            diceBtn.disabled = false;
+            diceBtn.classList.remove('opacity-50', 'cursor-not-allowed');
+        }
+    }, 500);
+}
+
+// 지나간 월급칸 찾기 (착지 위치 제외)
+function findPassedPaydays(oldPos, newPos, roll, spaces) {
+    const passedPaydays = [];
+
+    // 이동 경로상의 모든 칸 확인 (시작 위치 제외, 착지 위치 제외)
+    for (let i = 1; i < roll; i++) {
+        const checkPos = (oldPos + i) % spaces.length;
+        if (spaces[checkPos].type === 'payday') {
+            passedPaydays.push(checkPos);
+        }
+    }
+
+    return passedPaydays;
+}
+
+// 지나간 월급칸 모달 표시
+function showPassedPaydayModal(paydayCount, onComplete) {
+    const cashflow = getCashflow();
+    const totalPayday = cashflow * paydayCount;
+    const stakingRewards = processStakingRewards();
+
+    let stakingMessage = '';
+    if (stakingRewards.length > 0) {
+        stakingMessage = `<div class="mt-3 text-sm text-purple-400">
+            <div class="font-bold">스테이킹 보상:</div>
+            ${stakingRewards.map(r =>
+                `<div>+${r.reward.toFixed(4)} ${r.name} (₩${fmt(Math.round(r.value))}만)</div>`
+            ).join('')}
+        </div>`;
+    }
+
+    showEventModal(
+        '💰 월급칸 통과!',
+        `<div class="space-y-3">
+            <p class="text-lg text-center">월급칸을 ${paydayCount}개 지나갔습니다!</p>
+            <div class="p-4 bg-gray-800 rounded-lg">
+                <div class="flex justify-between mb-2">
+                    <span>캐시플로우</span>
+                    <span class="${cashflow >= 0 ? 'text-emerald-400' : 'text-red-400'}">${cashflow >= 0 ? '+' : ''}₩${fmt(cashflow)}만</span>
+                </div>
+                ${paydayCount > 1 ? `
+                <div class="flex justify-between text-sm text-gray-400">
+                    <span>× ${paydayCount}개 월급칸</span>
+                    <span>= ${totalPayday >= 0 ? '+' : ''}₩${fmt(totalPayday)}만</span>
+                </div>` : ''}
+            </div>
+            ${stakingMessage}
+        </div>`,
+        [
+            {
+                text: `월급 받기 (${totalPayday >= 0 ? '+' : ''}₩${fmt(totalPayday)}만)`,
+                action: () => {
+                    gameState.assets.cash += totalPayday;
+                    if (totalPayday >= 0) {
+                        showNotification(`월급 +₩${fmt(totalPayday)}만 받았습니다!`, 'success');
+                    } else {
+                        showNotification(`지출 ₩${fmt(Math.abs(totalPayday))}만`, 'warning');
+                    }
+                    updateUI();
+                    hideEventModal();
+                    onComplete();
+                },
+                primary: true
             }
-        }, 500);
-    }, 800);
+        ]
+    );
 }
 
 // Handle landing on a space

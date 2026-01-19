@@ -83,6 +83,87 @@ function hideAssetChartModal() {
     document.getElementById('assetChartModal').classList.add('hidden');
 }
 
+// Show interest rate chart modal
+function showInterestRateChart() {
+    const modal = document.getElementById('assetChartModal');
+    const title = document.getElementById('assetChartTitle');
+    const currentPriceEl = document.getElementById('assetCurrentPrice');
+    const priceChangeEl = document.getElementById('assetPriceChange');
+
+    title.textContent = `📊 기준금리 추이`;
+
+    const history = interestRateHistory || [interestRate];
+    const currentRate = interestRate;
+    const startRate = history[0] || currentRate;
+    const totalChange = (currentRate - startRate).toFixed(2);
+
+    currentPriceEl.textContent = `${currentRate.toFixed(2)}%`;
+
+    // 경기 사이클 표시
+    const phaseName = typeof CYCLE_PHASE_NAMES !== 'undefined' ? CYCLE_PHASE_NAMES[economicCycle.phase] : '알 수 없음';
+    priceChangeEl.innerHTML = `
+        <span class="${parseFloat(totalChange) >= 0 ? 'text-red-400' : 'text-emerald-400'}">${parseFloat(totalChange) >= 0 ? '▲' : '▼'} ${Math.abs(parseFloat(totalChange))}%p</span>
+        <span class="ml-3 text-yellow-400">${phaseName}</span>
+    `;
+
+    modal.classList.remove('hidden');
+
+    // Draw chart
+    setTimeout(() => {
+        const ctx = document.getElementById('assetPriceChart');
+        if (assetChartInstance) assetChartInstance.destroy();
+
+        const labels = history.map((_, i) => {
+            if (i === 0) return '시작';
+            if (i === history.length - 1) return '현재';
+            return `${history.length - i - 1}턴전`;
+        });
+
+        assetChartInstance = new Chart(ctx, {
+            type: 'line',
+            data: {
+                labels: labels,
+                datasets: [{
+                    label: '금리 (%)',
+                    data: [...history],
+                    borderColor: '#f59e0b',
+                    backgroundColor: 'rgba(245, 158, 11, 0.2)',
+                    fill: true,
+                    tension: 0.3,
+                    pointRadius: 3,
+                    pointHoverRadius: 6
+                }]
+            },
+            options: {
+                responsive: true,
+                plugins: {
+                    legend: { display: false },
+                    tooltip: {
+                        callbacks: {
+                            label: (ctx) => `${ctx.raw.toFixed(2)}%`
+                        }
+                    }
+                },
+                scales: {
+                    x: {
+                        ticks: { color: '#9ca3af' },
+                        grid: { color: 'rgba(255,255,255,0.1)' }
+                    },
+                    y: {
+                        ticks: {
+                            color: '#9ca3af',
+                            callback: v => v.toFixed(1) + '%'
+                        },
+                        grid: { color: 'rgba(255,255,255,0.1)' },
+                        min: 0,
+                        max: 12
+                    }
+                }
+            }
+        });
+    }, 100);
+}
+
 // Show real estate price chart modal
 function showRealEstateChart(propertyType) {
     const modal = document.getElementById('assetChartModal');

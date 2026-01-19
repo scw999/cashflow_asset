@@ -143,27 +143,90 @@ function getTotalLiabilities() {
     return Object.values(gameState.liabilities).reduce((a, b) => a + b, 0);
 }
 
-// 코스톨라니 달걀 모형 기반 경제 사이클 업데이트
+// 코스톨라니 달걀 모형 기반 경제 사이클 업데이트 (이벤트 기반)
 function updateEconomicCycleKostolany() {
     economicCycle.turnsInPhase++;
+    const oldRate = interestRate;
 
-    // 사이클 전환 체크
-    if (economicCycle.turnsInPhase >= economicCycle.phaseDuration) {
+    // 이벤트 기반 사이클 전환 확률 계산
+    let transitionProbability = 0;
+
+    // 기본 전환 확률 (시간이 지날수록 증가)
+    const turnsRatio = economicCycle.turnsInPhase / economicCycle.phaseDuration;
+    transitionProbability = turnsRatio * 0.15;  // 최대 15%
+
+    // 금리 기반 이벤트 트리거
+    if (economicCycle.phase === CYCLE_PHASES.BOOM && interestRate > 6) {
+        // 호황기에 금리가 높으면 후퇴기로 전환 확률 증가
+        transitionProbability += 0.15;
+    } else if (economicCycle.phase === CYCLE_PHASES.DEPRESSION && interestRate < 2) {
+        // 불황기에 금리가 낮으면 회복기로 전환 확률 증가
+        transitionProbability += 0.15;
+    } else if (economicCycle.phase === CYCLE_PHASES.RECOVERY && interestRate < 3) {
+        // 회복기에 저금리가 유지되면 호황기로 전환 확률 증가
+        transitionProbability += 0.1;
+    } else if (economicCycle.phase === CYCLE_PHASES.RECESSION && interestRate > 5) {
+        // 후퇴기에 금리가 높으면 불황기로 전환 확률 증가
+        transitionProbability += 0.1;
+    }
+
+    // 랜덤 이벤트 (경제 충격)
+    const economicShock = Math.random() < 0.05;  // 5% 확률로 경제 충격
+    if (economicShock) {
+        transitionProbability += 0.3;  // 경제 충격시 전환 확률 대폭 증가
+        showNotification('⚠️ 경제 충격 발생!', 'warning');
+    }
+
+    // 사이클 전환 체크 (확률 기반)
+    if (Math.random() < transitionProbability || economicCycle.turnsInPhase >= economicCycle.phaseDuration * 1.5) {
         const oldPhase = economicCycle.phase;
         const phases = [CYCLE_PHASES.RECOVERY, CYCLE_PHASES.BOOM, CYCLE_PHASES.RECESSION, CYCLE_PHASES.DEPRESSION];
         const currentIndex = phases.indexOf(economicCycle.phase);
         economicCycle.phase = phases[(currentIndex + 1) % phases.length];
         economicCycle.turnsInPhase = 0;
-        economicCycle.phaseDuration = 8 + Math.floor(Math.random() * 8);  // 8~15턴
+        economicCycle.phaseDuration = 6 + Math.floor(Math.random() * 10);  // 6~15턴 (더 변동적)
 
         // 사이클 전환 알림
         showNotification(`경기 사이클 변화: ${CYCLE_PHASE_NAMES[oldPhase]} → ${CYCLE_PHASE_NAMES[economicCycle.phase]}`, 'info');
+
+        // 사이클 전환시 금리 점프 이벤트
+        if (economicCycle.phase === CYCLE_PHASES.RECESSION) {
+            // 후퇴기 진입시 금리 인상
+            interestRate = Math.min(10, interestRate + 0.5 + Math.random() * 0.5);
+        } else if (economicCycle.phase === CYCLE_PHASES.RECOVERY) {
+            // 회복기 진입시 금리 인하
+            interestRate = Math.max(0.5, interestRate - 0.5 - Math.random() * 0.5);
+        }
     }
 
-    // 금리 조정 (사이클에 따라)
+    // 금리 조정 (이벤트 + 트렌드 기반)
     const cycleReturns = CYCLE_ASSET_RETURNS[economicCycle.phase];
-    const rateChange = cycleReturns.interestTrend + (Math.random() - 0.5) * 0.1;
+
+    // 기본 트렌드
+    let rateChange = cycleReturns.interestTrend;
+
+    // 랜덤 이벤트 (중앙은행 정책 결정)
+    const centralBankEvent = Math.random();
+    if (centralBankEvent < 0.1) {
+        // 10% 확률로 금리 동결 또는 큰 변동
+        const bigMove = (Math.random() - 0.5) * 0.8;  // -0.4% ~ +0.4%
+        rateChange += bigMove;
+        if (Math.abs(bigMove) > 0.2) {
+            showNotification(`🏦 중앙은행 ${bigMove > 0 ? '금리 인상' : '금리 인하'} 발표!`, 'info');
+        }
+    } else {
+        // 일반적인 변동
+        rateChange += (Math.random() - 0.5) * 0.2;
+    }
+
+    // 금리 적용
     interestRate = Math.max(0.5, Math.min(10, interestRate + rateChange));
+
+    // 금리 히스토리 기록
+    if (typeof interestRateHistory !== 'undefined') {
+        interestRateHistory.push(Math.round(interestRate * 100) / 100);
+        if (interestRateHistory.length > 30) interestRateHistory.shift();
+    }
 }
 
 // Update market prices with Kostolany economic cycle and asset characteristics

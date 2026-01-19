@@ -278,6 +278,7 @@ const stakingRates = {
 
 // 금리 설정 (연이율)
 let interestRate = 4.0;  // 기준금리 4%
+let interestRateHistory = [4.0];  // 금리 변동 기록
 const MORTGAGE_RATE_SPREAD = 1.0;  // 주택담보대출 스프레드
 const CREDIT_RATE_SPREAD = 4.0;   // 신용대출 스프레드
 
