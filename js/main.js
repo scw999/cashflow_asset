@@ -318,7 +318,7 @@ function handleStockEvent() {
             name: '📉 감자 (자본감소)',
             desc: '보유 주식 중 하나가 감자를 실시합니다!',
             type: 'reduction',
-            effect: '보유 주식 가치 -30%'
+            effect: '보유 주식 수량 -30%'
         },
         {
             name: '📈 무상증자',
@@ -426,16 +426,22 @@ function getStockEventActions(event, targetStock) {
     }
 }
 
-// 감자 적용
+// 감자 적용 (주식 수량 감소)
 function applyStockReduction(idx) {
     const inv = gameState.investments[idx];
     if (!inv) { hideEventModal(); nextTurn(); updateUI(); return; }
 
-    const reduction = Math.round(inv.cost * 0.3);
-    inv.cost -= reduction;
-    gameState.assets.stocks -= reduction;
+    // 주식 수량 30% 감소 (감자)
+    const reducedShares = Math.floor(inv.shares * 0.3);
+    const oldShares = inv.shares;
+    inv.shares -= reducedShares;
 
-    showNotification(`${inv.name} 감자로 -₩${fmt(reduction)}만`, 'error');
+    // 수량에 비례하여 원가도 감소
+    const costReduction = Math.round(inv.cost * (reducedShares / oldShares));
+    inv.cost -= costReduction;
+    gameState.assets.stocks -= costReduction;
+
+    showNotification(`${inv.name} 감자로 주식 ${reducedShares}주 감소 (${oldShares}주 → ${inv.shares}주)`, 'error');
     hideEventModal();
     nextTurn();
     updateUI();
