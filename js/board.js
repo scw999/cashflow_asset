@@ -420,6 +420,30 @@ function showRealEstateOpportunity() {
     const opportunity = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
     const content = document.getElementById('opportunityContent');
 
+    // 추가 이벤트 체크 (30% 확률로 매수자 등장)
+    const realEstateInvestments = gameState.investments.filter(inv => inv.type === 'realEstate');
+    const hasBuyerEvent = realEstateInvestments.length > 0 && Math.random() < 0.3;
+    let buyerEventHtml = '';
+
+    if (hasBuyerEvent) {
+        const targetProperty = realEstateInvestments[Math.floor(Math.random() * realEstateInvestments.length)];
+        const premium = 10 + Math.floor(Math.random() * 20);
+        const offerPrice = Math.round(targetProperty.cost * (1 + premium / 100));
+        buyerEventHtml = `
+            <div class="mt-4 p-3 bg-yellow-900/30 border border-yellow-600/50 rounded-lg">
+                <div class="flex items-center gap-2 mb-2">
+                    <span class="text-xl">🤵</span>
+                    <span class="font-bold text-yellow-400">매수자 등장!</span>
+                </div>
+                <p class="text-sm text-gray-300">당신의 <span class="text-yellow-300">${targetProperty.name}</span>을 <span class="text-emerald-400">₩${fmt(offerPrice)}만 (+${premium}%)</span>에 사고 싶어합니다!</p>
+                <button onclick="sellToBuyerFromOpportunity(${gameState.investments.indexOf(targetProperty)}, ${offerPrice})"
+                    class="mt-2 w-full py-2 bg-yellow-600 hover:bg-yellow-700 rounded text-sm font-bold">
+                    매도하기
+                </button>
+            </div>
+        `;
+    }
+
     content.innerHTML = `
         <div class="space-y-4">
             <div class="text-center">
@@ -467,10 +491,43 @@ function showRealEstateOpportunity() {
                     패스
                 </button>
             </div>
+
+            ${buyerEventHtml}
         </div>
     `;
 
     document.getElementById('opportunityModal').classList.remove('hidden');
+}
+
+// 부동산 기회창에서 매도하기
+function sellToBuyerFromOpportunity(investmentIdx, offerPrice) {
+    const inv = gameState.investments[investmentIdx];
+    if (!inv) {
+        hideOpportunityModal();
+        return;
+    }
+
+    const profit = offerPrice - inv.cost;
+    gameState.assets.cash += offerPrice;
+    gameState.assets.realEstate -= inv.cost;
+
+    if (inv.loan) {
+        gameState.assets.cash -= inv.loan;
+        gameState.liabilities.mortgage -= inv.loan;
+        const monthlyLoanPayment = Math.round(inv.loan * 0.04 / 12);
+        gameState.expenses.loan -= monthlyLoanPayment;
+    }
+
+    if (inv.monthlyIncome) {
+        gameState.income.rental -= inv.monthlyIncome;
+    }
+
+    gameState.investments.splice(investmentIdx, 1);
+
+    closeOpportunityModalOnly();
+    showNotification(`${inv.name} 매도 완료! 수익 +₩${fmt(profit)}만`, 'success');
+    nextTurn();
+    updateUI();
 }
 
 // Buy real estate from opportunity
@@ -498,11 +555,20 @@ function buyRealEstateOpportunity(opportunity) {
         monthlyIncome: opportunity.monthlyIncome
     });
 
-    hideOpportunityModal();
+    closeOpportunityModalOnly();
+    showNotification(`${opportunity.name} 구매 완료! 월 임대수익: ₩${fmt(opportunity.monthlyIncome)}만`, 'success');
+    nextTurn();
     updateUI();
-    alert(`${opportunity.name}을 구매했습니다!\n월 임대수익: ₩${fmt(opportunity.monthlyIncome)}만`);
 }
 
-function hideOpportunityModal() {
+// 모달만 닫기 (턴 진행 없음)
+function closeOpportunityModalOnly() {
     document.getElementById('opportunityModal').classList.add('hidden');
+}
+
+// 모달 닫고 턴 진행
+function hideOpportunityModal() {
+    closeOpportunityModalOnly();
+    nextTurn();
+    updateUI();
 }

@@ -357,44 +357,11 @@ function handleOpportunity(space) {
     }
 }
 
-// 부동산 이벤트 핸들러 (구매, 매수자 등장 등)
+// 부동산 이벤트 핸들러 (구매 기회는 항상, 추가 이벤트는 랜덤)
 function handleRealEstateEvent() {
-    const realEstateInvestments = gameState.investments.filter(inv => inv.type === 'realEstate');
-
-    // 이벤트 랜덤 선택 (보유 부동산 있으면 매수자 등장 이벤트 추가)
-    const events = [
-        { type: 'purchase', weight: 60 },  // 일반 구매 기회
-        { type: 'marketInfo', weight: 20 } // 시장 정보만 보기
-    ];
-
-    if (realEstateInvestments.length > 0) {
-        events.push({ type: 'buyer', weight: 20 }); // 매수자 등장
-    }
-
-    // 가중치 기반 랜덤 선택
-    const totalWeight = events.reduce((sum, e) => sum + e.weight, 0);
-    let random = Math.random() * totalWeight;
-    let selectedEvent = events[0];
-
-    for (const event of events) {
-        random -= event.weight;
-        if (random <= 0) {
-            selectedEvent = event;
-            break;
-        }
-    }
-
-    switch (selectedEvent.type) {
-        case 'purchase':
-            showRealEstateOpportunity();
-            break;
-        case 'buyer':
-            showBuyerOpportunity(realEstateInvestments);
-            break;
-        case 'marketInfo':
-            showRealEstateMarketInfo();
-            break;
-    }
+    // 부동산 칸에 가면 무조건 구매 기회가 먼저 나옴
+    // 추가로 랜덤하게 매수자 등장 이벤트가 나올 수 있음
+    showRealEstateOpportunity();
 }
 
 // 급매 기회 (20% 할인)
