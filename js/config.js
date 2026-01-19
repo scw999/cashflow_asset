@@ -70,35 +70,6 @@ const realEstateCharacteristics = {
     '다가구 주택': { type: 'realestate', volatility: 0.045, rentalYield: 0.05, beta: 0.8, location: 'any' }
 };
 
-// 경제 사이클 시스템
-let economicCycle = {
-    phase: 'expansion', // expansion, peak, recession, recovery
-    turnsInPhase: 0,
-    interestRate: 3.5, // 기준금리 (%)
-    inflation: 2.0, // 인플레이션 (%)
-    sentiment: 0.5 // 시장 심리 (0-1, 0.5가 중립)
-};
-
-// 사이클 단계별 특성
-const cycleCharacteristics = {
-    expansion: {
-        stockBias: 0.03, cryptoBias: 0.05, bondBias: -0.01, commodityBias: 0.02,
-        duration: [8, 15], nextPhase: 'peak'
-    },
-    peak: {
-        stockBias: 0.01, cryptoBias: 0.02, bondBias: 0.00, commodityBias: 0.03,
-        duration: [3, 6], nextPhase: 'recession'
-    },
-    recession: {
-        stockBias: -0.03, cryptoBias: -0.05, bondBias: 0.02, commodityBias: -0.02,
-        duration: [5, 10], nextPhase: 'recovery'
-    },
-    recovery: {
-        stockBias: 0.02, cryptoBias: 0.03, bondBias: 0.01, commodityBias: 0.01,
-        duration: [5, 10], nextPhase: 'expansion'
-    }
-};
-
 // 자산별 변동성 및 특성
 const assetCharacteristics = {
     // 주식
