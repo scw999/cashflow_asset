@@ -93,6 +93,32 @@ function getMarketHTML() {
                             </div>
                         `;
                     }).join('')}
+
+                    <div class="border-t border-gray-600 my-2 pt-2">
+                        <div class="text-xs text-red-400 mb-1">⚠️ 레버리지/인버스 (고위험)</div>
+                        ${['S&P500 2X ETF', '나스닥 3X ETF', 'S&P500 인버스', '나스닥 인버스 2X'].map(name => {
+                            const price = marketPrices[name];
+                            const history = priceHistory[name] || [price];
+                            const prevPrice = history.length > 1 ? history[history.length - 2] : price;
+                            const change = ((price - prevPrice) / prevPrice * 100).toFixed(1);
+                            const char = assetCharacteristics[name] || {};
+                            const leverageLabel = char.leverage > 0 ? `${char.leverage}X` : `${Math.abs(char.leverage)}X 인버스`;
+                            return `
+                                <div class="flex items-center gap-1">
+                                    <button onclick="buyStock('${name}')"
+                                        class="flex-1 p-2 ${char.leverage < 0 ? 'bg-red-900/50 hover:bg-red-800/50' : 'bg-orange-900/50 hover:bg-orange-800/50'} rounded text-left transition">
+                                        <span class="text-xs ${char.leverage < 0 ? 'text-red-300' : 'text-orange-300'}">[${leverageLabel}]</span>
+                                        ${name.replace(' 2X', '').replace(' 3X', '').replace(' 인버스', '')} ₩${fmt(price)}만
+                                        <span class="${parseFloat(change) >= 0 ? 'text-emerald-400' : 'text-red-400'}">
+                                            ${parseFloat(change) >= 0 ? '+' : ''}${change}%
+                                        </span>
+                                    </button>
+                                    <button onclick="showAssetChart('${name}')"
+                                        class="p-2 bg-gray-600 hover:bg-gray-500 rounded">📈</button>
+                                </div>
+                            `;
+                        }).join('')}
+                    </div>
                 </div>
             </div>
 
@@ -251,12 +277,27 @@ function buyCrypto(name) {
     showTab('portfolio');
 }
 
-// Stake cryptocurrency
+// Stake cryptocurrency (새로 구매하여 스테이킹)
 function stakeCrypto(name) {
     const currentPrice = marketPrices[name];
     const annualRate = stakingRates[name];
 
-    const amount = parseFloat(prompt(`${name} 스테이킹 (연 ${annualRate * 100}%)\n\n현재가: ₩${fmt(currentPrice)}만\n이자는 ${name}으로 지급됩니다.\n\n몇 개를 스테이킹하시겠습니까?\n(0.001 단위까지 입력 가능)`, '1'));
+    // 기존 보유 코인 확인
+    const existingCrypto = gameState.investments.filter(inv =>
+        inv.type === 'crypto' && inv.name === name && !inv.isStaking && !inv.isStable
+    );
+
+    if (existingCrypto.length > 0) {
+        const totalOwned = existingCrypto.reduce((sum, inv) => sum + (inv.amount || 0), 0);
+        const choice = prompt(`${name} 스테이킹 (연 ${annualRate * 100}%)\n\n보유 중: ${totalOwned.toFixed(3)}개\n\n1. 새로 구매하여 스테이킹\n2. 보유 코인 스테이킹\n\n선택 (1 또는 2):`, '2');
+
+        if (choice === '2') {
+            stakeExistingCrypto(name);
+            return;
+        }
+    }
+
+    const amount = parseFloat(prompt(`${name} 스테이킹 (연 ${annualRate * 100}%)\n\n현재가: ₩${fmt(currentPrice)}만\n이자는 ${name}으로 지급됩니다.\n\n몇 개를 새로 구매하여 스테이킹하시겠습니까?\n(0.001 단위까지 입력 가능)`, '1'));
 
     if (!amount || amount <= 0) return;
 
@@ -291,6 +332,70 @@ function stakeCrypto(name) {
         lockupTurns: 1       // 1턴 후 매도 가능
     });
 
+    updateUI();
+    showTab('portfolio');
+}
+
+// 기존 보유 코인 스테이킹
+function stakeExistingCrypto(name) {
+    const annualRate = stakingRates[name];
+    if (!annualRate) {
+        alert(`${name}은(는) 스테이킹을 지원하지 않습니다.`);
+        return;
+    }
+
+    // 보유 중인 해당 코인 찾기
+    const existingIdx = gameState.investments.findIndex(inv =>
+        inv.type === 'crypto' && inv.name === name && !inv.isStaking && !inv.isStable
+    );
+
+    if (existingIdx === -1) {
+        alert(`보유 중인 ${name}이(가) 없습니다.`);
+        return;
+    }
+
+    const existing = gameState.investments[existingIdx];
+    const amountToStake = parseFloat(prompt(`보유 ${name}: ${existing.amount.toFixed(3)}개\n\n몇 개를 스테이킹하시겠습니까?\n(연 ${annualRate * 100}% 보상)`, existing.amount.toFixed(3)));
+
+    if (!amountToStake || amountToStake <= 0) return;
+    if (amountToStake > existing.amount) {
+        alert('보유 수량보다 많이 스테이킹할 수 없습니다.');
+        return;
+    }
+
+    const currentPrice = marketPrices[name] || existing.pricePerUnit;
+    const stakeCost = Math.round(amountToStake * currentPrice * 100) / 100;
+    const monthlyReward = amountToStake * annualRate / 12;
+
+    if (!confirm(`${name} ${amountToStake.toFixed(3)}개를 스테이킹하시겠습니까?\n\n예상 월 보상: ${monthlyReward.toFixed(4)} ${name}`)) {
+        return;
+    }
+
+    // 기존 보유분에서 차감
+    existing.amount -= amountToStake;
+    existing.cost -= stakeCost;
+
+    if (existing.amount <= 0.0001) {
+        gameState.investments.splice(existingIdx, 1);
+    }
+
+    // 스테이킹으로 추가
+    gameState.investments.push({
+        type: 'crypto',
+        name: `${name} 스테이킹`,
+        baseName: name,
+        cost: stakeCost,
+        amount: amountToStake,
+        pricePerUnit: currentPrice,
+        stakingRate: annualRate,
+        monthlyReward: monthlyReward,
+        isStaking: true,
+        monthlyIncome: 0,
+        stakingTurn: turn,
+        lockupTurns: 1
+    });
+
+    showNotification(`${name} ${amountToStake.toFixed(3)}개 스테이킹 시작!`, 'success');
     updateUI();
     showTab('portfolio');
 }
@@ -333,14 +438,79 @@ function buyStableCoin() {
 function sellInvestment(idx) {
     const inv = gameState.investments[idx];
 
-    // 스테이킹 락업 체크 (1턴 후 매도 가능)
-    if (inv.isStaking && inv.stakingTurn !== undefined) {
-        const turnsStaked = turn - inv.stakingTurn;
-        const requiredTurns = inv.lockupTurns || 1;
-        if (turnsStaked < requiredTurns) {
-            alert(`스테이킹 락업 기간입니다.\n\n${requiredTurns}턴 후에 매도할 수 있습니다.\n현재: ${turnsStaked}턴 경과 / ${requiredTurns}턴 필요`);
+    // 스테이킹 언락 체크
+    if (inv.isStaking) {
+        // 아직 언락 시작 안한 경우
+        if (!inv.isUnlocking) {
+            if (confirm(`${inv.name}의 스테이킹을 해제하시겠습니까?\n\n언락에 1턴이 소요됩니다.\n언락 후 매도 또는 계속 보유할 수 있습니다.`)) {
+                inv.isUnlocking = true;
+                inv.unlockTurn = turn;
+                showNotification(`${inv.baseName} 스테이킹 해제 시작 (1턴 후 완료)`, 'info');
+                updateUI();
+            }
             return;
         }
+
+        // 언락 중인 경우
+        const turnsSinceUnlock = turn - inv.unlockTurn;
+        if (turnsSinceUnlock < 1) {
+            alert(`스테이킹 해제 중입니다.\n\n1턴 후에 매도 가능합니다.\n현재: ${turnsSinceUnlock}턴 경과`);
+            return;
+        }
+
+        // 언락 완료 - 매도 또는 계속 보유 선택
+        const choice = prompt(`${inv.name} 언락 완료!\n\n보유: ${inv.amount.toFixed(3)}개\n\n1. 전량 매도\n2. 일부 매도\n3. 계속 보유 (스테이킹 해제 상태)\n\n선택 (1, 2, 3):`, '1');
+
+        if (choice === '3') {
+            // 스테이킹 해제하고 일반 보유로 전환
+            inv.isStaking = false;
+            inv.isUnlocking = false;
+            inv.name = inv.baseName;
+            inv.monthlyReward = 0;
+            showNotification(`${inv.baseName} 스테이킹 해제 완료. 일반 보유로 전환.`, 'success');
+            updateUI();
+            return;
+        }
+
+        if (choice === '2') {
+            // 일부 매도
+            const amountToSell = parseFloat(prompt(`${inv.baseName} ${inv.amount.toFixed(3)}개 보유중\n몇 개를 매도하시겠습니까?`, inv.amount.toFixed(3)));
+            if (!amountToSell || amountToSell <= 0) return;
+            if (amountToSell > inv.amount) {
+                alert('보유 수량보다 많이 매도할 수 없습니다.');
+                return;
+            }
+
+            const currentPrice = marketPrices[inv.baseName] || inv.pricePerUnit;
+            const saleValue = Math.round(amountToSell * currentPrice * 100) / 100;
+
+            if (!confirm(`${inv.baseName} ${amountToSell.toFixed(3)}개를 ₩${fmt(saleValue)}만원에 매도하시겠습니까?`)) return;
+
+            gameState.assets.cash += saleValue;
+            const soldCost = Math.round(inv.cost * amountToSell / inv.amount);
+            gameState.assets.crypto -= soldCost;
+
+            inv.amount -= amountToSell;
+            inv.cost -= soldCost;
+            inv.monthlyReward = inv.monthlyReward * (1 - amountToSell / (inv.amount + amountToSell));
+
+            // 스테이킹 해제 상태로 전환
+            inv.isStaking = false;
+            inv.isUnlocking = false;
+            inv.name = inv.baseName;
+
+            if (inv.amount <= 0.0001) {
+                gameState.investments.splice(idx, 1);
+            }
+
+            showNotification(`${inv.baseName} ${amountToSell.toFixed(3)}개 매도 완료!`, 'success');
+            updateUI();
+            showTab('portfolio');
+            return;
+        }
+
+        // 전량 매도 (choice === '1' 또는 기본)
+        // 아래로 계속...
     }
 
     if (inv.shares && inv.shares > 1) {

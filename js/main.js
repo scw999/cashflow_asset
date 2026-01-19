@@ -291,18 +291,353 @@ function handleOpportunity(space) {
     // Real estate opportunities only appear on real estate spaces
     if (space.name.includes('부동산') || space.name.includes('경매') || space.name.includes('원룸') || space.name.includes('상가')) {
         showRealEstateOpportunity();
+    } else if (space.name.includes('주식') || space.name.includes('ETF')) {
+        // 주식/ETF 투자 기회 - 랜덤 이벤트
+        handleStockEvent();
+    } else if (space.name.includes('가상자산') || space.name.includes('스테이킹')) {
+        // 가상자산 이벤트
+        handleCryptoEvent();
     } else {
-        // Stock/ETF/Crypto opportunity
+        // 기타 투자 기회
         showEventModal(
             `${space.name} 기회!`,
             `<p>투자 기회가 찾아왔습니다!</p>
-             <p class="mt-2 text-gray-400">투자 탭에서 주식, ETF, 가상자산을 매매할 수 있습니다.</p>`,
+             <p class="mt-2 text-gray-400">투자 탭에서 투자할 수 있습니다.</p>`,
             [
                 { text: '투자하러 가기', action: 'goToMarketTab();', primary: true },
                 { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
             ]
         );
     }
+}
+
+// 주식/ETF 이벤트 핸들러
+function handleStockEvent() {
+    const stockEvents = [
+        {
+            name: '📉 감자 (자본감소)',
+            desc: '보유 주식 중 하나가 감자를 실시합니다!',
+            type: 'reduction',
+            effect: '보유 주식 가치 -30%'
+        },
+        {
+            name: '📈 무상증자',
+            desc: '회사가 무상증자를 실시하여 보너스 주식을 받습니다!',
+            type: 'bonus',
+            effect: '보유 주식 수량 +20%'
+        },
+        {
+            name: '💰 유상증자 참여 기회',
+            desc: '할인된 가격으로 추가 주식을 매수할 수 있습니다!',
+            type: 'rights',
+            effect: '현재가의 70%에 매수 가능'
+        },
+        {
+            name: '✂️ 액면분할',
+            desc: '주식이 분할되어 수량이 늘어납니다!',
+            type: 'split',
+            effect: '주식 수량 2배, 가격 1/2'
+        },
+        {
+            name: '💵 특별배당',
+            desc: '회사가 특별배당을 지급합니다!',
+            type: 'dividend',
+            effect: '보유 주식 가치의 5% 현금 지급'
+        },
+        {
+            name: '🔥 상장폐지 위기',
+            desc: '보유 주식 중 하나가 상장폐지 위기에 처했습니다!',
+            type: 'delist',
+            effect: '해당 주식 가치 -50%'
+        },
+        {
+            name: '🚀 기관 대량매수',
+            desc: '기관투자자가 대량 매수하여 주가가 급등합니다!',
+            type: 'surge',
+            effect: '보유 주식 가치 +25%'
+        }
+    ];
+
+    const event = stockEvents[Math.floor(Math.random() * stockEvents.length)];
+
+    // 보유 주식 확인
+    const stockInvestments = gameState.investments.filter(inv => inv.type === 'stocks' && inv.shares > 0);
+
+    if (stockInvestments.length === 0 && ['reduction', 'bonus', 'split', 'dividend', 'delist', 'surge'].includes(event.type)) {
+        // 보유 주식이 없으면 유상증자만 가능
+        showEventModal(
+            '📊 주식 투자 기회!',
+            `<p>주식 관련 이벤트가 발생했지만, 보유 중인 주식이 없습니다.</p>
+             <p class="mt-2 text-gray-400">투자 탭에서 주식을 매수해보세요!</p>`,
+            [
+                { text: '투자하러 가기', action: 'goToMarketTab();', primary: true },
+                { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
+            ]
+        );
+        return;
+    }
+
+    // 랜덤 주식 선택 (이벤트에 영향받을 주식)
+    const targetStock = stockInvestments.length > 0 ? stockInvestments[Math.floor(Math.random() * stockInvestments.length)] : null;
+
+    showEventModal(
+        event.name,
+        `<p class="text-lg">${event.desc}</p>
+         ${targetStock ? `<p class="mt-2 text-yellow-400">대상: ${targetStock.name} (${targetStock.shares}주)</p>` : ''}
+         <p class="mt-2 p-2 bg-gray-800 rounded text-sm">${event.effect}</p>`,
+        getStockEventActions(event, targetStock)
+    );
+}
+
+// 주식 이벤트 액션 생성
+function getStockEventActions(event, targetStock) {
+    switch (event.type) {
+        case 'reduction': // 감자
+            return [
+                { text: '확인 (가치 -30%)', action: `applyStockReduction(${gameState.investments.indexOf(targetStock)});`, primary: true }
+            ];
+        case 'bonus': // 무상증자
+            return [
+                { text: '보너스 주식 받기', action: `applyBonusShares(${gameState.investments.indexOf(targetStock)});`, primary: true }
+            ];
+        case 'rights': // 유상증자
+            return [
+                { text: '70% 가격에 매수', action: `showRightsOfferingModal();`, primary: true },
+                { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
+            ];
+        case 'split': // 액면분할
+            return [
+                { text: '확인', action: `applyStockSplit(${gameState.investments.indexOf(targetStock)});`, primary: true }
+            ];
+        case 'dividend': // 특별배당
+            return [
+                { text: '배당금 받기', action: `applySpecialDividend(${gameState.investments.indexOf(targetStock)});`, primary: true }
+            ];
+        case 'delist': // 상장폐지 위기
+            return [
+                { text: '확인 (가치 -50%)', action: `applyDelistRisk(${gameState.investments.indexOf(targetStock)});`, primary: true }
+            ];
+        case 'surge': // 기관 대량매수
+            return [
+                { text: '확인 (가치 +25%)', action: `applyInstitutionalBuy(${gameState.investments.indexOf(targetStock)});`, primary: true }
+            ];
+        default:
+            return [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }];
+    }
+}
+
+// 감자 적용
+function applyStockReduction(idx) {
+    const inv = gameState.investments[idx];
+    if (!inv) { hideEventModal(); nextTurn(); updateUI(); return; }
+
+    const reduction = Math.round(inv.cost * 0.3);
+    inv.cost -= reduction;
+    gameState.assets.stocks -= reduction;
+
+    showNotification(`${inv.name} 감자로 -₩${fmt(reduction)}만`, 'error');
+    hideEventModal();
+    nextTurn();
+    updateUI();
+}
+
+// 무상증자 적용
+function applyBonusShares(idx) {
+    const inv = gameState.investments[idx];
+    if (!inv) { hideEventModal(); nextTurn(); updateUI(); return; }
+
+    const bonusShares = Math.floor(inv.shares * 0.2);
+    inv.shares += bonusShares;
+
+    showNotification(`${inv.name} 무상증자 +${bonusShares}주!`, 'success');
+    hideEventModal();
+    nextTurn();
+    updateUI();
+}
+
+// 유상증자 모달
+function showRightsOfferingModal() {
+    hideEventModal();
+
+    const stocks = ['삼성전자', 'SK하이닉스', '네이버', '애플', '테슬라', '엔비디아'];
+    const randomStock = stocks[Math.floor(Math.random() * stocks.length)];
+    const currentPrice = marketPrices[randomStock];
+    const discountPrice = Math.round(currentPrice * 0.7 * 100) / 100;
+
+    const shares = parseInt(prompt(`${randomStock} 유상증자 참여\n\n현재가: ₩${fmt(currentPrice)}만\n할인가: ₩${fmt(discountPrice)}만 (30% 할인)\n\n몇 주를 매수하시겠습니까?`, '10'));
+
+    if (!shares || shares <= 0) {
+        nextTurn();
+        updateUI();
+        return;
+    }
+
+    const totalCost = Math.round(discountPrice * shares * 100) / 100;
+
+    if (gameState.assets.cash < totalCost) {
+        alert(`현금이 부족합니다! 필요: ₩${fmt(totalCost)}만`);
+        nextTurn();
+        updateUI();
+        return;
+    }
+
+    gameState.assets.cash -= totalCost;
+    gameState.assets.stocks += totalCost;
+
+    // 기존 보유 주식에 추가하거나 새로 생성
+    const existing = gameState.investments.find(inv => inv.type === 'stocks' && inv.name === randomStock);
+    if (existing) {
+        existing.shares += shares;
+        existing.cost += totalCost;
+    } else {
+        gameState.investments.push({
+            type: 'stocks',
+            name: randomStock,
+            cost: totalCost,
+            shares: shares,
+            pricePerShare: discountPrice,
+            monthlyIncome: 0
+        });
+    }
+
+    showNotification(`${randomStock} ${shares}주 유상증자 참여 완료!`, 'success');
+    nextTurn();
+    updateUI();
+}
+
+// 액면분할 적용
+function applyStockSplit(idx) {
+    const inv = gameState.investments[idx];
+    if (!inv) { hideEventModal(); nextTurn(); updateUI(); return; }
+
+    inv.shares *= 2;
+    inv.pricePerShare = inv.pricePerShare ? inv.pricePerShare / 2 : marketPrices[inv.name] / 2;
+
+    showNotification(`${inv.name} 액면분할! ${inv.shares}주로 증가`, 'success');
+    hideEventModal();
+    nextTurn();
+    updateUI();
+}
+
+// 특별배당 적용
+function applySpecialDividend(idx) {
+    const inv = gameState.investments[idx];
+    if (!inv) { hideEventModal(); nextTurn(); updateUI(); return; }
+
+    const dividend = Math.round(inv.cost * 0.05);
+    gameState.assets.cash += dividend;
+
+    showNotification(`${inv.name} 특별배당 +₩${fmt(dividend)}만!`, 'success');
+    hideEventModal();
+    nextTurn();
+    updateUI();
+}
+
+// 상장폐지 위기 적용
+function applyDelistRisk(idx) {
+    const inv = gameState.investments[idx];
+    if (!inv) { hideEventModal(); nextTurn(); updateUI(); return; }
+
+    const loss = Math.round(inv.cost * 0.5);
+    inv.cost -= loss;
+    gameState.assets.stocks -= loss;
+
+    showNotification(`${inv.name} 상장폐지 위기 -₩${fmt(loss)}만`, 'error');
+    hideEventModal();
+    nextTurn();
+    updateUI();
+}
+
+// 기관 대량매수 적용
+function applyInstitutionalBuy(idx) {
+    const inv = gameState.investments[idx];
+    if (!inv) { hideEventModal(); nextTurn(); updateUI(); return; }
+
+    const gain = Math.round(inv.cost * 0.25);
+    inv.cost += gain;
+    gameState.assets.stocks += gain;
+
+    showNotification(`${inv.name} 기관매수로 +₩${fmt(gain)}만!`, 'success');
+    hideEventModal();
+    nextTurn();
+    updateUI();
+}
+
+// 가상자산 이벤트
+function handleCryptoEvent() {
+    const cryptoEvents = [
+        { name: '🔥 하드포크', desc: '새로운 코인이 에어드랍됩니다!', type: 'airdrop', effect: '보유 코인 수량 +10%' },
+        { name: '🐋 고래 매도', desc: '대량 매도로 가격이 급락합니다!', type: 'dump', effect: '가상자산 가치 -20%' },
+        { name: '🚀 호재 발표', desc: '대형 호재로 가격이 급등합니다!', type: 'pump', effect: '가상자산 가치 +30%' },
+        { name: '💰 스테이킹 보너스', desc: '특별 스테이킹 이벤트!', type: 'stakingBonus', effect: '스테이킹 보상 2배 지급' }
+    ];
+
+    const event = cryptoEvents[Math.floor(Math.random() * cryptoEvents.length)];
+    const cryptoInvestments = gameState.investments.filter(inv => inv.type === 'crypto');
+
+    if (cryptoInvestments.length === 0) {
+        showEventModal(
+            '💎 가상자산 기회!',
+            `<p>가상자산 관련 이벤트가 발생했지만, 보유 중인 코인이 없습니다.</p>
+             <p class="mt-2 text-gray-400">투자 탭에서 가상자산을 매수해보세요!</p>`,
+            [
+                { text: '투자하러 가기', action: 'goToMarketTab();', primary: true },
+                { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
+            ]
+        );
+        return;
+    }
+
+    showEventModal(
+        event.name,
+        `<p class="text-lg">${event.desc}</p>
+         <p class="mt-2 p-2 bg-gray-800 rounded text-sm">${event.effect}</p>`,
+        [{ text: '확인', action: `applyCryptoEvent('${event.type}');`, primary: true }]
+    );
+}
+
+// 가상자산 이벤트 적용
+function applyCryptoEvent(type) {
+    const cryptoInvestments = gameState.investments.filter(inv => inv.type === 'crypto');
+
+    switch (type) {
+        case 'airdrop':
+            cryptoInvestments.forEach(inv => {
+                if (inv.amount) inv.amount *= 1.1;
+            });
+            showNotification('에어드랍으로 코인 +10%!', 'success');
+            break;
+        case 'dump':
+            cryptoInvestments.forEach(inv => {
+                inv.cost = Math.round(inv.cost * 0.8);
+            });
+            gameState.assets.crypto = Math.round(gameState.assets.crypto * 0.8);
+            showNotification('고래 매도로 가치 -20%', 'error');
+            break;
+        case 'pump':
+            cryptoInvestments.forEach(inv => {
+                inv.cost = Math.round(inv.cost * 1.3);
+            });
+            gameState.assets.crypto = Math.round(gameState.assets.crypto * 1.3);
+            showNotification('호재로 가치 +30%!', 'success');
+            break;
+        case 'stakingBonus':
+            const stakingInvs = cryptoInvestments.filter(inv => inv.isStaking);
+            if (stakingInvs.length > 0) {
+                stakingInvs.forEach(inv => {
+                    const bonus = inv.monthlyReward || 0;
+                    inv.amount += bonus;
+                });
+                showNotification('스테이킹 보너스 2배 지급!', 'success');
+            } else {
+                showNotification('스테이킹 중인 코인이 없습니다.', 'warning');
+            }
+            break;
+    }
+
+    hideEventModal();
+    nextTurn();
+    updateUI();
 }
 
 // Go to market tab function

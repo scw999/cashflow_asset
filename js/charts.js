@@ -257,15 +257,21 @@ function getPortfolioHTML() {
 
                             let stakingInfo = '';
                             if (i.isStaking) {
-                                const turnsStaked = turn - (i.stakingTurn || 0);
-                                const requiredTurns = i.lockupTurns || 1;
-                                const isLocked = turnsStaked < requiredTurns;
-                                stakingInfo = `
-                                    <div class="text-xs text-purple-400">월 보상: +${i.monthlyReward.toFixed(4)} ${i.baseName}</div>
-                                    <div class="text-xs ${isLocked ? 'text-yellow-400' : 'text-emerald-400'}">
-                                        ${isLocked ? `🔒 락업 중 (${turnsStaked}/${requiredTurns}턴)` : '🔓 매도 가능'}
-                                    </div>
-                                `;
+                                if (i.isUnlocking) {
+                                    const turnsSinceUnlock = turn - (i.unlockTurn || 0);
+                                    const isUnlocked = turnsSinceUnlock >= 1;
+                                    stakingInfo = `
+                                        <div class="text-xs text-orange-400">⏳ 스테이킹 해제 중...</div>
+                                        <div class="text-xs ${isUnlocked ? 'text-emerald-400' : 'text-yellow-400'}">
+                                            ${isUnlocked ? '✅ 언락 완료! 매도/보유 선택 가능' : `🔄 언락 진행 중 (${turnsSinceUnlock}/1턴)`}
+                                        </div>
+                                    `;
+                                } else {
+                                    stakingInfo = `
+                                        <div class="text-xs text-purple-400">월 보상: +${(i.monthlyReward || 0).toFixed(4)} ${i.baseName}</div>
+                                        <div class="text-xs text-emerald-400">🔒 스테이킹 중 (해제시 1턴 대기)</div>
+                                    `;
+                                }
                             }
 
                             const incomeInfo = i.monthlyIncome > 0

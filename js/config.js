@@ -28,6 +28,12 @@ const basePrices = {
     '리츠 ETF': 3.5,
     '채권 ETF': 11,
 
+    // 레버리지/인버스 ETF
+    'S&P500 2X ETF': 5,
+    '나스닥 3X ETF': 4,
+    'S&P500 인버스': 3.5,
+    '나스닥 인버스 2X': 2.5,
+
     // 원자재 ETF (만원/주)
     '금 ETF': 12,
     '은 ETF': 4.5,
@@ -111,6 +117,12 @@ const assetCharacteristics = {
     '고배당 ETF': { type: 'etf', volatility: 0.04, dividend: 0.04, beta: 0.7 },
     '리츠 ETF': { type: 'etf', volatility: 0.06, dividend: 0.05, beta: 0.8 },
     '채권 ETF': { type: 'bond', volatility: 0.02, dividend: 0.03, beta: -0.2 },
+
+    // 레버리지/인버스 ETF (고위험)
+    'S&P500 2X ETF': { type: 'leveraged', volatility: 0.10, dividend: 0.00, beta: 2.0, leverage: 2 },
+    '나스닥 3X ETF': { type: 'leveraged', volatility: 0.21, dividend: 0.00, beta: 3.6, leverage: 3 },
+    'S&P500 인버스': { type: 'inverse', volatility: 0.05, dividend: 0.00, beta: -1.0, leverage: -1 },
+    '나스닥 인버스 2X': { type: 'inverse', volatility: 0.14, dividend: 0.00, beta: -2.4, leverage: -2 },
 
     // 원자재
     '금 ETF': { type: 'commodity', volatility: 0.04, dividend: 0.00, beta: 0.0, safeHaven: true },
