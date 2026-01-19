@@ -672,12 +672,14 @@ function hideCelebrateModal() {
     document.getElementById('celebrateModal').classList.add('hidden');
 }
 
-// Hide opportunity modal
+// Hide opportunity modal (nextTurn 호출 포함)
 function hideOpportunityModal() {
     const modal = document.getElementById('opportunityModal');
     if (modal) {
         modal.classList.add('hidden');
     }
+    nextTurn();
+    updateUI();
 }
 
 // Repay debt
