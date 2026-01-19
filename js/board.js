@@ -417,9 +417,18 @@ function showRealEstateOpportunity() {
     const marketTrend = upCount > downCount ? '상승세' : (upCount < downCount ? '하락세' : '보합');
     const trendColor = upCount > downCount ? 'text-emerald-400' : (upCount < downCount ? 'text-red-400' : 'text-gray-400');
 
-    // 대형 부동산 기회 체크 (현금 1억 이상 보유 경험 + 40% 확률)
-    const hasLargeOpportunityAccess = typeof maxCashEverHeld !== 'undefined' && maxCashEverHeld >= 10000;
-    const showLargeOpportunity = hasLargeOpportunityAccess && Math.random() < 0.4;
+    // 대형 부동산 기회 체크
+    // 1. 현금 1억 이상 보유 경험 시 40% 확률
+    // 2. 현재 총 자산 1억 이상 시 35% 확률
+    const hasLargeOpportunityByCashHistory = typeof maxCashEverHeld !== 'undefined' && maxCashEverHeld >= 10000;
+    const hasLargeOpportunityByTotalAssets = getTotalAssets() >= 10000;
+
+    let showLargeOpportunity = false;
+    if (hasLargeOpportunityByCashHistory && Math.random() < 0.4) {
+        showLargeOpportunity = true;
+    } else if (hasLargeOpportunityByTotalAssets && Math.random() < 0.35) {
+        showLargeOpportunity = true;
+    }
 
     let opportunity;
     let isLargeOpportunity = false;
