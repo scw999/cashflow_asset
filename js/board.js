@@ -458,10 +458,20 @@ function showRealEstateOpportunity() {
                 <span class="text-xs text-gray-500 ml-2">(${upCount}개 상승, ${downCount}개 하락)</span>
             </div>
 
-            <div class="p-2 bg-purple-900/30 border border-purple-500/30 rounded-lg text-center text-sm">
-                <span class="text-purple-400">⚖️ 경매 카운트: </span>
-                <span class="font-bold ${getPlayer().auctionCount >= 3 ? 'text-emerald-400' : 'text-yellow-400'}">${getPlayer().auctionCount || 0} / 3</span>
-                <span class="text-xs text-gray-500 ml-1">${getPlayer().auctionCount >= 3 ? '(경매 가능!)' : `(${3 - (getPlayer().auctionCount || 0)}회 더 필요)`}</span>
+            <div class="p-2 bg-purple-900/30 border border-purple-500/30 rounded-lg text-sm space-y-1">
+                <div class="flex justify-between items-center">
+                    <span class="text-orange-400">🔥 급매 (20%↓):</span>
+                    <span class="font-bold ${getPlayer().urgentSaleCount >= 2 ? 'text-emerald-400' : 'text-yellow-400'}">${getPlayer().urgentSaleCount || 0} / 2</span>
+                </div>
+                <div class="flex justify-between items-center">
+                    <span class="text-purple-400">⚖️ 경매 (40%↓):</span>
+                    <span class="font-bold ${getPlayer().auctionCount >= 3 ? 'text-emerald-400' : 'text-yellow-400'}">${getPlayer().auctionCount || 0} / 3</span>
+                </div>
+                <div class="text-xs text-gray-500 text-center mt-1 pt-1 border-t border-gray-600">
+                    ${getPlayer().urgentSaleCount >= 2 || getPlayer().auctionCount >= 3
+                        ? '✨ 카운트 충족! 할인 기회 등장 확률 발생'
+                        : '카운트가 차면 할인 기회가 나타날 확률이 생깁니다'}
+                </div>
             </div>
 
             <div class="bg-gray-700/50 rounded-lg p-4 space-y-2">

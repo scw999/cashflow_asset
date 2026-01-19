@@ -75,7 +75,8 @@ function createPlayer() {
         childcareCost: 30,  // 직업별 양육비 (기본값 30만원)
         skipTurns: 0,
         doubleDice: 0,
-        auctionCount: 0      // 경매 칸 밟은 횟수 (3회 필요)
+        urgentSaleCount: 0,  // 급매 카운트 (2회 필요)
+        auctionCount: 0      // 경매 카운트 (3회 필요)
     };
 }
 

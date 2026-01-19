@@ -312,31 +312,125 @@ function handleOpportunity(space) {
     }
 }
 
-// 부동산 이벤트 핸들러 (통합 - 구매, 매수자, 경매)
+// 부동산 이벤트 핸들러 (통합 - 구매, 매수자, 급매, 경매)
 function handleRealEstateEvent() {
     const player = getPlayer();
     const realEstateInvestments = gameState.investments.filter(inv => inv.type === 'realEstate');
 
-    // 경매 카운트 증가 (발품 팔기)
+    // 급매/경매 카운트 증가 (발품 팔기)
+    player.urgentSaleCount = (player.urgentSaleCount || 0) + 1;
     player.auctionCount = (player.auctionCount || 0) + 1;
 
     // 이벤트 결정 (랜덤)
     const roll = Math.random() * 100;
 
-    // 경매 조건 충족 (3회) - 25% 확률로 경매 오퍼
-    if (player.auctionCount >= 3 && roll < 25) {
+    // 급매 조건 충족 (2회) - 25% 확률로 급매 오퍼
+    if (player.urgentSaleCount >= 2 && roll < 25) {
+        showUrgentSaleOpportunity();
+        return;
+    }
+
+    // 경매 조건 충족 (3회) - 20% 확률로 경매 오퍼
+    if (player.auctionCount >= 3 && roll < 45 && roll >= 25) {
         showAuctionOpportunity();
         return;
     }
 
-    // 매수자 등장 (부동산 보유 시) - 20% 확률
-    if (realEstateInvestments.length > 0 && roll < 45 && roll >= 25) {
+    // 매수자 등장 (부동산 보유 시) - 15% 확률
+    if (realEstateInvestments.length > 0 && roll < 60 && roll >= 45) {
         showBuyerOpportunity(realEstateInvestments);
         return;
     }
 
     // 기본: 구매 기회 (항상 나옴)
     showRealEstateOpportunity();
+}
+
+// 급매 기회 (20% 할인)
+function showUrgentSaleOpportunity() {
+    const player = getPlayer();
+    player.urgentSaleCount = 0;  // 카운트 리셋
+
+    updateRealEstatePrices();
+
+    const opportunity = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
+    const discountedCost = Math.round(opportunity.cost * 0.8);  // 20% 할인
+    const discountedDownPayment = Math.round(opportunity.downPayment * 0.8);
+
+    showEventModal(
+        '🔥 급매 기회!',
+        `<div class="space-y-4">
+            <div class="text-center">
+                <div class="text-3xl mb-2">🏠</div>
+                <h3 class="text-xl font-bold">${opportunity.name}</h3>
+                <p class="text-orange-400 font-bold">급매 20% 할인!</p>
+            </div>
+
+            <div class="bg-gray-700/50 rounded-lg p-4 space-y-2">
+                <div class="flex justify-between">
+                    <span>시세</span>
+                    <span class="line-through text-gray-500">₩${fmt(opportunity.cost)}만</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>급매가</span>
+                    <span class="font-bold text-orange-400">₩${fmt(discountedCost)}만</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>필요 계약금</span>
+                    <span class="font-bold text-yellow-400">₩${fmt(discountedDownPayment)}만</span>
+                </div>
+                <div class="flex justify-between">
+                    <span>예상 월 임대수익</span>
+                    <span class="font-bold text-emerald-400">₩${fmt(opportunity.monthlyIncome)}만</span>
+                </div>
+            </div>
+
+            <div class="text-sm text-gray-400">
+                보유 현금: ₩${fmt(gameState.assets.cash)}만
+                ${gameState.assets.cash < discountedDownPayment ? '<span class="text-red-400 ml-2">(계약금 부족)</span>' : ''}
+            </div>
+        </div>`,
+        gameState.assets.cash >= discountedDownPayment ? [
+            {
+                text: '급매 구매',
+                action: `buyUrgentSaleProperty(${JSON.stringify(opportunity).replace(/"/g, '&quot;')}, ${discountedCost}, ${discountedDownPayment});`,
+                primary: true,
+                color: 'green'
+            },
+            { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
+        ] : [
+            { text: '패스 (계약금 부족)', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }
+        ]
+    );
+}
+
+function buyUrgentSaleProperty(opportunity, discountedCost, discountedDownPayment) {
+    if (gameState.assets.cash < discountedDownPayment) {
+        alert('계약금이 부족합니다!');
+        return;
+    }
+
+    gameState.assets.cash -= discountedDownPayment;
+    gameState.assets.realEstate += discountedCost;
+    gameState.liabilities.mortgage += (discountedCost - discountedDownPayment);
+    gameState.income.rental += opportunity.monthlyIncome;
+
+    const monthlyLoanPayment = Math.round((discountedCost - discountedDownPayment) * 0.04 / 12);
+    gameState.expenses.loan += monthlyLoanPayment;
+
+    gameState.investments.push({
+        type: 'realEstate',
+        name: opportunity.name + ' (급매)',
+        cost: discountedCost,
+        downPayment: discountedDownPayment,
+        loan: discountedCost - discountedDownPayment,
+        monthlyIncome: opportunity.monthlyIncome
+    });
+
+    hideEventModal();
+    showNotification(`${opportunity.name} 급매 매입 완료! 20% 할인!`, 'success');
+    nextTurn();
+    updateUI();
 }
 
 // 경매 기회 (40% 할인, 주사위로 낙찰 성공/실패 결정)

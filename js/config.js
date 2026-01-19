@@ -289,13 +289,13 @@ const dreams = [
 
 // Real Estate Opportunities (기회 칸에서만 등장)
 const realEstateOpportunities = [
-    { name: '급매 원룸건물', cost: 12000, downPayment: 2400, monthlyIncome: 45, desc: '급하게 매물로 나온 원룸건물' },
-    { name: '경매 상가', cost: 25000, downPayment: 5000, monthlyIncome: 90, desc: '법원 경매로 나온 상가' },
+    { name: '원룸건물', cost: 12000, downPayment: 2400, monthlyIncome: 45, desc: '수익형 원룸건물' },
+    { name: '상가', cost: 25000, downPayment: 5000, monthlyIncome: 90, desc: '임대 수익 상가' },
     { name: '갭투자 아파트', cost: 40000, downPayment: 5000, monthlyIncome: 30, desc: '전세 끼고 매입하는 아파트' },
-    { name: '리모델링 오피스텔', cost: 8000, downPayment: 1600, monthlyIncome: 35, desc: '리모델링이 필요한 오피스텔' },
+    { name: '오피스텔', cost: 8000, downPayment: 1600, monthlyIncome: 35, desc: '역세권 오피스텔' },
     { name: '신축 빌라', cost: 15000, downPayment: 3000, monthlyIncome: 50, desc: '분양받은 신축 빌라' },
     { name: '상업용 건물', cost: 50000, downPayment: 10000, monthlyIncome: 150, desc: '유동인구 많은 지역의 상업용 건물' },
-    { name: '오래된 다가구', cost: 20000, downPayment: 4000, monthlyIncome: 70, desc: '재건축 기대되는 다가구 주택' },
+    { name: '다가구 주택', cost: 20000, downPayment: 4000, monthlyIncome: 70, desc: '재건축 기대되는 다가구 주택' },
     { name: '지방 아파트', cost: 10000, downPayment: 2000, monthlyIncome: 25, desc: '지방 소도시의 저렴한 아파트' }
 ];
 
