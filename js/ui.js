@@ -12,6 +12,7 @@ function updateUI() {
     document.getElementById('dashDebt').textContent = `₩${fmt(getTotalLiabilities())}만`;
     document.getElementById('dashNetWorth').textContent = `₩${fmt(getTotalAssets() - getTotalLiabilities())}만`;
     document.getElementById('dashCashflow').textContent = `₩${fmt(getCashflow())}만`;
+    document.getElementById('dashInterestRate').textContent = `${interestRate.toFixed(1)}%`;
 
     // Income statement
     const totalIncome = Object.values(gameState.income).reduce((a, b) => a + b, 0);

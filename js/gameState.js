@@ -587,6 +587,7 @@ function nextTurn() {
     }
     document.getElementById('turnCount').textContent = turn;
     updateCurrentPlayerDisplay();
+    drawBoard();  // 보드 다시 그려서 현재 플레이어 위치 표시
 }
 
 // Check if player can escape rat race

@@ -305,6 +305,20 @@ const stakingRates = {
     '솔라나': 0.08     // 연 8%
 };
 
+// 금리 설정 (연이율)
+let interestRate = 4.0;  // 기준금리 4%
+const MORTGAGE_RATE_SPREAD = 1.0;  // 주택담보대출 스프레드
+const CREDIT_RATE_SPREAD = 4.0;   // 신용대출 스프레드
+
+// 금리 계산 함수
+function getMortgageRate() {
+    return interestRate + MORTGAGE_RATE_SPREAD;
+}
+
+function getCreditRate() {
+    return interestRate + CREDIT_RATE_SPREAD;
+}
+
 // 주사위 쿨다운 상태
 let diceRolling = false;
 

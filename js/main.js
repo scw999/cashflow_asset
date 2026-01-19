@@ -240,6 +240,69 @@ function handleSpaceLanding(space) {
 
 // Payday handler
 function handlePayday() {
+    const player = getPlayer();
+
+    // 패스트트랙: 자동으로 캐시플로우 지급
+    if (gameState.inFastTrack) {
+        processPaydayAutomatic();
+        return;
+    }
+
+    // 쥐 레이스: 월급 버튼 클릭 필요
+    const cashflow = getCashflow();
+    const stakingRewards = processStakingRewards();
+
+    let stakingMessage = '';
+    if (stakingRewards.length > 0) {
+        stakingMessage = `<div class="mt-3 text-sm text-purple-400">
+            <div class="font-bold">스테이킹 보상:</div>
+            ${stakingRewards.map(r =>
+                `<div>+${r.reward.toFixed(4)} ${r.name} (₩${fmt(Math.round(r.value))}만)</div>`
+            ).join('')}
+        </div>`;
+    }
+
+    showEventModal(
+        '💰 월급날!',
+        `<div class="space-y-3">
+            <p class="text-lg text-center">월급날입니다!</p>
+            <div class="p-4 bg-gray-800 rounded-lg">
+                <div class="flex justify-between mb-2">
+                    <span>총 소득</span>
+                    <span class="text-emerald-400">+₩${fmt(Object.values(gameState.income).reduce((a,b)=>a+b,0))}만</span>
+                </div>
+                <div class="flex justify-between mb-2">
+                    <span>총 지출</span>
+                    <span class="text-red-400">-₩${fmt(getTotalExpenses())}만</span>
+                </div>
+                <div class="border-t border-gray-600 my-2"></div>
+                <div class="flex justify-between font-bold">
+                    <span>캐시플로우</span>
+                    <span class="${cashflow >= 0 ? 'text-emerald-400' : 'text-red-400'}">₩${fmt(cashflow)}만</span>
+                </div>
+            </div>
+            ${stakingMessage}
+            <p class="text-sm text-gray-400 text-center">현재 현금: ₩${fmt(gameState.assets.cash)}만</p>
+        </div>`,
+        [
+            { text: '💵 월급 받기', action: 'collectPayday();', primary: true, color: 'green' }
+        ]
+    );
+}
+
+// 월급 수령 (쥐 레이스)
+function collectPayday() {
+    const cashflow = getCashflow();
+    gameState.assets.cash += cashflow;
+
+    hideEventModal();
+    showNotification(`월급 수령! 캐시플로우 ${cashflow >= 0 ? '+' : ''}₩${fmt(cashflow)}만`, cashflow >= 0 ? 'success' : 'warning');
+    nextTurn();
+    updateUI();
+}
+
+// 자동 월급 처리 (패스트트랙)
+function processPaydayAutomatic() {
     const cashflow = getCashflow();
 
     // Process staking rewards
@@ -258,26 +321,23 @@ function handlePayday() {
     }
 
     // Fast track passive income check
-    let fastTrackInfo = '';
-    if (gameState.inFastTrack) {
-        const passiveIncome = getPassiveIncome();
-        const progress = Math.min(100, (passiveIncome / FAST_TRACK_WIN_PASSIVE) * 100).toFixed(1);
-        fastTrackInfo = `
-            <div class="mt-3 p-3 bg-purple-900/30 rounded-lg">
-                <div class="text-sm text-purple-400">🏆 승리 조건 진행도</div>
-                <div class="flex justify-between mt-1">
-                    <span>월 패시브 소득</span>
-                    <span class="text-emerald-400">₩${fmt(passiveIncome)}만 / ₩${fmt(FAST_TRACK_WIN_PASSIVE)}만</span>
-                </div>
-                <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
-                    <div class="h-full bg-gradient-to-r from-purple-500 to-yellow-400 rounded-full" style="width: ${progress}%"></div>
-                </div>
+    const passiveIncome = getPassiveIncome();
+    const progress = Math.min(100, (passiveIncome / FAST_TRACK_WIN_PASSIVE) * 100).toFixed(1);
+    const fastTrackInfo = `
+        <div class="mt-3 p-3 bg-purple-900/30 rounded-lg">
+            <div class="text-sm text-purple-400">🏆 승리 조건 진행도</div>
+            <div class="flex justify-between mt-1">
+                <span>월 패시브 소득</span>
+                <span class="text-emerald-400">₩${fmt(passiveIncome)}만 / ₩${fmt(FAST_TRACK_WIN_PASSIVE)}만</span>
             </div>
-        `;
-    }
+            <div class="w-full bg-gray-700 rounded-full h-2 mt-2">
+                <div class="h-full bg-gradient-to-r from-purple-500 to-yellow-400 rounded-full" style="width: ${progress}%"></div>
+            </div>
+        </div>
+    `;
 
     showEventModal(
-        '💰 월급날!',
+        '💰 현금 정산! (자동)',
         `<p class="text-lg">캐시플로우: <span class="${cashflow >= 0 ? 'text-emerald-400' : 'text-red-400'} font-bold">₩${fmt(cashflow)}만</span></p>
          <p class="mt-2 text-gray-400">현금: ₩${fmt(gameState.assets.cash)}만</p>
          ${stakingMessage}
