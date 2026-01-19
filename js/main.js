@@ -406,6 +406,27 @@ function handleRealEstateEvent() {
     showRealEstateOpportunity();
 }
 
+// 실제 매도 가능한 자산 가치 계산
+function getSellableAssetValue(assetType) {
+    const investments = gameState.investments.filter(inv => inv.type === assetType);
+    if (investments.length === 0) return 0;
+
+    if (assetType === 'stocks') {
+        return investments.reduce((sum, inv) => {
+            const currentPrice = marketPrices[inv.name] || inv.pricePerShare || 0;
+            return sum + (inv.shares || 0) * currentPrice;
+        }, 0);
+    } else if (assetType === 'crypto') {
+        return investments.reduce((sum, inv) => {
+            if (inv.isStable) return sum + (inv.amount || 0);
+            const priceName = inv.baseName || inv.name;
+            const currentPrice = marketPrices[priceName] || inv.pricePerUnit || 0;
+            return sum + (inv.amount || 0) * currentPrice;
+        }, 0);
+    }
+    return 0;
+}
+
 // 급매 기회 (20% 할인)
 function showUrgentSaleOpportunity() {
     const player = getPlayer();
@@ -417,20 +438,24 @@ function showUrgentSaleOpportunity() {
     const discountedCost = Math.round(opportunity.cost * 0.8);  // 20% 할인
     const discountedDownPayment = Math.round(opportunity.downPayment * 0.8);
 
+    // 실제 매도 가능한 자산 확인
+    const stockValue = getSellableAssetValue('stocks');
+    const cryptoValue = getSellableAssetValue('crypto');
+
     // 자산 매도 HTML 생성
-    const assetSellHtml = gameState.assets.cash < discountedDownPayment && (gameState.assets.stocks > 0 || gameState.assets.crypto > 0) ? `
+    const assetSellHtml = gameState.assets.cash < discountedDownPayment && (stockValue > 0 || cryptoValue > 0) ? `
         <div class="p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg">
             <p class="text-blue-400 text-sm font-bold mb-2">💼 자산 매도로 현금 마련</p>
             <div class="space-y-2 text-sm">
-                ${gameState.assets.stocks > 0 ? `
+                ${stockValue > 0 ? `
                 <div class="flex justify-between items-center">
-                    <span>📈 주식/ETF: ₩${fmt(gameState.assets.stocks)}만</span>
+                    <span>📈 주식/ETF: ₩${fmt(Math.round(stockValue))}만</span>
                     <button onclick="sellPortfolioForUrgentSale('stocks', ${discountedDownPayment}, '${JSON.stringify(opportunity).replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${discountedCost})"
                         class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">매도</button>
                 </div>` : ''}
-                ${gameState.assets.crypto > 0 ? `
+                ${cryptoValue > 0 ? `
                 <div class="flex justify-between items-center">
-                    <span>💎 가상자산: ₩${fmt(gameState.assets.crypto)}만</span>
+                    <span>💎 가상자산: ₩${fmt(Math.round(cryptoValue))}만</span>
                     <button onclick="sellPortfolioForUrgentSale('crypto', ${discountedDownPayment}, '${JSON.stringify(opportunity).replace(/'/g, "\\'").replace(/"/g, '&quot;')}', ${discountedCost})"
                         class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs">매도</button>
                 </div>` : ''}
@@ -491,18 +516,54 @@ function sellPortfolioForUrgentSale(assetType, neededAmount, opportunityJson, di
     const opportunity = JSON.parse(opportunityJson.replace(/&quot;/g, '"'));
     const shortage = neededAmount - gameState.assets.cash;
 
-    if (assetType === 'stocks' && gameState.assets.stocks > 0) {
-        const sellAmount = Math.min(gameState.assets.stocks, shortage + 100);
+    if (assetType === 'stocks') {
+        const stockInvestments = gameState.investments.filter(inv => inv.type === 'stocks' && inv.shares > 0);
+        if (stockInvestments.length === 0) {
+            showNotification('매도할 주식이 없습니다.', 'warning');
+            return;
+        }
+        const stockValue = getSellableAssetValue('stocks');
+        const sellAmount = Math.min(stockValue, shortage + 100);
+        const sellRatio = sellAmount / stockValue;
+
         gameState.assets.cash += sellAmount;
         gameState.assets.stocks -= sellAmount;
-        gameState.investments = gameState.investments.filter(inv => inv.type !== 'stocks' || inv.cost > sellAmount);
-        showNotification(`주식 ₩${fmt(sellAmount)}만 매도 완료!`, 'success');
-    } else if (assetType === 'crypto' && gameState.assets.crypto > 0) {
-        const sellAmount = Math.min(gameState.assets.crypto, shortage + 100);
+
+        // 투자 기록 업데이트
+        stockInvestments.forEach(inv => {
+            const sellShares = Math.floor(inv.shares * sellRatio);
+            inv.shares -= sellShares;
+            inv.cost = Math.round(inv.cost * (1 - sellRatio));
+            if (inv.monthlyIncome) {
+                const reducedIncome = Math.round(inv.monthlyIncome * sellRatio);
+                gameState.income.dividend -= reducedIncome;
+                inv.monthlyIncome -= reducedIncome;
+            }
+        });
+        gameState.investments = gameState.investments.filter(inv => inv.type !== 'stocks' || inv.shares > 0);
+        showNotification(`주식 ₩${fmt(Math.round(sellAmount))}만 매도 완료!`, 'success');
+    } else if (assetType === 'crypto') {
+        const cryptoInvestments = gameState.investments.filter(inv => inv.type === 'crypto' && (inv.amount > 0 || inv.cost > 0));
+        if (cryptoInvestments.length === 0) {
+            showNotification('매도할 가상자산이 없습니다.', 'warning');
+            return;
+        }
+        const cryptoValue = getSellableAssetValue('crypto');
+        const sellAmount = Math.min(cryptoValue, shortage + 100);
+        const sellRatio = sellAmount / cryptoValue;
+
         gameState.assets.cash += sellAmount;
         gameState.assets.crypto -= sellAmount;
-        gameState.investments = gameState.investments.filter(inv => inv.type !== 'crypto' || inv.cost > sellAmount);
-        showNotification(`가상자산 ₩${fmt(sellAmount)}만 매도 완료!`, 'success');
+
+        // 투자 기록 업데이트
+        cryptoInvestments.forEach(inv => {
+            if (inv.amount) {
+                inv.amount = Math.round(inv.amount * (1 - sellRatio) * 10000) / 10000;
+            }
+            inv.cost = Math.round(inv.cost * (1 - sellRatio));
+        });
+        gameState.investments = gameState.investments.filter(inv => inv.type !== 'crypto' || inv.cost > 0);
+        showNotification(`가상자산 ₩${fmt(Math.round(sellAmount))}만 매도 완료!`, 'success');
     }
 
     updateUI();
@@ -587,20 +648,24 @@ function showAuctionOpportunity() {
         discountedDownPayment: discountedDownPayment
     };
 
+    // 실제 매도 가능한 자산 확인
+    const stockValue = getSellableAssetValue('stocks');
+    const cryptoValue = getSellableAssetValue('crypto');
+
     // 자산 매도 HTML 생성
-    const assetSellHtml = gameState.assets.cash < discountedDownPayment && (gameState.assets.stocks > 0 || gameState.assets.crypto > 0) ? `
+    const assetSellHtml = gameState.assets.cash < discountedDownPayment && (stockValue > 0 || cryptoValue > 0) ? `
         <div class="p-3 bg-blue-900/30 border border-blue-500/30 rounded-lg">
             <p class="text-blue-400 text-sm font-bold mb-2">💼 자산 매도로 현금 마련</p>
             <div class="space-y-2 text-sm">
-                ${gameState.assets.stocks > 0 ? `
+                ${stockValue > 0 ? `
                 <div class="flex justify-between items-center">
-                    <span>📈 주식/ETF: ₩${fmt(gameState.assets.stocks)}만</span>
+                    <span>📈 주식/ETF: ₩${fmt(Math.round(stockValue))}만</span>
                     <button onclick="sellPortfolioForAuction('stocks', ${discountedDownPayment})"
                         class="px-3 py-1 bg-blue-600 hover:bg-blue-700 rounded text-xs">매도</button>
                 </div>` : ''}
-                ${gameState.assets.crypto > 0 ? `
+                ${cryptoValue > 0 ? `
                 <div class="flex justify-between items-center">
-                    <span>💎 가상자산: ₩${fmt(gameState.assets.crypto)}만</span>
+                    <span>💎 가상자산: ₩${fmt(Math.round(cryptoValue))}만</span>
                     <button onclick="sellPortfolioForAuction('crypto', ${discountedDownPayment})"
                         class="px-3 py-1 bg-purple-600 hover:bg-purple-700 rounded text-xs">매도</button>
                 </div>` : ''}
@@ -666,18 +731,52 @@ function showAuctionOpportunity() {
 function sellPortfolioForAuction(assetType, neededAmount) {
     const shortage = neededAmount - gameState.assets.cash;
 
-    if (assetType === 'stocks' && gameState.assets.stocks > 0) {
-        const sellAmount = Math.min(gameState.assets.stocks, shortage + 100);
+    if (assetType === 'stocks') {
+        const stockInvestments = gameState.investments.filter(inv => inv.type === 'stocks' && inv.shares > 0);
+        if (stockInvestments.length === 0) {
+            showNotification('매도할 주식이 없습니다.', 'warning');
+            return;
+        }
+        const stockValue = getSellableAssetValue('stocks');
+        const sellAmount = Math.min(stockValue, shortage + 100);
+        const sellRatio = sellAmount / stockValue;
+
         gameState.assets.cash += sellAmount;
         gameState.assets.stocks -= sellAmount;
-        gameState.investments = gameState.investments.filter(inv => inv.type !== 'stocks' || inv.cost > sellAmount);
-        showNotification(`주식 ₩${fmt(sellAmount)}만 매도 완료!`, 'success');
-    } else if (assetType === 'crypto' && gameState.assets.crypto > 0) {
-        const sellAmount = Math.min(gameState.assets.crypto, shortage + 100);
+
+        stockInvestments.forEach(inv => {
+            const sellShares = Math.floor(inv.shares * sellRatio);
+            inv.shares -= sellShares;
+            inv.cost = Math.round(inv.cost * (1 - sellRatio));
+            if (inv.monthlyIncome) {
+                const reducedIncome = Math.round(inv.monthlyIncome * sellRatio);
+                gameState.income.dividend -= reducedIncome;
+                inv.monthlyIncome -= reducedIncome;
+            }
+        });
+        gameState.investments = gameState.investments.filter(inv => inv.type !== 'stocks' || inv.shares > 0);
+        showNotification(`주식 ₩${fmt(Math.round(sellAmount))}만 매도 완료!`, 'success');
+    } else if (assetType === 'crypto') {
+        const cryptoInvestments = gameState.investments.filter(inv => inv.type === 'crypto' && (inv.amount > 0 || inv.cost > 0));
+        if (cryptoInvestments.length === 0) {
+            showNotification('매도할 가상자산이 없습니다.', 'warning');
+            return;
+        }
+        const cryptoValue = getSellableAssetValue('crypto');
+        const sellAmount = Math.min(cryptoValue, shortage + 100);
+        const sellRatio = sellAmount / cryptoValue;
+
         gameState.assets.cash += sellAmount;
         gameState.assets.crypto -= sellAmount;
-        gameState.investments = gameState.investments.filter(inv => inv.type !== 'crypto' || inv.cost > sellAmount);
-        showNotification(`가상자산 ₩${fmt(sellAmount)}만 매도 완료!`, 'success');
+
+        cryptoInvestments.forEach(inv => {
+            if (inv.amount) {
+                inv.amount = Math.round(inv.amount * (1 - sellRatio) * 10000) / 10000;
+            }
+            inv.cost = Math.round(inv.cost * (1 - sellRatio));
+        });
+        gameState.investments = gameState.investments.filter(inv => inv.type !== 'crypto' || inv.cost > 0);
+        showNotification(`가상자산 ₩${fmt(Math.round(sellAmount))}만 매도 완료!`, 'success');
     }
 
     updateUI();
