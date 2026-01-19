@@ -226,11 +226,17 @@ function findPassedPaydays(oldPos, newPos, roll, spaces) {
     return passedPaydays;
 }
 
+// 지나간 월급칸에서 콜백 저장용
+let passedPaydayCallback = null;
+
 // 지나간 월급칸 모달 표시
 function showPassedPaydayModal(paydayCount, onComplete) {
     const cashflow = getCashflow();
     const totalPayday = cashflow * paydayCount;
     const stakingRewards = processStakingRewards();
+
+    // 콜백 저장
+    passedPaydayCallback = onComplete;
 
     let stakingMessage = '';
     if (stakingRewards.length > 0) {
@@ -262,21 +268,29 @@ function showPassedPaydayModal(paydayCount, onComplete) {
         [
             {
                 text: `월급 받기 (${totalPayday >= 0 ? '+' : ''}₩${fmt(totalPayday)}만)`,
-                action: () => {
-                    gameState.assets.cash += totalPayday;
-                    if (totalPayday >= 0) {
-                        showNotification(`월급 +₩${fmt(totalPayday)}만 받았습니다!`, 'success');
-                    } else {
-                        showNotification(`지출 ₩${fmt(Math.abs(totalPayday))}만`, 'warning');
-                    }
-                    updateUI();
-                    hideEventModal();
-                    onComplete();
-                },
+                action: `collectPassedPayday(${totalPayday})`,
                 primary: true
             }
         ]
     );
+}
+
+// 지나간 월급칸 수금 처리
+function collectPassedPayday(totalPayday) {
+    gameState.assets.cash += totalPayday;
+    if (totalPayday >= 0) {
+        showNotification(`월급 +₩${fmt(totalPayday)}만 받았습니다!`, 'success');
+    } else {
+        showNotification(`지출 ₩${fmt(Math.abs(totalPayday))}만`, 'warning');
+    }
+    updateUI();
+    hideEventModal();
+
+    // 저장된 콜백 실행 (착지 처리)
+    if (passedPaydayCallback) {
+        passedPaydayCallback();
+        passedPaydayCallback = null;
+    }
 }
 
 // Handle landing on a space
