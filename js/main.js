@@ -312,32 +312,25 @@ function handleOpportunity(space) {
     }
 }
 
-// 부동산 이벤트 핸들러 (통합 - 구매, 매수자, 급매, 경매)
+// 부동산 이벤트 핸들러 (통합 - 구매, 매수자, 경매)
 function handleRealEstateEvent() {
     const player = getPlayer();
     const realEstateInvestments = gameState.investments.filter(inv => inv.type === 'realEstate');
 
-    // 급매/경매 카운트 증가 (발품 팔기)
-    player.urgentSaleCount = (player.urgentSaleCount || 0) + 1;
+    // 경매 카운트 증가 (발품 팔기)
     player.auctionCount = (player.auctionCount || 0) + 1;
 
     // 이벤트 결정 (랜덤)
     const roll = Math.random() * 100;
 
-    // 급매 조건 충족 (2회) - 20% 확률로 급매 오퍼
-    if (player.urgentSaleCount >= 2 && roll < 20) {
-        showUrgentSaleOpportunity();
-        return;
-    }
-
-    // 경매 조건 충족 (3회) - 15% 확률로 경매 오퍼
-    if (player.auctionCount >= 3 && roll < 35 && roll >= 20) {
+    // 경매 조건 충족 (3회) - 25% 확률로 경매 오퍼
+    if (player.auctionCount >= 3 && roll < 25) {
         showAuctionOpportunity();
         return;
     }
 
     // 매수자 등장 (부동산 보유 시) - 20% 확률
-    if (realEstateInvestments.length > 0 && roll < 55 && roll >= 35) {
+    if (realEstateInvestments.length > 0 && roll < 45 && roll >= 25) {
         showBuyerOpportunity(realEstateInvestments);
         return;
     }
@@ -346,91 +339,7 @@ function handleRealEstateEvent() {
     showRealEstateOpportunity();
 }
 
-// 급매 기회 (20% 할인)
-function showUrgentSaleOpportunity() {
-    const player = getPlayer();
-    player.urgentSaleCount = 0;  // 카운트 리셋
-
-    // 부동산 시세 업데이트
-    updateRealEstatePrices();
-
-    const opportunity = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
-    const discountedCost = Math.round(opportunity.cost * 0.8);
-    const discountedDownPayment = Math.round(opportunity.downPayment * 0.8);
-
-    showEventModal(
-        '🔥 급매 낙찰!',
-        `<div class="space-y-4">
-            <div class="text-center">
-                <div class="text-3xl mb-2">🏠</div>
-                <h3 class="text-xl font-bold">${opportunity.name}</h3>
-                <p class="text-emerald-400 font-bold">급매 20% 할인!</p>
-            </div>
-
-            <div class="bg-gray-700/50 rounded-lg p-4 space-y-2">
-                <div class="flex justify-between">
-                    <span>시세</span>
-                    <span class="line-through text-gray-500">₩${fmt(opportunity.cost)}만</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>급매가</span>
-                    <span class="font-bold text-emerald-400">₩${fmt(discountedCost)}만</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>필요 계약금</span>
-                    <span class="font-bold text-yellow-400">₩${fmt(discountedDownPayment)}만</span>
-                </div>
-                <div class="flex justify-between">
-                    <span>예상 월 임대수익</span>
-                    <span class="font-bold text-emerald-400">₩${fmt(opportunity.monthlyIncome)}만</span>
-                </div>
-            </div>
-
-            <div class="text-sm text-gray-400">
-                보유 현금: ₩${fmt(gameState.assets.cash)}만
-            </div>
-        </div>`,
-        [
-            {
-                text: '급매 구매',
-                action: `buyUrgentSaleProperty(${JSON.stringify(opportunity).replace(/"/g, '&quot;')}, ${discountedCost}, ${discountedDownPayment});`,
-                primary: gameState.assets.cash >= discountedDownPayment
-            },
-            { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
-        ]
-    );
-}
-
-function buyUrgentSaleProperty(opportunity, discountedCost, discountedDownPayment) {
-    if (gameState.assets.cash < discountedDownPayment) {
-        alert('계약금이 부족합니다!');
-        return;
-    }
-
-    gameState.assets.cash -= discountedDownPayment;
-    gameState.assets.realEstate += discountedCost;
-    gameState.liabilities.mortgage += (discountedCost - discountedDownPayment);
-    gameState.income.rental += opportunity.monthlyIncome;
-
-    const monthlyLoanPayment = Math.round((discountedCost - discountedDownPayment) * 0.04 / 12);
-    gameState.expenses.loan += monthlyLoanPayment;
-
-    gameState.investments.push({
-        type: 'realEstate',
-        name: opportunity.name + ' (급매)',
-        cost: discountedCost,
-        downPayment: discountedDownPayment,
-        loan: discountedCost - discountedDownPayment,
-        monthlyIncome: opportunity.monthlyIncome
-    });
-
-    hideEventModal();
-    showNotification(`${opportunity.name} 급매 매입 완료! 20% 할인!`, 'success');
-    nextTurn();
-    updateUI();
-}
-
-// 경매 기회 (30% 할인)
+// 경매 기회 (40% 할인, 주사위로 낙찰 성공/실패 결정)
 function showAuctionOpportunity() {
     const player = getPlayer();
     player.auctionCount = 0;  // 카운트 리셋
@@ -438,16 +347,23 @@ function showAuctionOpportunity() {
     updateRealEstatePrices();
 
     const opportunity = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
-    const discountedCost = Math.round(opportunity.cost * 0.7);
-    const discountedDownPayment = Math.round(opportunity.downPayment * 0.7);
+    const discountedCost = Math.round(opportunity.cost * 0.6);  // 40% 할인
+    const discountedDownPayment = Math.round(opportunity.downPayment * 0.6);
+
+    // 경매 정보를 전역으로 저장
+    window.currentAuctionOpportunity = {
+        opportunity: opportunity,
+        discountedCost: discountedCost,
+        discountedDownPayment: discountedDownPayment
+    };
 
     showEventModal(
-        '⚖️ 경매 낙찰!',
+        '⚖️ 경매 기회!',
         `<div class="space-y-4">
             <div class="text-center">
                 <div class="text-3xl mb-2">🏛️</div>
                 <h3 class="text-xl font-bold">${opportunity.name}</h3>
-                <p class="text-cyan-400 font-bold">경매 30% 할인!</p>
+                <p class="text-emerald-400 font-bold">경매 40% 할인!</p>
             </div>
 
             <div class="bg-gray-700/50 rounded-lg p-4 space-y-2">
@@ -456,8 +372,8 @@ function showAuctionOpportunity() {
                     <span class="line-through text-gray-500">₩${fmt(opportunity.cost)}만</span>
                 </div>
                 <div class="flex justify-between">
-                    <span>낙찰가</span>
-                    <span class="font-bold text-cyan-400">₩${fmt(discountedCost)}만</span>
+                    <span>경매가</span>
+                    <span class="font-bold text-emerald-400">₩${fmt(discountedCost)}만</span>
                 </div>
                 <div class="flex justify-between">
                     <span>필요 보증금</span>
@@ -469,22 +385,105 @@ function showAuctionOpportunity() {
                 </div>
             </div>
 
+            <div class="p-3 bg-orange-900/30 border border-orange-500/50 rounded-lg">
+                <p class="text-orange-400 text-sm font-bold">⚠️ 경매 주의사항</p>
+                <p class="text-orange-300 text-xs mt-1">주사위를 굴려 4 이상이면 낙찰 성공!</p>
+                <p class="text-orange-300 text-xs">3 이하면 낙찰 실패 (다른 입찰자에게 넘어감)</p>
+            </div>
+
             <div class="text-sm text-gray-400">
                 보유 현금: ₩${fmt(gameState.assets.cash)}만
             </div>
         </div>`,
         [
             {
-                text: '낙찰받기',
-                action: `buyAuctionProperty(${JSON.stringify(opportunity).replace(/"/g, '&quot;')}, ${discountedCost}, ${discountedDownPayment});`,
-                primary: gameState.assets.cash >= discountedDownPayment
+                text: '🎲 경매 참여',
+                action: `rollForAuction();`,
+                primary: gameState.assets.cash >= discountedDownPayment,
+                color: 'green'
             },
             { text: '패스', action: 'hideEventModal(); nextTurn(); updateUI();' }
         ]
     );
 }
 
-function buyAuctionProperty(opportunity, discountedCost, discountedDownPayment) {
+// 경매 주사위 굴리기
+function rollForAuction() {
+    const auctionData = window.currentAuctionOpportunity;
+    if (!auctionData) {
+        hideEventModal();
+        nextTurn();
+        updateUI();
+        return;
+    }
+
+    const { opportunity, discountedCost, discountedDownPayment } = auctionData;
+
+    // 주사위 굴리기
+    const diceRoll = Math.floor(Math.random() * 6) + 1;
+    const isSuccess = diceRoll >= 4;
+
+    if (isSuccess) {
+        // 낙찰 성공!
+        showEventModal(
+            '🎉 경매 낙찰 성공!',
+            `<div class="space-y-4">
+                <div class="text-center">
+                    <div class="text-6xl mb-4">🎲</div>
+                    <div class="text-4xl font-bold text-emerald-400 mb-2">${diceRoll}</div>
+                    <p class="text-emerald-400 font-bold text-xl">낙찰 성공!</p>
+                </div>
+
+                <div class="bg-emerald-900/30 border border-emerald-500/50 rounded-lg p-4">
+                    <p class="text-center text-emerald-400">🏠 ${opportunity.name}</p>
+                    <p class="text-center text-lg font-bold text-yellow-400">₩${fmt(discountedCost)}만에 낙찰!</p>
+                </div>
+            </div>`,
+            [
+                {
+                    text: '경매 구매',
+                    action: `completeAuctionPurchase();`,
+                    primary: true,
+                    color: 'green'
+                }
+            ]
+        );
+    } else {
+        // 낙찰 실패
+        showEventModal(
+            '😢 경매 낙찰 실패',
+            `<div class="space-y-4">
+                <div class="text-center">
+                    <div class="text-6xl mb-4">🎲</div>
+                    <div class="text-4xl font-bold text-red-400 mb-2">${diceRoll}</div>
+                    <p class="text-red-400 font-bold text-xl">낙찰 실패...</p>
+                </div>
+
+                <div class="bg-red-900/30 border border-red-500/50 rounded-lg p-4">
+                    <p class="text-center text-red-300">다른 입찰자가 더 높은 가격을 제시했습니다.</p>
+                    <p class="text-center text-gray-400 text-sm mt-2">4 이상이 필요했습니다.</p>
+                </div>
+            </div>`,
+            [
+                { text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }
+            ]
+        );
+        window.currentAuctionOpportunity = null;
+    }
+}
+
+// 경매 구매 완료
+function completeAuctionPurchase() {
+    const auctionData = window.currentAuctionOpportunity;
+    if (!auctionData) {
+        hideEventModal();
+        nextTurn();
+        updateUI();
+        return;
+    }
+
+    const { opportunity, discountedCost, discountedDownPayment } = auctionData;
+
     if (gameState.assets.cash < discountedDownPayment) {
         alert('보증금이 부족합니다!');
         return;
@@ -507,8 +506,9 @@ function buyAuctionProperty(opportunity, discountedCost, discountedDownPayment) 
         monthlyIncome: opportunity.monthlyIncome
     });
 
+    window.currentAuctionOpportunity = null;
     hideEventModal();
-    showNotification(`${opportunity.name} 경매 낙찰! 30% 할인!`, 'success');
+    showNotification(`${opportunity.name} 경매 낙찰! 40% 할인!`, 'success');
     nextTurn();
     updateUI();
 }
@@ -1252,12 +1252,20 @@ function showEventModal(title, content, actions) {
 
     titleEl.textContent = title;
     contentEl.innerHTML = content;
-    actionsEl.innerHTML = actions.map(a =>
-        `<button onclick="${a.action}"
-            class="px-4 py-2 rounded-lg font-bold ${a.primary ? 'bg-emerald-600 hover:bg-emerald-700' : 'bg-gray-600 hover:bg-gray-700'}">
+    actionsEl.innerHTML = actions.map(a => {
+        let btnClass = 'bg-gray-600 hover:bg-gray-700';
+        if (a.primary) {
+            if (a.color === 'green') {
+                btnClass = 'bg-green-600 hover:bg-green-700';
+            } else {
+                btnClass = 'bg-emerald-600 hover:bg-emerald-700';
+            }
+        }
+        return `<button onclick="${a.action}"
+            class="px-4 py-2 rounded-lg font-bold ${btnClass}">
             ${a.text}
-        </button>`
-    ).join('');
+        </button>`;
+    }).join('');
 
     modal.classList.remove('hidden');
 }

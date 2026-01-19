@@ -26,7 +26,6 @@ function saveGame() {
             childcareCost: p.childcareCost,
             skipTurns: p.skipTurns,
             doubleDice: p.doubleDice,
-            urgentSaleCount: p.urgentSaleCount,
             auctionCount: p.auctionCount
         })),
         marketPrices: { ...marketPrices },
@@ -83,7 +82,6 @@ function loadGame() {
             childcareCost: p.childcareCost || 30,
             skipTurns: p.skipTurns || 0,
             doubleDice: p.doubleDice || 0,
-            urgentSaleCount: p.urgentSaleCount || 0,
             auctionCount: p.auctionCount || 0
         }));
 
@@ -185,7 +183,6 @@ function exportGame() {
             childcareCost: p.childcareCost,
             skipTurns: p.skipTurns,
             doubleDice: p.doubleDice,
-            urgentSaleCount: p.urgentSaleCount,
             auctionCount: p.auctionCount
         })),
         marketPrices: { ...marketPrices },
