@@ -417,7 +417,20 @@ function showRealEstateOpportunity() {
     const marketTrend = upCount > downCount ? '상승세' : (upCount < downCount ? '하락세' : '보합');
     const trendColor = upCount > downCount ? 'text-emerald-400' : (upCount < downCount ? 'text-red-400' : 'text-gray-400');
 
-    const opportunity = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
+    // 대형 부동산 기회 체크 (현금 1억 이상 보유 경험 + 40% 확률)
+    const hasLargeOpportunityAccess = typeof maxCashEverHeld !== 'undefined' && maxCashEverHeld >= 10000;
+    const showLargeOpportunity = hasLargeOpportunityAccess && Math.random() < 0.4;
+
+    let opportunity;
+    let isLargeOpportunity = false;
+
+    if (showLargeOpportunity && typeof largeRealEstateOpportunities !== 'undefined') {
+        opportunity = largeRealEstateOpportunities[Math.floor(Math.random() * largeRealEstateOpportunities.length)];
+        isLargeOpportunity = true;
+    } else {
+        opportunity = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
+    }
+
     const content = document.getElementById('opportunityContent');
 
     // 추가 이벤트 체크 (30% 확률로 매수자 등장)
@@ -447,8 +460,9 @@ function showRealEstateOpportunity() {
     content.innerHTML = `
         <div class="space-y-4">
             <div class="text-center">
-                <div class="text-3xl mb-2">🏠</div>
-                <h3 class="text-xl font-bold">${opportunity.name}</h3>
+                ${isLargeOpportunity ? '<div class="mb-2 px-3 py-1 bg-gradient-to-r from-yellow-600 to-orange-600 rounded-full inline-block text-xs font-bold">🏢 대형 부동산 기회</div>' : ''}
+                <div class="text-3xl mb-2">${isLargeOpportunity ? '🏢' : '🏠'}</div>
+                <h3 class="text-xl font-bold ${isLargeOpportunity ? 'text-yellow-400' : ''}">${opportunity.name}</h3>
                 <p class="text-gray-400 text-sm">${opportunity.desc}</p>
             </div>
 

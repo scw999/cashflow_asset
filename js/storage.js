@@ -35,7 +35,8 @@ function saveGame() {
         realEstatePriceHistory: { ...realEstatePriceHistory },
         economicCycle: { ...economicCycle },
         interestRate: interestRate,
-        interestRateHistory: [...interestRateHistory]
+        interestRateHistory: [...interestRateHistory],
+        maxCashEverHeld: maxCashEverHeld || 0
     };
 
     try {
@@ -117,6 +118,11 @@ function loadGame() {
             interestRateHistory = [...data.interestRateHistory];
         }
 
+        // Load max cash ever held (for large real estate opportunities)
+        if (data.maxCashEverHeld !== undefined) {
+            maxCashEverHeld = data.maxCashEverHeld;
+        }
+
         // Hide setup modal and update UI
         document.getElementById('setupModal').classList.add('hidden');
         document.getElementById('turnCount').textContent = turn;
@@ -142,6 +148,9 @@ function resetGame() {
     // Reset market prices
     marketPrices = { ...basePrices };
     initPriceHistory();
+
+    // Reset max cash tracking
+    maxCashEverHeld = 0;
 
     // Reset players
     numPlayers = 1;
@@ -208,7 +217,8 @@ function exportGame() {
         realEstatePriceHistory: { ...realEstatePriceHistory },
         economicCycle: { ...economicCycle },
         interestRate: interestRate,
-        interestRateHistory: [...interestRateHistory]
+        interestRateHistory: [...interestRateHistory],
+        maxCashEverHeld: maxCashEverHeld || 0
     };
 
     const blob = new Blob([JSON.stringify(saveData, null, 2)], { type: 'application/json' });
@@ -284,6 +294,9 @@ function importGame(event) {
             }
             if (data.interestRateHistory) {
                 interestRateHistory = [...data.interestRateHistory];
+            }
+            if (data.maxCashEverHeld !== undefined) {
+                maxCashEverHeld = data.maxCashEverHeld;
             }
 
             document.getElementById('setupModal').classList.add('hidden');

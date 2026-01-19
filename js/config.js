@@ -270,6 +270,21 @@ const realEstateOpportunities = [
     { name: '지방 아파트', cost: 10000, downPayment: 2000, monthlyIncome: 25, desc: '지방 소도시의 저렴한 아파트' }
 ];
 
+// 대형 부동산 기회 (현금 1억 이상 보유 경험 시 등장)
+const largeRealEstateOpportunities = [
+    { name: '강남 아파트', cost: 150000, downPayment: 30000, monthlyIncome: 300, desc: '강남 핵심지 고급 아파트' },
+    { name: '대형 상가 건물', cost: 120000, downPayment: 24000, monthlyIncome: 400, desc: '유동인구 많은 대형 상가' },
+    { name: '오피스 빌딩', cost: 200000, downPayment: 40000, monthlyIncome: 600, desc: '오피스 임대 수익형 빌딩' },
+    { name: '원룸촌 건물', cost: 80000, downPayment: 16000, monthlyIncome: 280, desc: '대학가 원룸 다세대 건물' },
+    { name: '호텔', cost: 300000, downPayment: 60000, monthlyIncome: 900, desc: '관광지 중소형 호텔' },
+    { name: '물류 창고', cost: 100000, downPayment: 20000, monthlyIncome: 350, desc: '물류단지 내 대형 창고' },
+    { name: '복합 상가', cost: 180000, downPayment: 36000, monthlyIncome: 550, desc: '주상복합 상업시설' },
+    { name: '프리미엄 빌라', cost: 90000, downPayment: 18000, monthlyIncome: 250, desc: '한남동 고급 빌라' }
+];
+
+// 플레이어 최고 현금 보유액 추적 (대형 부동산 기회 해금용)
+let maxCashEverHeld = 0;
+
 // Staking Rates
 const stakingRates = {
     '이더리움': 0.03,  // 연 3%

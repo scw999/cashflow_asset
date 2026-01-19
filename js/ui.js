@@ -6,6 +6,11 @@
 function updateUI() {
     const player = getPlayer();
 
+    // 최고 현금 보유액 추적 (대형 부동산 기회 해금용)
+    if (typeof maxCashEverHeld !== 'undefined' && gameState.assets.cash > maxCashEverHeld) {
+        maxCashEverHeld = gameState.assets.cash;
+    }
+
     // Dashboard
     document.getElementById('dashCash').textContent = `₩${fmt(gameState.assets.cash)}만`;
     document.getElementById('dashAssets').textContent = `₩${fmt(getTotalAssets())}만`;
