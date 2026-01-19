@@ -172,6 +172,13 @@ function loadSetupPlayerData() {
         jobDisplay.textContent = player.job || '없음';
     }
 
+    // Update childcare cost display
+    const childcareDisplay = document.getElementById('childcareCostDisplay');
+    if (childcareDisplay) {
+        const cost = player.childcareCost || 30;
+        childcareDisplay.textContent = `₩${cost}만`;
+    }
+
     // Income
     document.getElementById('inpSalary').value = player.income.salary;
     document.getElementById('inpRental').value = player.income.rental;
@@ -209,7 +216,6 @@ function updatePresetButtons() {
         <button onclick="applyPreset('${key}')" class="preset-btn p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition ${players[setupPlayer].jobPreset === key ? 'ring-2 ring-yellow-400' : ''}">
             <div class="font-bold text-sm">${preset.job}</div>
             <div class="text-xs text-gray-400">${key}</div>
-            <div class="text-xs text-pink-400 mt-1">👶 양육비 ₩${preset.childcareCost || 30}만/자녀</div>
         </button>
     `).join('') + `
         <button onclick="applyRandomPreset()" class="preset-btn p-2 bg-purple-700 hover:bg-purple-600 rounded-lg text-center transition">

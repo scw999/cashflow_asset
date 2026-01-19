@@ -56,7 +56,7 @@
                 <div class="text-xs text-gray-400">💰 순자산</div>
                 <div id="dashNetWorth" class="text-lg font-bold text-purple-400">₩0</div>
             </div>
-            <div onclick="showDetailModal('expenses')" class="card rounded-xl p-3 border-l-4 border-yellow-500 cursor-pointer hover:scale-105 transition">
+            <div onclick="showDetailModal('cashflow')" class="card rounded-xl p-3 border-l-4 border-yellow-500 cursor-pointer hover:scale-105 transition">
                 <div class="text-xs text-gray-400">💸 월 캐시플로우 <span class="text-[10px]">▼</span></div>
                 <div id="dashCashflow" class="text-lg font-bold text-yellow-400">₩0</div>
             </div>
@@ -251,6 +251,10 @@
                         <div><label class="text-sm">생활비</label><input type="number" id="expLiving" class="w-full bg-gray-700 rounded p-2" value="0"></div>
                         <div><label class="text-sm">대출이자</label><input type="number" id="expLoan" class="w-full bg-gray-700 rounded p-2" value="0"></div>
                         <div><label class="text-sm">세금/보험</label><input type="number" id="expTax" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div class="pt-2 border-t border-gray-600">
+                            <label class="text-sm text-pink-400">👶 양육비 (자녀당)</label>
+                            <div id="childcareCostDisplay" class="w-full bg-gray-800 rounded p-2 text-pink-400 font-bold">₩30만</div>
+                        </div>
                     </div>
                 </div>
                 <div>
