@@ -258,28 +258,28 @@ const dreams = [
     { id: 'charity', name: '🏥 자선재단', cost: 500000, desc: '나만의 재단 설립' }
 ];
 
-// Real Estate Opportunities (기회 칸에서만 등장)
+// Real Estate Opportunities (기회 칸에서만 등장) - 난이도 하향 조정
 const realEstateOpportunities = [
-    { name: '원룸건물', cost: 12000, downPayment: 2400, monthlyIncome: 45, desc: '수익형 원룸건물' },
-    { name: '상가', cost: 25000, downPayment: 5000, monthlyIncome: 90, desc: '임대 수익 상가' },
-    { name: '갭투자 아파트', cost: 40000, downPayment: 5000, monthlyIncome: 30, desc: '전세 끼고 매입하는 아파트' },
-    { name: '오피스텔', cost: 8000, downPayment: 1600, monthlyIncome: 35, desc: '역세권 오피스텔' },
-    { name: '신축 빌라', cost: 15000, downPayment: 3000, monthlyIncome: 50, desc: '분양받은 신축 빌라' },
-    { name: '상업용 건물', cost: 50000, downPayment: 10000, monthlyIncome: 150, desc: '유동인구 많은 지역의 상업용 건물' },
-    { name: '다가구 주택', cost: 20000, downPayment: 4000, monthlyIncome: 70, desc: '재건축 기대되는 다가구 주택' },
-    { name: '지방 아파트', cost: 10000, downPayment: 2000, monthlyIncome: 25, desc: '지방 소도시의 저렴한 아파트' }
+    { name: '원룸건물', cost: 10000, downPayment: 1500, monthlyIncome: 55, desc: '수익형 원룸건물' },
+    { name: '상가', cost: 20000, downPayment: 3000, monthlyIncome: 100, desc: '임대 수익 상가' },
+    { name: '갭투자 아파트', cost: 35000, downPayment: 4000, monthlyIncome: 45, desc: '전세 끼고 매입하는 아파트' },
+    { name: '오피스텔', cost: 6000, downPayment: 1000, monthlyIncome: 40, desc: '역세권 오피스텔' },
+    { name: '신축 빌라', cost: 12000, downPayment: 2000, monthlyIncome: 60, desc: '분양받은 신축 빌라' },
+    { name: '상업용 건물', cost: 40000, downPayment: 6000, monthlyIncome: 180, desc: '유동인구 많은 지역의 상업용 건물' },
+    { name: '다가구 주택', cost: 15000, downPayment: 2500, monthlyIncome: 80, desc: '재건축 기대되는 다가구 주택' },
+    { name: '지방 아파트', cost: 8000, downPayment: 1200, monthlyIncome: 35, desc: '지방 소도시의 저렴한 아파트' }
 ];
 
-// 대형 부동산 기회 (현금 1억 이상 보유 경험 시 등장)
+// 대형 부동산 기회 (현금 1억 이상 보유 경험 시 등장) - 난이도 하향 조정
 const largeRealEstateOpportunities = [
-    { name: '강남 아파트', cost: 150000, downPayment: 30000, monthlyIncome: 300, desc: '강남 핵심지 고급 아파트' },
-    { name: '대형 상가 건물', cost: 120000, downPayment: 24000, monthlyIncome: 400, desc: '유동인구 많은 대형 상가' },
-    { name: '오피스 빌딩', cost: 200000, downPayment: 40000, monthlyIncome: 600, desc: '오피스 임대 수익형 빌딩' },
-    { name: '원룸촌 건물', cost: 80000, downPayment: 16000, monthlyIncome: 280, desc: '대학가 원룸 다세대 건물' },
-    { name: '호텔', cost: 300000, downPayment: 60000, monthlyIncome: 900, desc: '관광지 중소형 호텔' },
-    { name: '물류 창고', cost: 100000, downPayment: 20000, monthlyIncome: 350, desc: '물류단지 내 대형 창고' },
-    { name: '복합 상가', cost: 180000, downPayment: 36000, monthlyIncome: 550, desc: '주상복합 상업시설' },
-    { name: '프리미엄 빌라', cost: 90000, downPayment: 18000, monthlyIncome: 250, desc: '한남동 고급 빌라' }
+    { name: '강남 아파트', cost: 120000, downPayment: 20000, monthlyIncome: 400, desc: '강남 핵심지 고급 아파트' },
+    { name: '대형 상가 건물', cost: 100000, downPayment: 15000, monthlyIncome: 500, desc: '유동인구 많은 대형 상가' },
+    { name: '오피스 빌딩', cost: 150000, downPayment: 25000, monthlyIncome: 750, desc: '오피스 임대 수익형 빌딩' },
+    { name: '원룸촌 건물', cost: 60000, downPayment: 10000, monthlyIncome: 350, desc: '대학가 원룸 다세대 건물' },
+    { name: '호텔', cost: 200000, downPayment: 35000, monthlyIncome: 1100, desc: '관광지 중소형 호텔' },
+    { name: '물류 창고', cost: 80000, downPayment: 12000, monthlyIncome: 420, desc: '물류단지 내 대형 창고' },
+    { name: '복합 상가', cost: 140000, downPayment: 22000, monthlyIncome: 680, desc: '주상복합 상업시설' },
+    { name: '프리미엄 빌라', cost: 70000, downPayment: 11000, monthlyIncome: 320, desc: '한남동 고급 빌라' }
 ];
 
 // 플레이어 최고 현금 보유액 추적 (대형 부동산 기회 해금용)
