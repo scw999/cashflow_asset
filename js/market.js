@@ -11,7 +11,7 @@ function getMarketHTML() {
             <!-- 부동산 시세 및 정보 -->
             <div class="card p-4 rounded-xl border border-blue-500/30">
                 <h4 class="font-bold text-blue-400 mb-3">🏠 부동산 시세</h4>
-                <div class="space-y-2 text-sm max-h-64 overflow-y-auto">
+                <div class="space-y-2 text-sm">
                     ${Object.keys(realEstateMarketPrices).map(name => {
                         const price = realEstateMarketPrices[name];
                         const history = realEstatePriceHistory[name] || [price];
