@@ -1295,8 +1295,9 @@ function showRightsOfferingModal() {
     const randomStock = stocks[Math.floor(Math.random() * stocks.length)];
     const currentPrice = marketPrices[randomStock];
     const discountPrice = Math.round(currentPrice * 0.7 * 100) / 100;
+    const maxShares = Math.floor(gameState.assets.cash / discountPrice);
 
-    const shares = parseInt(prompt(`${randomStock} 유상증자 참여\n\n현재가: ₩${fmt(currentPrice)}만\n할인가: ₩${fmt(discountPrice)}만 (30% 할인)\n\n몇 주를 매수하시겠습니까?`, '10'));
+    const shares = parseInt(prompt(`${randomStock} 유상증자 참여\n\n현재가: ₩${fmt(currentPrice)}만\n할인가: ₩${fmt(discountPrice)}만 (30% 할인)\n\n보유 현금: ₩${fmt(gameState.assets.cash)}만\n최대 구매 가능: ${maxShares}주\n\n몇 주를 매수하시겠습니까?`, Math.min(10, maxShares).toString()));
 
     if (!shares || shares <= 0) {
         nextTurn();
