@@ -126,9 +126,11 @@ function loadGame() {
         // Hide setup modal and update UI
         document.getElementById('setupModal').classList.add('hidden');
         document.getElementById('turnCount').textContent = turn;
+        suppressCashAnimation = true;  // 로드 시 애니메이션 억제
         updateCurrentPlayerDisplay();
         updateUI();
         drawBoard();
+        suppressCashAnimation = false;
 
         showNotification('게임을 불러왔습니다!', 'success');
         return true;
@@ -168,8 +170,10 @@ function resetGame() {
     updateSetupPlayerTabs();
     loadSetupPlayerData();
 
+    suppressCashAnimation = true;  // 리셋 시 애니메이션 억제
     updateUI();
     drawBoard();
+    suppressCashAnimation = false;
 
     showNotification('게임이 초기화되었습니다.', 'info');
 }
@@ -301,9 +305,11 @@ function importGame(event) {
 
             document.getElementById('setupModal').classList.add('hidden');
             document.getElementById('turnCount').textContent = turn;
+            suppressCashAnimation = true;  // 가져오기 시 애니메이션 억제
             updateCurrentPlayerDisplay();
             updateUI();
             drawBoard();
+            suppressCashAnimation = false;
 
             showNotification('게임 데이터를 가져왔습니다!', 'success');
         } catch (e) {

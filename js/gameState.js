@@ -53,6 +53,7 @@ initPriceHistory();
 let numPlayers = 1;
 let currentPlayer = 0;
 let setupPlayer = 0;
+let suppressCashAnimation = false;  // 플레이어 전환 시 애니메이션 억제
 let players = [];
 let currentEvent = null;
 let turn = 1;
@@ -647,13 +648,18 @@ function setNumPlayers(n) {
 
 // Next player's turn
 function nextTurn() {
-    currentPlayer = (currentPlayer + 1) % numPlayers;
-    if (currentPlayer === 0) {
-        turn++;
-    }
-    document.getElementById('turnCount').textContent = turn;
-    updateCurrentPlayerDisplay();
-    drawBoard();  // 보드 다시 그려서 현재 플레이어 위치 표시
+    // 애니메이션 완료 대기 후 다음 플레이어로 전환 (1초 딜레이)
+    setTimeout(() => {
+        suppressCashAnimation = true;  // 플레이어 전환 시 애니메이션 억제
+        currentPlayer = (currentPlayer + 1) % numPlayers;
+        if (currentPlayer === 0) {
+            turn++;
+        }
+        document.getElementById('turnCount').textContent = turn;
+        updateCurrentPlayerDisplay();
+        drawBoard();  // 보드 다시 그려서 현재 플레이어 위치 표시
+        suppressCashAnimation = false;  // 플래그 리셋
+    }, 1000);
 }
 
 // Check if player can escape rat race

@@ -23,7 +23,8 @@ function updateUI() {
     dashCash.textContent = newCashText;
 
     // Number pop animation when cash changes (green for increase, red for decrease)
-    if (oldCashText !== newCashText && typeof animateNumberPop === 'function') {
+    // Skip animation if suppressCashAnimation flag is set (player tab switching)
+    if (oldCashText !== newCashText && !suppressCashAnimation && typeof animateNumberPop === 'function') {
         const isPositive = newCashValue >= oldCashValue;
         animateNumberPop(dashCash, isPositive);
 
@@ -179,10 +180,12 @@ function updatePlayerTabs() {
 
 // Switch to player (for viewing)
 function switchToPlayer(playerIndex) {
+    suppressCashAnimation = true;  // 플레이어 전환 시 애니메이션 억제
     currentPlayer = playerIndex;
     updateCurrentPlayerDisplay();
     updateUI();
     drawBoard();
+    suppressCashAnimation = false;  // 플래그 리셋
 }
 
 // Update setup player tabs
