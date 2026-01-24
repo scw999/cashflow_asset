@@ -140,6 +140,7 @@ function rollDice() {
         diceBtn.disabled = true;
         diceBtn.classList.add('opacity-50', 'cursor-not-allowed');
     }
+
     // Start 3D dice rolling animation
     if (dice3d) {
         dice3d.className = 'dice-3d rolling';
@@ -148,98 +149,149 @@ function rollDice() {
     // Roll dice: 쥐 레이스에서는 1개 (1-6), 패스트트랙에서는 2개 (2-12)
     let roll;
     let diceDisplay;
+    let dice1, dice2;
 
     if (gameState.inFastTrack) {
         // 패스트트랙: 주사위 2개
-        let dice1 = Math.floor(Math.random() * 6) + 1;
-        let dice2 = Math.floor(Math.random() * 6) + 1;
+        dice1 = Math.floor(Math.random() * 6) + 1;
+        dice2 = Math.floor(Math.random() * 6) + 1;
         roll = dice1 + dice2;
-        diceDisplay = `🎲🎲 ${dice1} + ${dice2} = ${roll}`;
+        diceDisplay = `${dice1} + ${dice2} = ${roll}`;
     } else {
         // 쥐 레이스: 주사위 1개
         roll = Math.floor(Math.random() * 6) + 1;
-        diceDisplay = `🎲 ${roll}`;
+        dice1 = roll;
+        diceDisplay = `${roll}`;
     }
 
     // 기부 효과: 더블 다이스 (굴린 값 2배)
+    let isDoubleDice = false;
     if (player.doubleDice > 0) {
         roll *= 2;
         player.doubleDice--;
-        showNotification(`더블 다이스! ${diceDisplay} × 2 = ${roll}`, 'success');
-    } else {
-        showNotification(`주사위: ${diceDisplay}`, 'info');
-    }
-
-    // Show final dice face after rolling animation
-    if (dice3d) {
-        setTimeout(() => {
-            dice3d.classList.remove('rolling');
-            // Show the first dice result (for single dice, or first of two)
-            const displayFace = gameState.inFastTrack ? Math.ceil(roll / 2) : roll;
-            dice3d.className = `dice-3d show-${Math.min(6, displayFace)}`;
-        }, 800);
+        isDoubleDice = true;
     }
 
     // Update market prices (random fluctuation on each roll)
     const priceChanges = updateMarketPrices();
 
+    // Calculate positions before animation
+    const spaces = gameState.inFastTrack ? fastTrackSpaces : ratRaceSpaces;
+    const oldPosition = gameState.position;
+    const newPosition = (gameState.position + roll) % spaces.length;
+    const passedPaydays = findPassedPaydays(oldPosition, newPosition, roll, spaces);
+
+    // Step 1: After 800ms - Stop dice animation and show result
+    setTimeout(() => {
+        // Stop rolling animation and show final face
+        if (dice3d) {
+            dice3d.classList.remove('rolling');
+            dice3d.className = `dice-3d show-${dice1}`;
+        }
+
+        // Show dice result modal
+        const diceResultHtml = `
+            <div class="text-center">
+                <div class="text-6xl mb-4">${gameState.inFastTrack ? '🎲🎲' : '🎲'}</div>
+                <div class="text-4xl font-bold text-yellow-400 mb-2">${diceDisplay}</div>
+                ${isDoubleDice ? `<div class="text-2xl text-green-400">× 2 = ${roll} (더블 다이스!)</div>` : ''}
+                <div class="text-lg text-gray-400 mt-4">${roll}칸 이동합니다</div>
+            </div>
+        `;
+
+        showEventModal('🎲 주사위 결과', diceResultHtml, [
+            { text: '이동하기', action: 'proceedAfterDice()', primary: true }
+        ]);
+
+        // Store data for next step
+        window._diceRollData = {
+            roll,
+            oldPosition,
+            newPosition,
+            passedPaydays,
+            spaces,
+            diceBtn,
+            priceChanges
+        };
+    }, 800);
+}
+
+// Step 2: After dice result modal - Move player and handle payday/landing
+function proceedAfterDice() {
+    hideEventModal();
+
+    const data = window._diceRollData;
+    if (!data) return;
+
+    const { roll, oldPosition, newPosition, passedPaydays, spaces, diceBtn, priceChanges } = data;
+
+    // Move player position
+    gameState.position = newPosition;
+
+    // Draw board to show new position
+    drawBoard();
+    updateUI();
+
     // Show price change notification for significant moves
     const significantChanges = priceChanges.filter(c => Math.abs(parseFloat(c.changePercent)) > 5);
     if (significantChanges.length > 0) {
         const change = significantChanges[0];
-        const color = parseFloat(change.changePercent) > 0 ? 'success' : 'error';
-        setTimeout(() => {
-            showNotification(`${change.name} ${change.changePercent}%!`, color);
-        }, 1000);
+        showNotification(`${change.name} ${change.changePercent}%!`, parseFloat(change.changePercent) > 0 ? 'success' : 'error');
     }
 
-    // Move player
-    const spaces = gameState.inFastTrack ? fastTrackSpaces : ratRaceSpaces;
-    const oldPosition = gameState.position;
-    const newPosition = (gameState.position + roll) % spaces.length;
+    // Step 3: After 500ms - Check payday or show landing
+    setTimeout(() => {
+        if (passedPaydays.length > 0) {
+            if (gameState.inFastTrack) {
+                // 패스트트랙: 자동 수령 (패시브 소득 * 100)
+                const player = getPlayer();
+                const passiveIncomeBase = player.income.other || 0;
+                const fastTrackPayday = passiveIncomeBase * 100;
+                const totalPayday = fastTrackPayday * passedPaydays.length;
+                gameState.assets.cash += totalPayday;
+                updateUI();
 
-    // 월급칸을 지나가는지 확인 (착지 제외, 지나가기만)
-    const passedPaydays = findPassedPaydays(oldPosition, newPosition, roll, spaces);
-
-    gameState.position = newPosition;
-
-    // Draw board with animation
-    drawBoard();
-
-    // 지나간 월급칸이 있으면 먼저 처리
-    if (passedPaydays.length > 0) {
-        if (gameState.inFastTrack) {
-            // 패스트트랙: 자동 수령 (패시브 소득 * 100)
-            const player = getPlayer();
-            const passiveIncomeBase = player.income.other || 0;
-            const fastTrackPayday = passiveIncomeBase * 100;
-            const totalPayday = fastTrackPayday * passedPaydays.length;
-            gameState.assets.cash += totalPayday;
-            showNotification(`💰 투자 소득 ${passedPaydays.length}회 자동 수령! +₩${fmt(totalPayday)}만`, 'success');
-            setTimeout(() => {
-                const space = spaces[gameState.position];
-                handleSpaceLanding(space);
-                resetDiceButton(diceBtn);
-            }, 800);
-        } else {
-            // 쥐 레이스: 월급 버튼 클릭 필요
-            setTimeout(() => {
+                showEventModal('💰 투자 소득', `
+                    <div class="text-center">
+                        <div class="text-5xl mb-4">💰</div>
+                        <div class="text-2xl font-bold text-green-400 mb-2">+₩${fmt(totalPayday)}만</div>
+                        <div class="text-gray-400">월 패시브 소득 ₩${fmt(passiveIncomeBase)}만 × 100</div>
+                        ${passedPaydays.length > 1 ? `<div class="text-yellow-400 mt-2">${passedPaydays.length}회 수령!</div>` : ''}
+                    </div>
+                `, [
+                    { text: '확인', action: 'proceedToLanding()', primary: true }
+                ]);
+            } else {
+                // 쥐 레이스: 월급 모달 표시
                 showPassedPaydayModal(passedPaydays.length, () => {
-                    // 월급칸 처리 후 착지 처리
-                    const space = spaces[gameState.position];
-                    handleSpaceLanding(space);
-                    resetDiceButton(diceBtn);
+                    proceedToLanding();
                 });
-            }, 800);
+            }
+        } else {
+            // No payday - go directly to landing
+            proceedToLanding();
         }
-    } else {
-        // Process landing after a delay
-        setTimeout(() => {
-            const space = spaces[gameState.position];
-            handleSpaceLanding(space);
-            resetDiceButton(diceBtn);
-        }, 800);
-    }
+    }, 500);
+
+    // Store for next step
+    window._diceRollData.spaces = spaces;
+    window._diceRollData.diceBtn = diceBtn;
+}
+
+// Step 4: Show landing space event
+function proceedToLanding() {
+    const data = window._diceRollData;
+    if (!data) return;
+
+    const { spaces, diceBtn } = data;
+    const space = spaces[gameState.position];
+
+    // Handle space landing
+    handleSpaceLanding(space);
+    resetDiceButton(diceBtn);
+
+    // Clean up
+    delete window._diceRollData;
 }
 
 // 주사위 버튼 리셋
