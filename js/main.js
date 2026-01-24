@@ -2,6 +2,9 @@
 // 메인 초기화 및 이벤트 바인딩
 // ==========================================
 
+// 주사위 굴리는 중 플래그
+let diceRolling = false;
+
 // Initialize game
 function init() {
     // Draw initial board
