@@ -657,6 +657,7 @@ function nextTurn() {
         }
         document.getElementById('turnCount').textContent = turn;
         updateCurrentPlayerDisplay();
+        updateUI();  // 여기서도 updateUI 호출 (플래그 설정된 상태)
         drawBoard();  // 보드 다시 그려서 현재 플레이어 위치 표시
         suppressCashAnimation = false;  // 플래그 리셋
     }, 1000);
