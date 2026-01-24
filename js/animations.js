@@ -59,11 +59,11 @@ function createSparkles(element, count = 8) {
 function showMoneyBounce(element, amount, isPositive = true) {
     const rect = element.getBoundingClientRect();
     const moneyEl = document.createElement('div');
-    moneyEl.className = 'money-bounce';
+    // Use money-bounce for income (goes up), money-drop for expense (goes down)
+    moneyEl.className = isPositive ? 'money-bounce' : 'money-drop';
     moneyEl.textContent = `${isPositive ? '+' : '-'}₩${fmt(Math.abs(amount))}만`;
     moneyEl.style.left = `${rect.left + rect.width / 2}px`;
     moneyEl.style.top = `${rect.top}px`;
-    moneyEl.style.color = isPositive ? '#10b981' : '#ef4444';
     moneyEl.style.transform = 'translateX(-50%)';
 
     document.body.appendChild(moneyEl);
@@ -72,9 +72,10 @@ function showMoneyBounce(element, amount, isPositive = true) {
 }
 
 // ===== Number Pop Animation =====
-function animateNumberPop(element) {
-    element.classList.add('number-pop');
-    setTimeout(() => element.classList.remove('number-pop'), 500);
+function animateNumberPop(element, isPositive = true) {
+    const animClass = isPositive ? 'number-pop' : 'number-pop-red';
+    element.classList.add(animClass);
+    setTimeout(() => element.classList.remove(animClass), 500);
 }
 
 // ===== Screen Shake =====

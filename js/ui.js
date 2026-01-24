@@ -15,10 +15,22 @@ function updateUI() {
     const dashCash = document.getElementById('dashCash');
     const oldCashText = dashCash.textContent;
     const newCashText = `₩${fmt(gameState.assets.cash)}만`;
+
+    // Parse old cash value for comparison
+    const oldCashValue = parseFloat(oldCashText.replace(/[^0-9.-]/g, '')) || 0;
+    const newCashValue = gameState.assets.cash;
+
     dashCash.textContent = newCashText;
-    // Number pop animation when cash changes
+
+    // Number pop animation when cash changes (green for increase, red for decrease)
     if (oldCashText !== newCashText && typeof animateNumberPop === 'function') {
-        animateNumberPop(dashCash);
+        const isPositive = newCashValue >= oldCashValue;
+        animateNumberPop(dashCash, isPositive);
+
+        // Show floating money indicator for significant changes
+        if (Math.abs(newCashValue - oldCashValue) >= 1 && typeof showMoneyBounce === 'function') {
+            showMoneyBounce(dashCash, Math.abs(newCashValue - oldCashValue), isPositive);
+        }
     }
 
     document.getElementById('dashAssets').textContent = `₩${fmt(getTotalAssets())}만`;
@@ -256,6 +268,10 @@ function loadSetupPlayerData() {
     document.getElementById('debtOther').value = player.liabilities.other;
 }
 
+// Player ring color classes for selection
+const playerRingClasses = ['ring-yellow-400', 'ring-blue-400', 'ring-red-400', 'ring-green-400'];
+const playerTextClasses = ['text-yellow-200', 'text-blue-200', 'text-red-200', 'text-green-200'];
+
 // Update preset buttons
 function updatePresetButtons() {
     const container = document.getElementById('presetBtns');
@@ -264,11 +280,14 @@ function updatePresetButtons() {
 
     const player = players && players[setupPlayer];
     const currentJobPreset = player ? player.jobPreset : null;
+    const playerBgClass = playerColorClasses[setupPlayer] || 'bg-yellow-600';
+    const playerRingClass = playerRingClasses[setupPlayer] || 'ring-yellow-400';
+    const playerTextClass = playerTextClasses[setupPlayer] || 'text-yellow-200';
 
     container.innerHTML = Object.entries(presets).map(([key, preset]) => `
-        <button onclick="applyPreset('${key}')" class="preset-btn p-2 rounded-lg text-left transition ${currentJobPreset === key ? 'bg-yellow-600 ring-2 ring-yellow-400' : 'bg-gray-700 hover:bg-gray-600'}">
+        <button onclick="applyPreset('${key}')" class="preset-btn p-2 rounded-lg text-left transition ${currentJobPreset === key ? playerBgClass + ' ring-2 ' + playerRingClass : 'bg-gray-700 hover:bg-gray-600'}">
             <div class="font-bold text-sm">${preset.job}</div>
-            <div class="text-xs ${currentJobPreset === key ? 'text-yellow-200' : 'text-gray-400'}">${key}</div>
+            <div class="text-xs ${currentJobPreset === key ? playerTextClass : 'text-gray-400'}">${key}</div>
         </button>
     `).join('') + `
         <button onclick="applyRandomPreset()" class="preset-btn p-2 bg-purple-700 hover:bg-purple-600 rounded-lg text-center transition">
@@ -293,12 +312,14 @@ function updateDreamSelection() {
 
     const player = players && players[setupPlayer];
     const currentDream = player ? player.dream : null;
+    const playerBgClass = playerColorClasses[setupPlayer] || 'bg-yellow-600';
+    const playerRingClass = playerRingClasses[setupPlayer] || 'ring-yellow-400';
 
     container.innerHTML = dreams.map(dream => `
         <button onclick="selectDream('${dream.id}')"
             class="p-3 rounded-lg text-left transition-all ${
                 currentDream === dream.id
-                    ? 'bg-yellow-600 ring-2 ring-yellow-400'
+                    ? playerBgClass + ' ring-2 ' + playerRingClass
                     : 'bg-gray-700 hover:bg-gray-600'
             }">
             <div class="font-bold">${dream.name}</div>

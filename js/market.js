@@ -207,6 +207,27 @@ function buyStock(name) {
         return;
     }
 
+    // Calculate dividend info for this specific stock
+    let dividendYield = 0;
+    if (name.includes('고배당')) dividendYield = 0.04;
+    else if (name.includes('리츠')) dividendYield = 0.05;
+    else if (name.includes('채권')) dividendYield = 0.03;
+    else if (name === '삼성전자') dividendYield = 0.02;
+    else if (name === '애플') dividendYield = 0.005;
+    else if (assetCharacteristics[name] && assetCharacteristics[name].dividend) {
+        dividendYield = assetCharacteristics[name].dividend;
+    }
+
+    // Build description based on dividend info
+    let description = '';
+    if (dividendYield > 0) {
+        const annualDividendPercent = (dividendYield * 100).toFixed(1);
+        const monthlyDividendPer100 = Math.floor(100 * currentPrice * dividendYield / 12);
+        description = `💰 배당주 (연 ${annualDividendPercent}% 배당)<br>100주 매수 시 월 배당금: ₩${fmt(monthlyDividendPer100)}만`;
+    } else {
+        description = '📊 비배당주 (시세 차익 목적)';
+    }
+
     showPurchaseModal({
         title: '📈 주식 매수',
         itemName: name,
@@ -214,7 +235,7 @@ function buyStock(name) {
         maxQuantity: maxShares,
         step: 1,
         unit: '주',
-        description: '배당주는 월 배당금을 지급합니다.',
+        description: description,
         buttonText: '매수하기',
         onConfirm: (shares) => {
             executeBuyStock(name, shares, currentPrice);
