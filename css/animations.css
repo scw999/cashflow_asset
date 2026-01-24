@@ -675,3 +675,89 @@
     0% { width: 0; height: 0; opacity: 0.5; }
     100% { width: 300px; height: 300px; opacity: 0; }
 }
+
+/* ===== 3D Dice Styles ===== */
+.dice-btn {
+    perspective: 300px;
+}
+
+.dice-3d-container {
+    width: 60px;
+    height: 60px;
+    margin: 0 auto;
+    perspective: 300px;
+}
+
+.dice-3d {
+    width: 60px;
+    height: 60px;
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(-20deg) rotateY(20deg);
+    transition: transform 0.1s ease-out;
+}
+
+.dice-face {
+    position: absolute;
+    width: 60px;
+    height: 60px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 40px;
+    background: linear-gradient(145deg, #ffffff 0%, #e0e0e0 100%);
+    border-radius: 10px;
+    border: 2px solid #ccc;
+    box-shadow: inset 0 0 10px rgba(0,0,0,0.1);
+    backface-visibility: hidden;
+}
+
+.dice-face-1 { transform: rotateY(0deg) translateZ(30px); }
+.dice-face-2 { transform: rotateY(180deg) translateZ(30px); }
+.dice-face-3 { transform: rotateY(-90deg) translateZ(30px); }
+.dice-face-4 { transform: rotateY(90deg) translateZ(30px); }
+.dice-face-5 { transform: rotateX(90deg) translateZ(30px); }
+.dice-face-6 { transform: rotateX(-90deg) translateZ(30px); }
+
+/* Dice rolling animation */
+@keyframes diceRoll3DNew {
+    0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+    25% { transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg); }
+    50% { transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg); }
+    75% { transform: rotateX(540deg) rotateY(270deg) rotateZ(135deg); }
+    100% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg); }
+}
+
+.dice-3d.rolling {
+    animation: diceRoll3DNew 0.8s ease-out forwards;
+}
+
+/* Final dice face positions */
+.dice-3d.show-1 { transform: rotateX(0deg) rotateY(0deg); }
+.dice-3d.show-2 { transform: rotateX(0deg) rotateY(180deg); }
+.dice-3d.show-3 { transform: rotateX(0deg) rotateY(90deg); }
+.dice-3d.show-4 { transform: rotateX(0deg) rotateY(-90deg); }
+.dice-3d.show-5 { transform: rotateX(-90deg) rotateY(0deg); }
+.dice-3d.show-6 { transform: rotateX(90deg) rotateY(0deg); }
+
+/* ===== Custom Board Icons ===== */
+.icon-house { color: #3b82f6; }
+.icon-building { color: #8b5cf6; }
+.icon-coin { color: #fbbf24; }
+.icon-chart-up { color: #10b981; }
+.icon-chart-down { color: #ef4444; }
+
+/* ===== Board Design Improvements ===== */
+.track-path-outer {
+    fill: none;
+    stroke: rgba(59, 130, 246, 0.3);
+    stroke-width: 60;
+    stroke-linecap: round;
+}
+
+.track-path-inner {
+    fill: none;
+    stroke: rgba(251, 191, 36, 0.3);
+    stroke-width: 50;
+    stroke-linecap: round;
+}

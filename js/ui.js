@@ -52,9 +52,26 @@ function updateUI() {
     document.getElementById('netWorth').textContent = `₩${fmt(netWorth)}만`;
     document.getElementById('netWorth').className = netWorth >= 0 ? 'text-emerald-400' : 'text-red-400';
 
-    // Escape progress
-    const escapeProgress = passiveIncome > 0 && totalExpense > 0 ? Math.min(100, (passiveIncome / totalExpense) * 100) : 0;
-    document.getElementById('escapeProgress').style.width = `${escapeProgress}%`;
+    // Escape/Victory progress
+    const progressTitle = document.getElementById('progressTitle');
+    const progressDesc = document.getElementById('progressDesc');
+    const progressBar = document.getElementById('escapeProgress');
+
+    if (gameState.inFastTrack) {
+        // 패스트트랙: 승리조건 진행도 표시
+        const victoryProgress = Math.min(100, (passiveIncome / FAST_TRACK_WIN_PASSIVE) * 100);
+        progressBar.style.width = `${victoryProgress}%`;
+        progressBar.className = 'h-full bg-gradient-to-r from-purple-500 to-yellow-400 transition-all';
+        progressTitle.textContent = '🏆 승리조건 진행도';
+        progressDesc.textContent = `월 패시브 소득 ₩${fmt(passiveIncome)}만 / ₩${fmt(FAST_TRACK_WIN_PASSIVE)}만`;
+    } else {
+        // 쥐 레이스: 탈출 진행도 표시
+        const escapeProgress = passiveIncome > 0 && totalExpense > 0 ? Math.min(100, (passiveIncome / totalExpense) * 100) : 0;
+        progressBar.style.width = `${escapeProgress}%`;
+        progressBar.className = 'h-full bg-gradient-to-r from-emerald-500 to-yellow-400 transition-all';
+        progressTitle.textContent = '🏃 탈출 진행도';
+        progressDesc.textContent = '패시브 소득 ≥ 총 지출 시 탈출!';
+    }
 
     // Current player info
     document.getElementById('currentPlayerEmoji').textContent = playerEmojis[currentPlayer];

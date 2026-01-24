@@ -131,8 +131,17 @@
                     </div>
                 </div>
                 <div class="text-center mb-4">
-                    <button onclick="rollDice()" id="diceBtn" class="px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-2xl shadow-lg hover:shadow-yellow-500/30 transition-all hover:scale-105">
-                        <span id="dice" class="text-5xl">🎲</span>
+                    <button onclick="rollDice()" id="diceBtn" class="dice-btn px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-2xl shadow-lg hover:shadow-yellow-500/30 transition-all">
+                        <div id="diceContainer" class="dice-3d-container">
+                            <div id="dice3d" class="dice-3d">
+                                <div class="dice-face dice-face-1">⚀</div>
+                                <div class="dice-face dice-face-2">⚁</div>
+                                <div class="dice-face dice-face-3">⚂</div>
+                                <div class="dice-face dice-face-4">⚃</div>
+                                <div class="dice-face dice-face-5">⚄</div>
+                                <div class="dice-face dice-face-6">⚅</div>
+                            </div>
+                        </div>
                         <div class="text-black font-bold mt-1">주사위 굴리기</div>
                     </button>
                 </div>
@@ -179,13 +188,13 @@
                     </div>
                 </div>
 
-                <!-- Escape Progress -->
+                <!-- Escape/Victory Progress -->
                 <div class="card rounded-2xl p-4 glow-gold">
-                    <h3 class="font-bold text-yellow-400 mb-3">🏃 탈출 진행도</h3>
+                    <h3 id="progressTitle" class="font-bold text-yellow-400 mb-3">🏃 탈출 진행도</h3>
                     <div class="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
                         <div id="escapeProgress" class="h-full bg-gradient-to-r from-emerald-500 to-yellow-400 transition-all" style="width: 0%"></div>
                     </div>
-                    <p class="text-sm mt-2 text-gray-400">패시브 소득 ≥ 총 지출 시 탈출!</p>
+                    <p id="progressDesc" class="text-sm mt-2 text-gray-400">패시브 소득 ≥ 총 지출 시 탈출!</p>
                 </div>
             </div>
         </div>

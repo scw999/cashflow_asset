@@ -124,12 +124,14 @@ function rollDice() {
     // Set cooldown
     diceRolling = true;
     const diceBtn = document.getElementById('diceBtn');
+    const dice3d = document.getElementById('dice3d');
     if (diceBtn) {
         diceBtn.disabled = true;
         diceBtn.classList.add('opacity-50', 'cursor-not-allowed');
-        // Add dice shake animation
-        diceBtn.classList.add('dice-shake');
-        setTimeout(() => diceBtn.classList.remove('dice-shake'), 800);
+    }
+    // Start 3D dice rolling animation
+    if (dice3d) {
+        dice3d.className = 'dice-3d rolling';
     }
 
     // Roll dice: 쥐 레이스에서는 1개 (1-6), 패스트트랙에서는 2개 (2-12)
@@ -155,6 +157,17 @@ function rollDice() {
         showNotification(`더블 다이스! ${diceDisplay} × 2 = ${roll}`, 'success');
     } else {
         showNotification(`주사위: ${diceDisplay}`, 'info');
+    }
+
+    // Show final dice face after rolling animation
+    const dice3d = document.getElementById('dice3d');
+    if (dice3d) {
+        setTimeout(() => {
+            dice3d.classList.remove('rolling');
+            // Show the first dice result (for single dice, or first of two)
+            const displayFace = gameState.inFastTrack ? Math.ceil(roll / 2) : roll;
+            dice3d.className = `dice-3d show-${Math.min(6, displayFace)}`;
+        }, 800);
     }
 
     // Update market prices (random fluctuation on each roll)
@@ -186,9 +199,11 @@ function rollDice() {
     // 지나간 월급칸이 있으면 먼저 처리
     if (passedPaydays.length > 0) {
         if (gameState.inFastTrack) {
-            // 패스트트랙: 자동 수령
-            const cashflow = getCashflow();
-            const totalPayday = cashflow * passedPaydays.length;
+            // 패스트트랙: 자동 수령 (패시브 소득 * 100)
+            const player = getPlayer();
+            const passiveIncomeBase = player.income.other || 0;
+            const fastTrackPayday = passiveIncomeBase * 100;
+            const totalPayday = fastTrackPayday * passedPaydays.length;
             gameState.assets.cash += totalPayday;
             showNotification(`💰 투자 소득 ${passedPaydays.length}회 자동 수령! +₩${fmt(totalPayday)}만`, 'success');
             setTimeout(() => {
@@ -352,6 +367,10 @@ function handleSpaceLanding(space) {
             handleBusiness(space);
             break;
 
+        case 'disaster':
+            handleDisaster(space);
+            break;
+
         default:
             nextTurn();
             updateUI();
@@ -435,22 +454,12 @@ function collectPayday() {
 
 // 자동 투자 소득 처리 (패스트트랙)
 function processPaydayAutomatic() {
-    const cashflow = getCashflow();
+    // 패스트트랙 페이데이: 탈출 시 패시브 소득 * 100
+    const player = getPlayer();
+    const passiveIncomeBase = player.income.other || 0;  // 탈출 시 저장된 패시브 소득
+    const fastTrackPayday = passiveIncomeBase * 100;
 
-    // Process staking rewards (if any remaining)
-    const stakingRewards = processStakingRewards();
-
-    gameState.assets.cash += cashflow;
-
-    let stakingMessage = '';
-    if (stakingRewards.length > 0) {
-        stakingMessage = `<div class="mt-3 text-sm text-purple-400">
-            <div class="font-bold">스테이킹 보상:</div>
-            ${stakingRewards.map(r =>
-                `<div>+${r.reward.toFixed(4)} ${r.name} (₩${fmt(Math.round(r.value))}만)</div>`
-            ).join('')}
-        </div>`;
-    }
+    gameState.assets.cash += fastTrackPayday;
 
     // Fast track passive income check
     const passiveIncome = getPassiveIncome();
@@ -470,10 +479,12 @@ function processPaydayAutomatic() {
 
     showEventModal(
         '💰 투자 소득! (자동)',
-        `<p class="text-lg">투자 소득: <span class="${cashflow >= 0 ? 'text-emerald-400' : 'text-red-400'} font-bold">₩${fmt(cashflow)}만</span></p>
-         <p class="mt-2 text-gray-400">현금: ₩${fmt(gameState.assets.cash)}만</p>
-         ${stakingMessage}
-         ${fastTrackInfo}`,
+        `<div class="space-y-2">
+            <p class="text-lg">투자 소득: <span class="text-emerald-400 font-bold">+₩${fmt(fastTrackPayday)}만</span></p>
+            <p class="text-sm text-gray-400">(월 패시브 소득 ₩${fmt(passiveIncomeBase)}만 × 100)</p>
+            <p class="text-gray-400">현금: ₩${fmt(gameState.assets.cash)}만</p>
+        </div>
+        ${fastTrackInfo}`,
         [{ text: '확인', action: 'hideEventModal(); checkFastTrackVictory(); nextTurn(); updateUI();', primary: true }]
     );
 }
@@ -1728,6 +1739,53 @@ function investBusiness(name, cost, monthlyIncome) {
 
     nextTurn();
     updateUI();
+}
+
+// Disaster handler (Fast Track) - 이혼, 세무감사, 소송
+function handleDisaster(space) {
+    const currentCash = gameState.assets.cash;
+    const lostAmount = Math.floor(currentCash / 2);
+
+    // 화면 흔들림 효과
+    if (typeof shakeScreen === 'function') {
+        shakeScreen('hard');
+    }
+
+    // 화면 플래시 효과
+    if (typeof flashScreen === 'function') {
+        flashScreen('error');
+    }
+
+    let message = '';
+    let emoji = '';
+
+    if (space.name.includes('이혼')) {
+        emoji = '💔';
+        message = '이혼 소송으로 재산의 절반을 잃었습니다...';
+    } else if (space.name.includes('세무감사')) {
+        emoji = '📋';
+        message = '세무감사에서 탈세가 적발되어 과징금을 내야 합니다!';
+    } else if (space.name.includes('소송')) {
+        emoji = '⚖️';
+        message = '소송에서 패소하여 거액의 합의금을 지불해야 합니다!';
+    }
+
+    gameState.assets.cash -= lostAmount;
+
+    showEventModal(
+        `${emoji} ${space.name}`,
+        `<div class="text-center">
+            <div class="text-5xl mb-4">${emoji}</div>
+            <p class="text-lg text-red-400 font-bold">${message}</p>
+            <div class="mt-4 p-4 bg-red-900/30 border border-red-500/50 rounded-lg">
+                <div class="text-sm text-gray-400">손실 금액</div>
+                <div class="text-2xl font-bold text-red-400">-₩${fmt(lostAmount)}만</div>
+                <div class="text-sm text-gray-500 mt-1">(보유 현금의 50%)</div>
+            </div>
+            <p class="mt-3 text-gray-400">남은 현금: ₩${fmt(gameState.assets.cash)}만</p>
+        </div>`,
+        [{ text: '확인', action: 'hideEventModal(); nextTurn(); updateUI();', primary: true }]
+    );
 }
 
 // Check fast track victory condition (월 패시브 소득 5000만원)

@@ -13,6 +13,9 @@ function getSpaceIcon(name) {
     if (name.includes('기부')) return '❤️';
     if (name.includes('가상') || name.includes('스테이킹')) return '💎';
     if (name.includes('아기')) return '👶';
+    if (name.includes('이혼')) return '💔';
+    if (name.includes('세무감사')) return '📋';
+    if (name.includes('소송')) return '⚖️';
     if (name.includes('상가')) return '🏢';
     if (name.includes('해고')) return '😢';
     if (name.includes('섬')) return '🏝️';
