@@ -312,6 +312,11 @@ function updateDreamSelection() {
 function selectDream(dreamId) {
     players[setupPlayer].dream = dreamId;
     updateDreamSelection();
+    // Auto-apply to current player
+    if (setupPlayer === currentPlayer) {
+        applySettingsToCurrentPlayer();
+    }
+    showNotification(`🌟 꿈이 설정되었습니다!`, 'success');
 }
 
 // Apply preset
@@ -336,8 +341,15 @@ function applyPreset(presetName) {
         btn.classList.remove('ring-2', 'ring-yellow-400');
     });
     if (event && event.target) {
-        event.target.closest('.preset-btn').classList.add('ring-2', 'ring-yellow-400');
+        const btn = event.target.closest('.preset-btn');
+        if (btn) btn.classList.add('ring-2', 'ring-yellow-400');
     }
+
+    // Auto-apply to current player
+    if (setupPlayer === currentPlayer) {
+        applySettingsToCurrentPlayer();
+    }
+    showNotification(`🎭 ${preset.job} 직업이 적용되었습니다!`, 'success');
 }
 
 // Save setup player data
@@ -373,6 +385,13 @@ function saveSetupPlayer() {
 function applySettingsToPlayer() {
     saveSetupPlayer();
     showNotification(`플레이어 ${setupPlayer + 1} 설정 적용됨`, 'success');
+}
+
+// Auto-apply current setup player's settings to game state and UI
+function applySettingsToCurrentPlayer() {
+    updateUI();
+    updateCurrentPlayerDisplay();
+    drawBoard();
 }
 
 // Apply settings and close modal

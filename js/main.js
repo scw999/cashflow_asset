@@ -219,36 +219,49 @@ function rollDice() {
             priceChanges
         };
 
-        // Step 2: After showing result, move player
-        setTimeout(() => {
-            proceedAfterDice();
-        }, 500);
+        // Immediately start moving player (no delay)
+        animateTokenMovement();
     }, 800);
 }
 
-// Step 2: After dice result - Move player and handle payday/landing
-function proceedAfterDice() {
+// Animate token moving one space at a time
+function animateTokenMovement() {
     const data = window._diceRollData;
     if (!data) return;
 
     const { roll, oldPosition, newPosition, passedPaydays, spaces, diceBtn, priceChanges } = data;
+    const totalSpaces = spaces.length;
 
-    // Move player position
-    gameState.position = newPosition;
+    let currentPos = oldPosition;
+    let stepsRemaining = roll;
+    const stepDelay = 100; // 100ms per step
 
-    // Draw board to show new position
-    drawBoard();
-    updateUI();
+    function moveOneStep() {
+        if (stepsRemaining <= 0) {
+            // Animation complete - proceed to payday/landing
+            onMovementComplete();
+            return;
+        }
 
-    // Show price change notification for significant moves
-    const significantChanges = priceChanges.filter(c => Math.abs(parseFloat(c.changePercent)) > 5);
-    if (significantChanges.length > 0) {
-        const change = significantChanges[0];
-        showNotification(`${change.name} ${change.changePercent}%!`, parseFloat(change.changePercent) > 0 ? 'success' : 'error');
+        currentPos = (currentPos + 1) % totalSpaces;
+        stepsRemaining--;
+        gameState.position = currentPos;
+        drawBoard();
+
+        setTimeout(moveOneStep, stepDelay);
     }
 
-    // Step 3: After 500ms - Check payday or show landing
-    setTimeout(() => {
+    function onMovementComplete() {
+        updateUI();
+
+        // Show price change notification for significant moves
+        const significantChanges = priceChanges.filter(c => Math.abs(parseFloat(c.changePercent)) > 5);
+        if (significantChanges.length > 0) {
+            const change = significantChanges[0];
+            showNotification(`${change.name} ${change.changePercent}%!`, parseFloat(change.changePercent) > 0 ? 'success' : 'error');
+        }
+
+        // Check payday or show landing
         if (passedPaydays.length > 0) {
             if (gameState.inFastTrack) {
                 // 패스트트랙: 자동 수령 (패시브 소득 * 100)
@@ -279,11 +292,10 @@ function proceedAfterDice() {
             // No payday - go directly to landing
             proceedToLanding();
         }
-    }, 500);
+    }
 
-    // Store for next step
-    window._diceRollData.spaces = spaces;
-    window._diceRollData.diceBtn = diceBtn;
+    // Start animation
+    moveOneStep();
 }
 
 // Step 4: Show landing space event
