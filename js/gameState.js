@@ -201,6 +201,11 @@ function updateEconomicCycleKostolany() {
         // 사이클 전환 알림
         showNotification(`경기 사이클 변화: ${CYCLE_PHASE_NAMES[oldPhase]} → ${CYCLE_PHASE_NAMES[economicCycle.phase]}`, 'info');
 
+        // Update background color for economic cycle
+        if (typeof updateCycleBackground === 'function') {
+            updateCycleBackground(economicCycle.phase);
+        }
+
         // 사이클 전환시 금리 점프 이벤트
         if (economicCycle.phase === CYCLE_PHASES.RECESSION) {
             // 후퇴기 진입시 금리 인상
@@ -732,6 +737,12 @@ function enterFastTrack() {
 
     document.getElementById('celebrateModal').classList.add('hidden');
     showNotification(`패스트트랙 진입! 모든 자산 현금화: ₩${fmt(Math.round(totalCash))}만, 월 투자소득: ₩${fmt(passiveIncomeAtEscape)}만`, 'success');
+
+    // Celebration animation
+    if (typeof celebrateFastTrackEntry === 'function') {
+        celebrateFastTrackEntry();
+    }
+
     drawBoard();
     updateUI();
 }
@@ -778,6 +789,11 @@ function purchaseDream(space) {
         document.getElementById('victoryMessage').textContent =
             `${dreamData.name}을(를) 달성했습니다! 축하합니다!`;
         document.getElementById('victoryModal').classList.remove('hidden');
+
+        // Victory celebration animation
+        if (typeof celebrateVictory === 'function') {
+            celebrateVictory();
+        }
 
         return true;
     }

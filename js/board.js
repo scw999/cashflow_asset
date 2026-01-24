@@ -49,9 +49,9 @@ function drawBoard() {
         const y = cy + r1 * Math.sin(angle);
 
         html += `
-            <g class="track-space" onclick="showSpaceInfo(${i}, false)" data-space="${i}">
+            <g class="track-space board-space-hover" onclick="showSpaceInfo(${i}, false)" data-space="${i}" style="cursor: pointer;">
                 <circle cx="${x}" cy="${y}" r="${spaceRadius}" fill="${space.color}"
-                    stroke="rgba(255,255,255,0.4)" stroke-width="2"/>
+                    stroke="rgba(255,255,255,0.4)" stroke-width="2" style="transition: all 0.3s ease;"/>
                 <text x="${x}" y="${y + 2}" text-anchor="middle" dominant-baseline="middle"
                     font-size="20" style="font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif; pointer-events: none;">
                     ${getSpaceIcon(space.name)}
@@ -73,10 +73,10 @@ function drawBoard() {
         );
 
         html += `
-            <g class="track-space" onclick="showSpaceInfo(${i}, true)" data-space="${i}">
+            <g class="track-space board-space-hover ${isDream ? 'pulse-glow' : ''}" onclick="showSpaceInfo(${i}, true)" data-space="${i}" style="cursor: pointer;">
                 <circle cx="${x}" cy="${y}" r="${fastSpaceRadius}" fill="${space.color}"
                     stroke="${isDream ? '#fff' : 'rgba(251,191,36,0.4)'}"
-                    stroke-width="${isDream ? 4 : 2}"/>
+                    stroke-width="${isDream ? 4 : 2}" style="transition: all 0.3s ease;"/>
                 <text x="${x}" y="${y + 2}" text-anchor="middle" dominant-baseline="middle"
                     font-size="18" style="font-family: 'Segoe UI Emoji', 'Apple Color Emoji', sans-serif; pointer-events: none;">
                     ${getSpaceIcon(space.name)}

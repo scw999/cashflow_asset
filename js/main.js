@@ -127,6 +127,9 @@ function rollDice() {
     if (diceBtn) {
         diceBtn.disabled = true;
         diceBtn.classList.add('opacity-50', 'cursor-not-allowed');
+        // Add dice shake animation
+        diceBtn.classList.add('dice-shake');
+        setTimeout(() => diceBtn.classList.remove('dice-shake'), 800);
     }
 
     // Roll dice: 쥐 레이스에서는 1개 (1-6), 패스트트랙에서는 2개 (2-12)
@@ -412,8 +415,20 @@ function collectPayday() {
     const cashflow = getCashflow();
     gameState.assets.cash += cashflow;
 
+    // Money bounce animation
+    const cashDisplay = document.getElementById('cashDisplay') || document.querySelector('[data-cash-display]');
+    if (cashDisplay && typeof showMoneyBounce === 'function') {
+        showMoneyBounce(cashDisplay, cashflow, cashflow >= 0);
+    }
+
     hideEventModal();
     showNotification(`월급 수령! 캐시플로우 ${cashflow >= 0 ? '+' : ''}₩${fmt(cashflow)}만`, cashflow >= 0 ? 'success' : 'warning');
+
+    // Sparkle effect on success
+    if (cashflow >= 0 && typeof createSparkles === 'function' && cashDisplay) {
+        createSparkles(cashDisplay, 6);
+    }
+
     nextTurn();
     updateUI();
 }

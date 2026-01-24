@@ -8,9 +8,10 @@
     <script src="https://cdn.tailwindcss.com"></script>
     <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
     <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/animations.css">
 </head>
 
-<body class="text-white p-4">
+<body class="text-white p-4 cycle-transition">
     <div id="app" class="max-w-7xl mx-auto">
         <!-- Header with Current Player Indicator -->
         <header class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
@@ -42,7 +43,7 @@
         <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
             <div onclick="showDetailModal('cash')" class="card rounded-xl p-3 border-l-4 border-emerald-500 cursor-pointer hover:scale-105 transition">
                 <div class="text-xs text-gray-400">💵 현금</div>
-                <div id="dashCash" class="text-lg font-bold text-emerald-400">₩0</div>
+                <div id="dashCash" data-cash-display class="text-lg font-bold text-emerald-400">₩0</div>
             </div>
             <div onclick="showDetailModal('assets')" class="card rounded-xl p-3 border-l-4 border-blue-500 cursor-pointer hover:scale-105 transition">
                 <div class="text-xs text-gray-400">📊 총 자산 <span class="text-[10px]">▼</span></div>
@@ -335,6 +336,7 @@
     <script src="js/charts.js"></script>
     <script src="js/ui.js"></script>
     <script src="js/storage.js"></script>
+    <script src="js/animations.js"></script>
     <script src="js/main.js"></script>
 </body>
 

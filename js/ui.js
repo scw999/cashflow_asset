@@ -12,7 +12,15 @@ function updateUI() {
     }
 
     // Dashboard
-    document.getElementById('dashCash').textContent = `₩${fmt(gameState.assets.cash)}만`;
+    const dashCash = document.getElementById('dashCash');
+    const oldCashText = dashCash.textContent;
+    const newCashText = `₩${fmt(gameState.assets.cash)}만`;
+    dashCash.textContent = newCashText;
+    // Number pop animation when cash changes
+    if (oldCashText !== newCashText && typeof animateNumberPop === 'function') {
+        animateNumberPop(dashCash);
+    }
+
     document.getElementById('dashAssets').textContent = `₩${fmt(getTotalAssets())}만`;
     document.getElementById('dashDebt').textContent = `₩${fmt(getTotalLiabilities())}만`;
     document.getElementById('dashNetWorth').textContent = `₩${fmt(getTotalAssets() - getTotalLiabilities())}만`;
