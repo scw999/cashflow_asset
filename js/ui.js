@@ -266,9 +266,9 @@ function updatePresetButtons() {
     const currentJobPreset = player ? player.jobPreset : null;
 
     container.innerHTML = Object.entries(presets).map(([key, preset]) => `
-        <button onclick="applyPreset('${key}')" class="preset-btn p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition ${currentJobPreset === key ? 'ring-2 ring-yellow-400' : ''}">
+        <button onclick="applyPreset('${key}')" class="preset-btn p-2 rounded-lg text-left transition ${currentJobPreset === key ? 'bg-yellow-600 ring-2 ring-yellow-400' : 'bg-gray-700 hover:bg-gray-600'}">
             <div class="font-bold text-sm">${preset.job}</div>
-            <div class="text-xs text-gray-400">${key}</div>
+            <div class="text-xs ${currentJobPreset === key ? 'text-yellow-200' : 'text-gray-400'}">${key}</div>
         </button>
     `).join('') + `
         <button onclick="applyRandomPreset()" class="preset-btn p-2 bg-purple-700 hover:bg-purple-600 rounded-lg text-center transition">
@@ -334,16 +334,8 @@ function applyPreset(presetName) {
     player.investments = []; // Start with no investments
     player.childcareCost = preset.childcareCost || 30;  // 직업별 양육비 설정
 
+    // Reload UI which will update preset button highlights
     loadSetupPlayerData();
-
-    // Highlight selected preset
-    document.querySelectorAll('.preset-btn').forEach(btn => {
-        btn.classList.remove('ring-2', 'ring-yellow-400');
-    });
-    if (event && event.target) {
-        const btn = event.target.closest('.preset-btn');
-        if (btn) btn.classList.add('ring-2', 'ring-yellow-400');
-    }
 
     // Auto-apply to current player
     if (setupPlayer === currentPlayer) {
