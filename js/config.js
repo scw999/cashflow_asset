@@ -14,12 +14,16 @@ const basePrices = {
     'SK하이닉스': 19,
     '네이버': 21,
     '카카오': 4.5,
+    'LG에너지솔루션': 38,
+    '현대차': 22,
 
     // 미국 주식 (만원/주, 환율 1,400원 기준)
     '애플': 35,
     '테슬라': 55,
     '마이크로소프트': 60,
     '엔비디아': 195,
+    '아마존': 30,
+    '팔란티어': 12,
 
     // ETF (만원/주)
     'S&P500 ETF': 7,
@@ -39,11 +43,18 @@ const basePrices = {
     '은 ETF': 4.5,
     '원유 ETF': 6,
     '농산물 ETF': 4,
+    '천연가스 ETF': 3,
+    '구리 ETF': 5,
+    '플래티넘 ETF': 8,
+    '리튬 ETF': 6,
 
     // 가상자산 (만원)
     '비트코인': 14000,
     '이더리움': 550,
-    '솔라나': 35
+    '솔라나': 35,
+    '리플': 0.35,
+    '도지코인': 0.05,
+    '에이다': 0.12
 };
 
 // 부동산 기본 가격 (만원)
@@ -72,15 +83,21 @@ const realEstateCharacteristics = {
 
 // 자산별 변동성 및 특성
 const assetCharacteristics = {
-    // 주식
+    // 한국 주식
     '삼성전자': { type: 'stock', volatility: 0.08, dividend: 0.02, beta: 1.0 },
     'SK하이닉스': { type: 'stock', volatility: 0.12, dividend: 0.01, beta: 1.3 },
     '네이버': { type: 'stock', volatility: 0.10, dividend: 0.00, beta: 1.1 },
     '카카오': { type: 'stock', volatility: 0.12, dividend: 0.00, beta: 1.2 },
+    'LG에너지솔루션': { type: 'stock', volatility: 0.14, dividend: 0.00, beta: 1.4 },
+    '현대차': { type: 'stock', volatility: 0.09, dividend: 0.025, beta: 1.1 },
+
+    // 미국 주식
     '애플': { type: 'stock', volatility: 0.06, dividend: 0.005, beta: 0.9 },
     '테슬라': { type: 'stock', volatility: 0.15, dividend: 0.00, beta: 1.8 },
     '마이크로소프트': { type: 'stock', volatility: 0.07, dividend: 0.008, beta: 0.95 },
     '엔비디아': { type: 'stock', volatility: 0.18, dividend: 0.001, beta: 1.6 },
+    '아마존': { type: 'stock', volatility: 0.10, dividend: 0.00, beta: 1.2 },
+    '팔란티어': { type: 'stock', volatility: 0.22, dividend: 0.00, beta: 1.9 },
 
     // ETF
     'S&P500 ETF': { type: 'etf', volatility: 0.05, dividend: 0.015, beta: 1.0 },
@@ -100,11 +117,18 @@ const assetCharacteristics = {
     '은 ETF': { type: 'commodity', volatility: 0.08, dividend: 0.00, beta: 0.3 },
     '원유 ETF': { type: 'commodity', volatility: 0.12, dividend: 0.00, beta: 0.5 },
     '농산물 ETF': { type: 'commodity', volatility: 0.06, dividend: 0.00, beta: 0.2 },
+    '천연가스 ETF': { type: 'commodity', volatility: 0.18, dividend: 0.00, beta: 0.4 },
+    '구리 ETF': { type: 'commodity', volatility: 0.10, dividend: 0.00, beta: 0.6 },
+    '플래티넘 ETF': { type: 'commodity', volatility: 0.09, dividend: 0.00, beta: 0.3 },
+    '리튬 ETF': { type: 'commodity', volatility: 0.16, dividend: 0.00, beta: 0.8 },
 
     // 가상자산
     '비트코인': { type: 'crypto', volatility: 0.15, dividend: 0.00, beta: 2.0 },
     '이더리움': { type: 'crypto', volatility: 0.18, dividend: 0.00, beta: 2.2 },
-    '솔라나': { type: 'crypto', volatility: 0.25, dividend: 0.00, beta: 2.5 }
+    '솔라나': { type: 'crypto', volatility: 0.25, dividend: 0.00, beta: 2.5 },
+    '리플': { type: 'crypto', volatility: 0.22, dividend: 0.00, beta: 2.3 },
+    '도지코인': { type: 'crypto', volatility: 0.35, dividend: 0.00, beta: 3.0 },
+    '에이다': { type: 'crypto', volatility: 0.28, dividend: 0.00, beta: 2.6 }
 };
 
 // Job Presets - 모든 직업의 난이도를 비슷하게 조정
@@ -291,7 +315,8 @@ let maxCashEverHeld = 0;
 // Staking Rates
 const stakingRates = {
     '이더리움': 0.03,  // 연 3%
-    '솔라나': 0.08     // 연 8%
+    '솔라나': 0.08,    // 연 8%
+    '에이다': 0.05     // 연 5%
 };
 
 // 금리 설정 (연이율)

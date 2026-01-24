@@ -48,7 +48,7 @@ function getMarketHTML() {
             <div class="card p-4 rounded-xl border border-purple-500/30">
                 <h4 class="font-bold text-purple-400 mb-3">📊 주식</h4>
                 <div class="space-y-2 text-sm">
-                    ${['삼성전자', 'SK하이닉스', '네이버', '애플', '테슬라', '엔비디아'].map(name => {
+                    ${['삼성전자', 'SK하이닉스', '네이버', 'LG에너지솔루션', '현대차', '애플', '테슬라', '엔비디아', '아마존', '팔란티어'].map(name => {
                         const price = marketPrices[name];
                         const history = priceHistory[name] || [price];
                         const prevPrice = history.length > 1 ? history[history.length - 2] : price;
@@ -126,7 +126,7 @@ function getMarketHTML() {
             <div class="card p-4 rounded-xl border border-yellow-500/30">
                 <h4 class="font-bold text-yellow-400 mb-3">🥇 원자재</h4>
                 <div class="space-y-2 text-sm">
-                    ${['금 ETF', '은 ETF', '원유 ETF', '농산물 ETF'].map(name => {
+                    ${['금 ETF', '은 ETF', '원유 ETF', '농산물 ETF', '천연가스 ETF', '구리 ETF', '플래티넘 ETF', '리튬 ETF'].map(name => {
                         const price = marketPrices[name];
                         const history = priceHistory[name] || [price];
                         const prevPrice = history.length > 1 ? history[history.length - 2] : price;
@@ -152,7 +152,7 @@ function getMarketHTML() {
             <div class="card p-4 rounded-xl border border-orange-500/30">
                 <h4 class="font-bold text-orange-400 mb-3">💎 가상자산</h4>
                 <div class="space-y-2 text-sm">
-                    ${['비트코인', '이더리움', '솔라나'].map(name => {
+                    ${['비트코인', '이더리움', '솔라나', '리플', '도지코인', '에이다'].map(name => {
                         const price = marketPrices[name];
                         const history = priceHistory[name] || [price];
                         const prevPrice = history.length > 1 ? history[history.length - 2] : price;
@@ -181,6 +181,10 @@ function getMarketHTML() {
                         <button onclick="stakeCrypto('솔라나')"
                             class="w-full p-2 bg-purple-700 hover:bg-purple-600 rounded text-left transition mb-1">
                             ◎ 솔라나 스테이킹 <span class="text-emerald-400">연 8%</span>
+                        </button>
+                        <button onclick="stakeCrypto('에이다')"
+                            class="w-full p-2 bg-blue-700 hover:bg-blue-600 rounded text-left transition mb-1">
+                            ₳ 에이다 스테이킹 <span class="text-emerald-400">연 5%</span>
                         </button>
                     </div>
 
