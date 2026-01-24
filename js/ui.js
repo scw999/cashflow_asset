@@ -1062,3 +1062,94 @@ function buyBlockDealStock(name, shares) {
     hideBlockDealModal();
     updateUI();
 }
+
+// ==========================================
+// Universal Purchase Modal
+// ==========================================
+
+let purchaseModalCallback = null;
+let purchaseModalMax = 0;
+let purchaseModalStep = 1;
+
+function showPurchaseModal(options) {
+    const {
+        title = '구매',
+        itemName = '',
+        price = 0,
+        maxQuantity = 0,
+        step = 1,
+        unit = '주',
+        description = '',
+        buttonText = '구매하기',
+        onConfirm = null
+    } = options;
+
+    purchaseModalCallback = onConfirm;
+    purchaseModalMax = maxQuantity;
+    purchaseModalStep = step;
+
+    document.getElementById('purchaseModalTitle').textContent = title;
+    document.getElementById('purchaseModalCash').textContent = `₩${fmt(gameState.assets.cash)}만`;
+    document.getElementById('purchaseModalMax').textContent = `${typeof maxQuantity === 'number' && maxQuantity % 1 !== 0 ? maxQuantity.toFixed(3) : maxQuantity}${unit}`;
+    document.getElementById('purchaseModalLabel').textContent = `몇 ${unit} 구매하시겠습니까?`;
+    document.getElementById('purchaseModalConfirm').textContent = buttonText;
+
+    const input = document.getElementById('purchaseModalInput');
+    input.value = '';
+    input.step = step;
+    input.min = step;
+    input.max = maxQuantity;
+    input.placeholder = `0 ~ ${typeof maxQuantity === 'number' && maxQuantity % 1 !== 0 ? maxQuantity.toFixed(3) : maxQuantity}`;
+
+    // Build content
+    let html = '';
+    if (itemName) {
+        html += `<div class="text-center">
+            <div class="text-2xl font-bold text-white mb-1">${itemName}</div>`;
+        if (price > 0) {
+            html += `<div class="text-lg text-yellow-400">현재가: ₩${fmt(price)}만/${unit}</div>`;
+        }
+        html += `</div>`;
+    }
+    if (description) {
+        html += `<div class="text-sm text-gray-400 text-center p-2 bg-gray-800/50 rounded-lg">${description}</div>`;
+    }
+
+    document.getElementById('purchaseModalContent').innerHTML = html;
+    document.getElementById('purchaseModal').classList.remove('hidden');
+
+    // Focus input
+    setTimeout(() => input.focus(), 100);
+}
+
+function hidePurchaseModal() {
+    document.getElementById('purchaseModal').classList.add('hidden');
+    purchaseModalCallback = null;
+}
+
+function setPurchaseMax() {
+    const input = document.getElementById('purchaseModalInput');
+    input.value = purchaseModalStep < 1 ? purchaseModalMax.toFixed(3) : purchaseModalMax;
+}
+
+function confirmPurchase() {
+    const input = document.getElementById('purchaseModalInput');
+    const value = parseFloat(input.value);
+
+    if (isNaN(value) || value <= 0) {
+        showNotification('올바른 수량을 입력해주세요.', 'error');
+        return;
+    }
+
+    if (value > purchaseModalMax) {
+        showNotification('최대 수량을 초과했습니다.', 'error');
+        return;
+    }
+
+    if (purchaseModalCallback) {
+        purchaseModalCallback(value);
+    }
+
+    hidePurchaseModal();
+}
+

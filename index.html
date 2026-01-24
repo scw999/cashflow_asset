@@ -343,6 +343,51 @@
         </div>
     </div>
 
+    <!-- Universal Purchase Modal -->
+    <div id="purchaseModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="card rounded-2xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="purchaseModalTitle" class="text-xl font-bold text-yellow-400">구매</h2>
+                <button onclick="hidePurchaseModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div id="purchaseModalContent" class="space-y-4">
+                <!-- Dynamic content -->
+            </div>
+            <div class="mt-4 p-3 bg-gray-800/50 rounded-lg space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">보유 현금</span>
+                    <span id="purchaseModalCash" class="text-emerald-400 font-bold">₩0만</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">최대 구매 가능</span>
+                    <span id="purchaseModalMax" class="text-yellow-400 font-bold">0</span>
+                </div>
+            </div>
+            <div class="mt-4">
+                <label class="block text-sm text-gray-400 mb-2" id="purchaseModalLabel">수량 입력</label>
+                <div class="flex gap-2">
+                    <input type="number" id="purchaseModalInput"
+                        class="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white text-lg focus:border-yellow-400 focus:outline-none"
+                        min="0" step="1" placeholder="0">
+                    <button onclick="setPurchaseMax()"
+                        class="px-4 py-3 bg-yellow-600 hover:bg-yellow-500 rounded-lg font-bold transition">
+                        최대
+                    </button>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="confirmPurchase()" id="purchaseModalConfirm"
+                    class="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 rounded-xl font-bold transition">
+                    구매하기
+                </button>
+                <button onclick="hidePurchaseModal()"
+                    class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition">
+                    취소
+                </button>
+            </div>
+        </div>
+    </div>
+
     <!-- Scripts -->
     <script src="js/config.js"></script>
     <script src="js/gameState.js"></script>

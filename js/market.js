@@ -201,16 +201,29 @@ function getMarketHTML() {
 function buyStock(name) {
     const currentPrice = marketPrices[name];
     const maxShares = Math.floor(gameState.assets.cash / currentPrice);
-    const shares = parseInt(prompt(`${name} (현재가 ₩${fmt(currentPrice)}만/주)\n\n보유 현금: ₩${fmt(gameState.assets.cash)}만\n최대 구매 가능: ${maxShares}주\n\n몇 주 구매하시겠습니까?`, Math.min(10, maxShares).toString()));
 
-    if (!shares || shares <= 0) return;
-
-    const totalCost = Math.round(currentPrice * shares * 100) / 100;
-
-    if (gameState.assets.cash < totalCost) {
-        alert(`현금이 부족합니다! 필요: ₩${fmt(totalCost)}만`);
+    if (maxShares <= 0) {
+        showNotification('현금이 부족합니다!', 'error');
         return;
     }
+
+    showPurchaseModal({
+        title: '📈 주식 매수',
+        itemName: name,
+        price: currentPrice,
+        maxQuantity: maxShares,
+        step: 1,
+        unit: '주',
+        description: '배당주는 월 배당금을 지급합니다.',
+        buttonText: '매수하기',
+        onConfirm: (shares) => {
+            executeBuyStock(name, shares, currentPrice);
+        }
+    });
+}
+
+function executeBuyStock(name, shares, currentPrice) {
+    const totalCost = Math.round(currentPrice * shares * 100) / 100;
 
     // Dividend yield based on asset type
     let dividendYield = 0;
@@ -221,10 +234,6 @@ function buyStock(name) {
     else if (name === '애플') dividendYield = 0.005;
 
     const monthlyDividend = Math.floor(totalCost * dividendYield / 12);
-
-    if (!confirm(`${name} ${shares}주를 ₩${fmt(totalCost)}만원에 구매하시겠습니까?${monthlyDividend > 0 ? `\n예상 월 배당: ₩${fmt(monthlyDividend)}만` : ''}`)) {
-        return;
-    }
 
     gameState.assets.cash -= totalCost;
     gameState.assets.stocks += totalCost;
@@ -242,6 +251,7 @@ function buyStock(name) {
         monthlyIncome: monthlyDividend
     });
 
+    showNotification(`${name} ${shares}주 매수 완료!${monthlyDividend > 0 ? ` (월 배당 +₩${fmt(monthlyDividend)}만)` : ''}`, 'success');
     updateUI();
     showTab('portfolio');
 }
@@ -249,19 +259,30 @@ function buyStock(name) {
 // Buy cryptocurrency (소수점 단위 가능)
 function buyCrypto(name) {
     const currentPrice = marketPrices[name];
-    const maxAmount = Math.floor((gameState.assets.cash / currentPrice) * 1000) / 1000;  // 0.001 단위
-    const amount = parseFloat(prompt(`${name} (현재가 ₩${fmt(currentPrice)}만)\n\n보유 현금: ₩${fmt(gameState.assets.cash)}만\n최대 구매 가능: ${maxAmount}개\n\n몇 개 구매하시겠습니까?\n(0.001 단위까지 입력 가능)`, Math.min(1, maxAmount).toString()));
+    const maxAmount = Math.floor((gameState.assets.cash / currentPrice) * 1000) / 1000;
 
-    if (!amount || amount <= 0) return;
-
-    const totalCost = Math.round(currentPrice * amount * 100) / 100;
-
-    if (gameState.assets.cash < totalCost) {
-        alert(`현금이 부족합니다! 필요: ₩${fmt(totalCost)}만`);
+    if (maxAmount <= 0) {
+        showNotification('현금이 부족합니다!', 'error');
         return;
     }
 
-    if (!confirm(`${name} ${amount}개를 ₩${fmt(totalCost)}만원에 구매하시겠습니까?`)) return;
+    showPurchaseModal({
+        title: '💎 가상자산 매수',
+        itemName: name,
+        price: currentPrice,
+        maxQuantity: maxAmount,
+        step: 0.001,
+        unit: '개',
+        description: '0.001 단위까지 구매 가능합니다.',
+        buttonText: '매수하기',
+        onConfirm: (amount) => {
+            executeBuyCrypto(name, amount, currentPrice);
+        }
+    });
+}
+
+function executeBuyCrypto(name, amount, currentPrice) {
+    const totalCost = Math.round(currentPrice * amount * 100) / 100;
 
     gameState.assets.cash -= totalCost;
     gameState.assets.crypto += totalCost;
@@ -275,6 +296,7 @@ function buyCrypto(name) {
         monthlyIncome: 0
     });
 
+    showNotification(`${name} ${amount}개 매수 완료!`, 'success');
     updateUI();
     showTab('portfolio');
 }
@@ -291,30 +313,52 @@ function stakeCrypto(name) {
 
     if (existingCrypto.length > 0) {
         const totalOwned = existingCrypto.reduce((sum, inv) => sum + (inv.amount || 0), 0);
-        const choice = prompt(`${name} 스테이킹 (연 ${annualRate * 100}%)\n\n보유 중: ${totalOwned.toFixed(3)}개\n\n1. 새로 구매하여 스테이킹\n2. 보유 코인 스테이킹\n\n선택 (1 또는 2):`, '2');
+        // Show choice modal
+        showEventModal(`💎 ${name} 스테이킹`, `
+            <div class="text-center mb-4">
+                <div class="text-lg text-yellow-400 mb-2">연 ${(annualRate * 100).toFixed(0)}% 보상</div>
+                <div class="text-gray-400">보유 중: ${totalOwned.toFixed(3)}개</div>
+            </div>
+        `, [
+            { text: '새로 구매하여 스테이킹', action: `showNewStakingModal('${name}')`, primary: true },
+            { text: '보유 코인 스테이킹', action: `stakeExistingCrypto('${name}')` }
+        ]);
+        return;
+    }
 
-        if (choice === '2') {
-            stakeExistingCrypto(name);
-            return;
+    showNewStakingModal(name);
+}
+
+function showNewStakingModal(name) {
+    hideEventModal();
+    const currentPrice = marketPrices[name];
+    const annualRate = stakingRates[name];
+    const maxAmount = Math.floor((gameState.assets.cash / currentPrice) * 1000) / 1000;
+
+    if (maxAmount <= 0) {
+        showNotification('현금이 부족합니다!', 'error');
+        return;
+    }
+
+    showPurchaseModal({
+        title: `💎 ${name} 스테이킹`,
+        itemName: name,
+        price: currentPrice,
+        maxQuantity: maxAmount,
+        step: 0.001,
+        unit: '개',
+        description: `연 ${(annualRate * 100).toFixed(0)}% 보상 (${name}으로 지급)`,
+        buttonText: '스테이킹하기',
+        onConfirm: (amount) => {
+            executeStakeCrypto(name, amount, currentPrice);
         }
-    }
+    });
+}
 
-    const amount = parseFloat(prompt(`${name} 스테이킹 (연 ${annualRate * 100}%)\n\n현재가: ₩${fmt(currentPrice)}만\n이자는 ${name}으로 지급됩니다.\n\n몇 개를 새로 구매하여 스테이킹하시겠습니까?\n(0.001 단위까지 입력 가능)`, '1'));
-
-    if (!amount || amount <= 0) return;
-
+function executeStakeCrypto(name, amount, currentPrice) {
+    const annualRate = stakingRates[name];
     const totalCost = Math.round(currentPrice * amount * 100) / 100;
-
-    if (gameState.assets.cash < totalCost) {
-        alert(`현금이 부족합니다! 필요: ₩${fmt(totalCost)}만`);
-        return;
-    }
-
     const monthlyReward = amount * annualRate / 12;
-
-    if (!confirm(`${name} ${amount}개를 ₩${fmt(totalCost)}만원에 스테이킹하시겠습니까?\n\n예상 월 보상: ${monthlyReward.toFixed(4)} ${name}`)) {
-        return;
-    }
 
     gameState.assets.cash -= totalCost;
     gameState.assets.crypto += totalCost;
@@ -330,19 +374,21 @@ function stakeCrypto(name) {
         monthlyReward: monthlyReward,
         isStaking: true,
         monthlyIncome: 0,
-        stakingTurn: turn,  // 락업 시작 턴
-        lockupTurns: 1       // 1턴 후 매도 가능
+        stakingTurn: turn,
+        lockupTurns: 1
     });
 
+    showNotification(`${name} ${amount}개 스테이킹 시작! (월 보상: ${monthlyReward.toFixed(4)} ${name})`, 'success');
     updateUI();
     showTab('portfolio');
 }
 
 // 기존 보유 코인 스테이킹
 function stakeExistingCrypto(name) {
+    hideEventModal();
     const annualRate = stakingRates[name];
     if (!annualRate) {
-        alert(`${name}은(는) 스테이킹을 지원하지 않습니다.`);
+        showNotification(`${name}은(는) 스테이킹을 지원하지 않습니다.`, 'error');
         return;
     }
 
@@ -352,26 +398,33 @@ function stakeExistingCrypto(name) {
     );
 
     if (existingIdx === -1) {
-        alert(`보유 중인 ${name}이(가) 없습니다.`);
+        showNotification(`보유 중인 ${name}이(가) 없습니다.`, 'error');
         return;
     }
 
     const existing = gameState.investments[existingIdx];
-    const amountToStake = parseFloat(prompt(`보유 ${name}: ${existing.amount.toFixed(3)}개\n\n몇 개를 스테이킹하시겠습니까?\n(연 ${annualRate * 100}% 보상)`, existing.amount.toFixed(3)));
 
-    if (!amountToStake || amountToStake <= 0) return;
-    if (amountToStake > existing.amount) {
-        alert('보유 수량보다 많이 스테이킹할 수 없습니다.');
-        return;
-    }
+    showPurchaseModal({
+        title: `💎 ${name} 스테이킹`,
+        itemName: `보유 ${name}`,
+        price: 0,
+        maxQuantity: existing.amount,
+        step: 0.001,
+        unit: '개',
+        description: `연 ${(annualRate * 100).toFixed(0)}% 보상 (보유: ${existing.amount.toFixed(3)}개)`,
+        buttonText: '스테이킹하기',
+        onConfirm: (amountToStake) => {
+            executeStakeExisting(name, existingIdx, amountToStake);
+        }
+    });
+}
 
+function executeStakeExisting(name, existingIdx, amountToStake) {
+    const annualRate = stakingRates[name];
+    const existing = gameState.investments[existingIdx];
     const currentPrice = marketPrices[name] || existing.pricePerUnit;
     const stakeCost = Math.round(amountToStake * currentPrice * 100) / 100;
     const monthlyReward = amountToStake * annualRate / 12;
-
-    if (!confirm(`${name} ${amountToStake.toFixed(3)}개를 스테이킹하시겠습니까?\n\n예상 월 보상: ${monthlyReward.toFixed(4)} ${name}`)) {
-        return;
-    }
 
     // 기존 보유분에서 차감
     existing.amount -= amountToStake;
@@ -404,20 +457,30 @@ function stakeExistingCrypto(name) {
 
 // Buy stablecoin (예치)
 function buyStableCoin() {
-    const amount = parseFloat(prompt(`스테이블코인 예치 (연 5% 이자, 현금으로 지급)\n\n얼마를 예치하시겠습니까? (만원 단위)`, '1000'));
+    const maxAmount = gameState.assets.cash;
 
-    if (!amount || amount <= 0) return;
-
-    if (gameState.assets.cash < amount) {
-        alert(`현금이 부족합니다! 보유: ₩${fmt(gameState.assets.cash)}만`);
+    if (maxAmount <= 0) {
+        showNotification('현금이 부족합니다!', 'error');
         return;
     }
 
+    showPurchaseModal({
+        title: '💵 스테이블코인 예치',
+        itemName: '스테이블코인',
+        price: 0,
+        maxQuantity: maxAmount,
+        step: 1,
+        unit: '만원',
+        description: '연 5% 이자 (현금으로 지급)',
+        buttonText: '예치하기',
+        onConfirm: (amount) => {
+            executeStableCoin(amount);
+        }
+    });
+}
+
+function executeStableCoin(amount) {
     const monthlyInterest = Math.round(amount * 0.05 / 12 * 100) / 100;
-
-    if (!confirm(`₩${fmt(amount)}만원을 스테이블코인에 예치하시겠습니까?\n\n예상 월 이자: ₩${fmt(monthlyInterest)}만 (현금)`)) {
-        return;
-    }
 
     gameState.assets.cash -= amount;
     gameState.assets.crypto += amount;
@@ -432,6 +495,7 @@ function buyStableCoin() {
         isStable: true
     });
 
+    showNotification(`₩${fmt(amount)}만원 예치 완료! (월 이자 +₩${fmt(monthlyInterest)}만)`, 'success');
     updateUI();
     showTab('portfolio');
 }

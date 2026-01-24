@@ -261,6 +261,13 @@ function animateTokenMovement() {
             showNotification(`${change.name} ${change.changePercent}%!`, parseFloat(change.changePercent) > 0 ? 'success' : 'error');
         }
 
+        // Small delay after movement so player can see the new position
+        setTimeout(() => {
+            showLandingEvents();
+        }, 400);
+    }
+
+    function showLandingEvents() {
         // Check payday or show landing
         if (passedPaydays.length > 0) {
             if (gameState.inFastTrack) {
@@ -1419,22 +1426,36 @@ function showRightsOfferingModal() {
     const discountPrice = Math.round(currentPrice * 0.7 * 100) / 100;
     const maxShares = Math.floor(gameState.assets.cash / discountPrice);
 
-    const shares = parseInt(prompt(`${randomStock} 유상증자 참여\n\n현재가: ₩${fmt(currentPrice)}만\n할인가: ₩${fmt(discountPrice)}만 (30% 할인)\n\n보유 현금: ₩${fmt(gameState.assets.cash)}만\n최대 구매 가능: ${maxShares}주\n\n몇 주를 매수하시겠습니까?`, Math.min(10, maxShares).toString()));
-
-    if (!shares || shares <= 0) {
+    if (maxShares <= 0) {
+        showNotification('현금이 부족하여 유상증자에 참여할 수 없습니다.', 'error');
         nextTurn();
         updateUI();
         return;
     }
+
+    // Store for callback
+    window._rightsOfferingData = { randomStock, discountPrice };
+
+    showPurchaseModal({
+        title: '💰 유상증자 참여',
+        itemName: randomStock,
+        price: discountPrice,
+        maxQuantity: maxShares,
+        step: 1,
+        unit: '주',
+        description: `30% 할인 (원래가: ₩${fmt(currentPrice)}만)`,
+        buttonText: '유상증자 참여',
+        onConfirm: (shares) => {
+            executeRightsOffering(shares);
+        }
+    });
+}
+
+function executeRightsOffering(shares) {
+    const { randomStock, discountPrice } = window._rightsOfferingData || {};
+    if (!randomStock) return;
 
     const totalCost = Math.round(discountPrice * shares * 100) / 100;
-
-    if (gameState.assets.cash < totalCost) {
-        alert(`현금이 부족합니다! 필요: ₩${fmt(totalCost)}만`);
-        nextTurn();
-        updateUI();
-        return;
-    }
 
     gameState.assets.cash -= totalCost;
     gameState.assets.stocks += totalCost;
@@ -1456,6 +1477,7 @@ function showRightsOfferingModal() {
     }
 
     showNotification(`${randomStock} ${shares}주 유상증자 참여 완료!`, 'success');
+    delete window._rightsOfferingData;
     nextTurn();
     updateUI();
 }
