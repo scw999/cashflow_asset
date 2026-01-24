@@ -210,6 +210,11 @@ function loadSetupPlayerData() {
     // Update preset buttons
     updatePresetButtons();
 
+    // Update dream selection (do this first even if player is undefined)
+    updateDreamSelection();
+
+    if (!player) return;
+
     // Update selected job display
     const jobDisplay = document.getElementById('selectedJobDisplay');
     if (jobDisplay) {
@@ -246,9 +251,6 @@ function loadSetupPlayerData() {
     document.getElementById('debtCredit').value = player.liabilities.credit;
     document.getElementById('debtStudent').value = player.liabilities.student;
     document.getElementById('debtOther').value = player.liabilities.other;
-
-    // Dream selection
-    updateDreamSelection();
 }
 
 // Update preset buttons
@@ -256,8 +258,11 @@ function updatePresetButtons() {
     const container = document.getElementById('presetBtns');
     if (!container) return;
 
+    const player = players[setupPlayer];
+    const currentJobPreset = player ? player.jobPreset : null;
+
     container.innerHTML = Object.entries(presets).map(([key, preset]) => `
-        <button onclick="applyPreset('${key}')" class="preset-btn p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition ${players[setupPlayer].jobPreset === key ? 'ring-2 ring-yellow-400' : ''}">
+        <button onclick="applyPreset('${key}')" class="preset-btn p-2 bg-gray-700 hover:bg-gray-600 rounded-lg text-left transition ${currentJobPreset === key ? 'ring-2 ring-yellow-400' : ''}">
             <div class="font-bold text-sm">${preset.job}</div>
             <div class="text-xs text-gray-400">${key}</div>
         </button>
@@ -282,11 +287,12 @@ function updateDreamSelection() {
     if (!container) return;
 
     const player = players[setupPlayer];
+    const currentDream = player ? player.dream : null;
 
     container.innerHTML = dreams.map(dream => `
         <button onclick="selectDream('${dream.id}')"
             class="p-3 rounded-lg text-left transition-all ${
-                player.dream === dream.id
+                currentDream === dream.id
                     ? 'bg-yellow-600 ring-2 ring-yellow-400'
                     : 'bg-gray-700 hover:bg-gray-600'
             }">

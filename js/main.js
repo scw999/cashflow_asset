@@ -163,7 +163,6 @@ function rollDice() {
     }
 
     // Show final dice face after rolling animation
-    const dice3d = document.getElementById('dice3d');
     if (dice3d) {
         setTimeout(() => {
             dice3d.classList.remove('rolling');

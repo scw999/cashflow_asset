@@ -72,7 +72,7 @@ body {
 
 /* Player Indicator */
 .player-indicator {
-    animation: pulse 2s infinite;
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
 }
 
 /* Dice */
