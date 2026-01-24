@@ -7,18 +7,29 @@ let diceRolling = false;
 
 // Initialize game
 function init() {
-    // Draw initial board
-    drawBoard();
+    try {
+        // Draw initial board
+        drawBoard();
+    } catch (e) { console.error('drawBoard error:', e); }
 
-    // Setup player tabs
-    setNumPlayers(1);
+    try {
+        // Setup player tabs
+        setNumPlayers(1);
+    } catch (e) { console.error('setNumPlayers error:', e); }
 
-    // Initialize UI
-    updateCurrentPlayerDisplay();
-    updateUI();
+    try {
+        // Initialize UI
+        updateCurrentPlayerDisplay();
+    } catch (e) { console.error('updateCurrentPlayerDisplay error:', e); }
 
-    // Show setup modal on start
-    showSetupModal();
+    try {
+        updateUI();
+    } catch (e) { console.error('updateUI error:', e); }
+
+    try {
+        // Show setup modal on start
+        showSetupModal();
+    } catch (e) { console.error('showSetupModal error:', e); }
 
     // Setup tab click handlers
     document.querySelectorAll('[data-tab]').forEach(tab => {

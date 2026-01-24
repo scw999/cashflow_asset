@@ -176,7 +176,10 @@ function switchToPlayer(playerIndex) {
 // Update setup player tabs
 function updateSetupPlayerTabs() {
     const container = document.getElementById('setupPlayerTabs');
-    if (!container) return;
+    if (!container) { console.error('setupPlayerTabs container not found'); return; }
+    if (typeof numPlayers === 'undefined') { console.error('numPlayers not defined'); return; }
+    if (typeof playerEmojis === 'undefined') { console.error('playerEmojis not defined'); return; }
+    if (typeof playerColorClasses === 'undefined') { console.error('playerColorClasses not defined'); return; }
 
     container.innerHTML = '';
     for (let i = 0; i < numPlayers; i++) {
@@ -256,9 +259,10 @@ function loadSetupPlayerData() {
 // Update preset buttons
 function updatePresetButtons() {
     const container = document.getElementById('presetBtns');
-    if (!container) return;
+    if (!container) { console.error('presetBtns container not found'); return; }
+    if (typeof presets === 'undefined') { console.error('presets not defined'); return; }
 
-    const player = players[setupPlayer];
+    const player = players && players[setupPlayer];
     const currentJobPreset = player ? player.jobPreset : null;
 
     container.innerHTML = Object.entries(presets).map(([key, preset]) => `
@@ -284,9 +288,10 @@ function applyRandomPreset() {
 // Update dream selection UI
 function updateDreamSelection() {
     const container = document.getElementById('dreamSelection');
-    if (!container) return;
+    if (!container) { console.error('dreamSelection container not found'); return; }
+    if (typeof dreams === 'undefined' || !Array.isArray(dreams)) { console.error('dreams not defined'); return; }
 
-    const player = players[setupPlayer];
+    const player = players && players[setupPlayer];
     const currentDream = player ? player.dream : null;
 
     container.innerHTML = dreams.map(dream => `
@@ -406,8 +411,12 @@ function applySettingsAndClose() {
 // Show setup modal
 function showSetupModal() {
     document.getElementById('setupModal').classList.remove('hidden');
-    updateSetupPlayerTabs();
-    loadSetupPlayerData();
+    try {
+        updateSetupPlayerTabs();
+    } catch (e) { console.error('updateSetupPlayerTabs error:', e); }
+    try {
+        loadSetupPlayerData();
+    } catch (e) { console.error('loadSetupPlayerData error:', e); }
 }
 
 // Hide setup modal

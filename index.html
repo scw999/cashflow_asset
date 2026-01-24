@@ -347,6 +347,16 @@
     <script src="js/storage.js"></script>
     <script src="js/animations.js"></script>
     <script src="js/main.js"></script>
+    <script>
+        // Fallback initialization if DOMContentLoaded fails
+        setTimeout(function() {
+            if (document.getElementById('setupPlayerTabs') &&
+                document.getElementById('setupPlayerTabs').innerHTML === '') {
+                console.log('Fallback init triggered');
+                try { if (typeof init === 'function') init(); } catch(e) { console.error(e); }
+            }
+        }, 100);
+    </script>
 </body>
 
 </html>

@@ -109,14 +109,11 @@ body {
 .track-path-outer {
     stroke: rgba(0, 245, 255, 0.3);
     stroke-width: 8;
-    animation: neonPulse 3s ease-in-out infinite;
 }
 
 .track-path-inner {
     stroke: rgba(251, 191, 36, 0.3);
     stroke-width: 6;
-    animation: neonPulse 3s ease-in-out infinite;
-    animation-delay: 1.5s;
 }
 
 /* Asset Items */
