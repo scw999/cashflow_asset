@@ -189,19 +189,24 @@ function rollDice() {
             dice3d.className = `dice-3d show-${dice1}`;
         }
 
-        // Show dice result modal
-        const diceResultHtml = `
-            <div class="text-center">
-                <div class="text-6xl mb-4">${gameState.inFastTrack ? '🎲🎲' : '🎲'}</div>
-                <div class="text-4xl font-bold text-yellow-400 mb-2">${diceDisplay}</div>
-                ${isDoubleDice ? `<div class="text-2xl text-green-400">× 2 = ${roll} (더블 다이스!)</div>` : ''}
-                <div class="text-lg text-gray-400 mt-4">${roll}칸 이동합니다</div>
-            </div>
-        `;
+        // Show dice result next to dice button
+        const resultDisplay = document.getElementById('diceResultDisplay');
+        const resultValue = document.getElementById('diceResultValue');
+        const resultText = document.getElementById('diceResultText');
 
-        showEventModal('🎲 주사위 결과', diceResultHtml, [
-            { text: '이동하기', action: 'proceedAfterDice()', primary: true }
-        ]);
+        if (resultDisplay && resultValue && resultText) {
+            resultDisplay.classList.remove('hidden');
+            if (isDoubleDice) {
+                resultValue.textContent = roll;
+                resultText.innerHTML = `<span class="text-green-400">더블! ×2</span>`;
+            } else if (gameState.inFastTrack) {
+                resultValue.textContent = roll;
+                resultText.textContent = `${dice1}+${dice2}`;
+            } else {
+                resultValue.textContent = roll;
+                resultText.textContent = `${roll}칸 이동`;
+            }
+        }
 
         // Store data for next step
         window._diceRollData = {
@@ -213,13 +218,16 @@ function rollDice() {
             diceBtn,
             priceChanges
         };
+
+        // Step 2: After showing result, move player
+        setTimeout(() => {
+            proceedAfterDice();
+        }, 500);
     }, 800);
 }
 
-// Step 2: After dice result modal - Move player and handle payday/landing
+// Step 2: After dice result - Move player and handle payday/landing
 function proceedAfterDice() {
-    hideEventModal();
-
     const data = window._diceRollData;
     if (!data) return;
 
