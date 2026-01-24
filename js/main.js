@@ -181,15 +181,29 @@ function rollDice() {
     drawBoard();
 
     // 지나간 월급칸이 있으면 먼저 처리
-    if (passedPaydays.length > 0 && !gameState.inFastTrack) {
-        setTimeout(() => {
-            showPassedPaydayModal(passedPaydays.length, () => {
-                // 월급칸 처리 후 착지 처리
+    if (passedPaydays.length > 0) {
+        if (gameState.inFastTrack) {
+            // 패스트트랙: 자동 수령
+            const cashflow = getCashflow();
+            const totalPayday = cashflow * passedPaydays.length;
+            gameState.assets.cash += totalPayday;
+            showNotification(`💰 투자 소득 ${passedPaydays.length}회 자동 수령! +₩${fmt(totalPayday)}만`, 'success');
+            setTimeout(() => {
                 const space = spaces[gameState.position];
                 handleSpaceLanding(space);
                 resetDiceButton(diceBtn);
-            });
-        }, 800);
+            }, 800);
+        } else {
+            // 쥐 레이스: 월급 버튼 클릭 필요
+            setTimeout(() => {
+                showPassedPaydayModal(passedPaydays.length, () => {
+                    // 월급칸 처리 후 착지 처리
+                    const space = spaces[gameState.position];
+                    handleSpaceLanding(space);
+                    resetDiceButton(diceBtn);
+                });
+            }, 800);
+        }
     } else {
         // Process landing after a delay
         setTimeout(() => {
@@ -404,11 +418,11 @@ function collectPayday() {
     updateUI();
 }
 
-// 자동 월급 처리 (패스트트랙)
+// 자동 투자 소득 처리 (패스트트랙)
 function processPaydayAutomatic() {
     const cashflow = getCashflow();
 
-    // Process staking rewards
+    // Process staking rewards (if any remaining)
     const stakingRewards = processStakingRewards();
 
     gameState.assets.cash += cashflow;
@@ -440,8 +454,8 @@ function processPaydayAutomatic() {
     `;
 
     showEventModal(
-        '💰 현금 정산! (자동)',
-        `<p class="text-lg">캐시플로우: <span class="${cashflow >= 0 ? 'text-emerald-400' : 'text-red-400'} font-bold">₩${fmt(cashflow)}만</span></p>
+        '💰 투자 소득! (자동)',
+        `<p class="text-lg">투자 소득: <span class="${cashflow >= 0 ? 'text-emerald-400' : 'text-red-400'} font-bold">₩${fmt(cashflow)}만</span></p>
          <p class="mt-2 text-gray-400">현금: ₩${fmt(gameState.assets.cash)}만</p>
          ${stakingMessage}
          ${fastTrackInfo}`,

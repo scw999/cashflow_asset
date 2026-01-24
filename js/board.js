@@ -4,7 +4,7 @@
 
 // Icon mapping for spaces
 function getSpaceIcon(name) {
-    if (name.includes('월급')) return '💰';
+    if (name.includes('월급') || name.includes('투자 소득')) return '💰';
     if (name.includes('부동산') || name.includes('원룸') || name.includes('경매')) return '🏠';
     if (name.includes('상승')) return '📈';
     if (name.includes('하락')) return '📉';
@@ -192,7 +192,7 @@ function rollDice() {
     }, 100);
 }
 
-// Move player
+// Move player (legacy - main.js rollDice is used instead)
 function movePlayer(steps) {
     const track = gameState.inFastTrack ? fastTrackSpaces : ratRaceSpaces;
     gameState.position = (gameState.position + steps) % track.length;
@@ -214,7 +214,11 @@ function triggerEvent(space) {
     switch (space.type) {
         case 'payday':
             const cf = getCashflow();
-            desc.textContent = `월급날입니다! 캐시플로우 ₩${fmt(cf)}만원이 들어옵니다.`;
+            if (gameState.inFastTrack) {
+                desc.textContent = `투자 소득! ₩${fmt(cf)}만원이 들어옵니다.`;
+            } else {
+                desc.textContent = `월급날입니다! 캐시플로우 ₩${fmt(cf)}만원이 들어옵니다.`;
+            }
             break;
 
         case 'opportunity':

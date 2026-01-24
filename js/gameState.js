@@ -667,9 +667,71 @@ function checkEscape() {
 
 // Enter fast track
 function enterFastTrack() {
+    const player = getPlayer();
+
+    // 패스트트랙 진입 시 투자 소득 계산 (탈출 시점의 패시브 소득)
+    const passiveIncomeAtEscape = getPassiveIncome();
+    const totalExpensesAtEscape = getTotalExpenses();
+
+    // 모든 자산 현금화
+    let totalCash = gameState.assets.cash;
+
+    // 1. 주식/ETF 매도
+    gameState.investments.filter(inv => inv.type === 'stocks').forEach(inv => {
+        const currentValue = inv.shares * (marketPrices[inv.name] || inv.currentPrice || inv.cost / inv.shares);
+        totalCash += currentValue;
+    });
+
+    // 2. 가상자산 매도
+    gameState.investments.filter(inv => inv.type === 'crypto').forEach(inv => {
+        if (inv.isStable) {
+            totalCash += inv.amount;
+        } else {
+            const price = marketPrices[inv.baseName] || marketPrices[inv.name] || inv.currentPrice || 1;
+            totalCash += inv.amount * price;
+        }
+    });
+
+    // 3. 부동산 매도 (시세 기준, 대출 상환)
+    gameState.investments.filter(inv => inv.type === 'realEstate').forEach(inv => {
+        // 현재 시세로 매도 (시세가 있으면 시세, 없으면 구매가)
+        const currentMarketPrice = realEstateMarketPrices[inv.name] || inv.cost;
+        const saleProceeds = currentMarketPrice - (inv.loan || 0);  // 대출 상환 후 순수익
+        totalCash += saleProceeds;
+    });
+
+    // 4. 일반 부채 상환 (신용대출, 학자금 등)
+    const remainingDebts = gameState.liabilities.credit + gameState.liabilities.student + gameState.liabilities.other;
+    totalCash -= remainingDebts;
+
+    // 모든 투자 및 자산 초기화
+    player.investments = [];
+    player.assets = { cash: Math.round(totalCash), realEstate: 0, stocks: 0, crypto: 0 };
+    player.liabilities = { mortgage: 0, credit: 0, student: 0, other: 0 };
+
+    // 패스트트랙용 소득/지출 설정
+    // 투자 소득 = 탈출 시점의 패시브 소득 (월급은 더 이상 없음)
+    player.income = {
+        salary: 0,
+        rental: 0,
+        dividend: 0,
+        other: passiveIncomeAtEscape  // 투자 소득으로 전환
+    };
+
+    // 지출 = 기본 생활비만 (대출, 세금 등은 초기화)
+    const basicLiving = Math.round(totalExpensesAtEscape * 0.3);  // 기본 생활비
+    player.expenses = {
+        housing: 0,
+        living: basicLiving,
+        loan: 0,
+        tax: 0
+    };
+
     gameState.inFastTrack = true;
     gameState.position = 0;
+
     document.getElementById('celebrateModal').classList.add('hidden');
+    showNotification(`패스트트랙 진입! 모든 자산 현금화: ₩${fmt(Math.round(totalCash))}만, 월 투자소득: ₩${fmt(passiveIncomeAtEscape)}만`, 'success');
     drawBoard();
     updateUI();
 }
