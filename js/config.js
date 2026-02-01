@@ -238,8 +238,8 @@ const ratRaceSpaces = [
     { type: 'payday', name: '💰월급날', color: '#10b981' },
     { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
     { type: 'market', name: '📉시장하락', color: '#dc2626' },
-    { type: 'baby', name: '👶아기탄생', color: '#f472b6' },
     { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' },
+    { type: 'opportunity', name: '💎가상자산', color: '#f59e0b' },
     { type: 'opportunity', name: '🏠부동산', color: '#3b82f6' }
 ];
 

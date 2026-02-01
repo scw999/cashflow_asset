@@ -287,12 +287,19 @@ function updatePresetButtons() {
     const playerRingClass = playerRingClasses[setupPlayer] || 'ring-yellow-400';
     const playerTextClass = playerTextClasses[setupPlayer] || 'text-yellow-200';
 
-    container.innerHTML = Object.entries(presets).map(([key, preset]) => `
+    container.innerHTML = Object.entries(presets).map(([key, preset]) => {
+        const totalIncome = Object.values(preset.income).reduce((a, b) => a + b, 0);
+        const totalExpense = Object.values(preset.expenses).reduce((a, b) => a + b, 0);
+        const cashflow = totalIncome - totalExpense;
+        return `
         <button onclick="applyPreset('${key}')" class="preset-btn p-2 rounded-lg text-left transition ${currentJobPreset === key ? playerBgClass + ' ring-2 ' + playerRingClass : 'bg-gray-700 hover:bg-gray-600'}">
             <div class="font-bold text-sm">${preset.job}</div>
-            <div class="text-xs ${currentJobPreset === key ? playerTextClass : 'text-gray-400'}">${key}</div>
-        </button>
-    `).join('') + `
+            <div class="flex justify-between items-center">
+                <span class="text-xs ${currentJobPreset === key ? playerTextClass : 'text-gray-400'}">${key}</span>
+                <span class="text-xs font-bold ${cashflow >= 0 ? 'text-emerald-400' : 'text-red-400'}">CF ₩${fmt(cashflow)}만</span>
+            </div>
+        </button>`;
+    }).join('') + `
         <button onclick="applyRandomPreset()" class="preset-btn p-2 bg-purple-700 hover:bg-purple-600 rounded-lg text-center transition">
             <div class="font-bold text-sm">🎲 랜덤</div>
             <div class="text-xs text-gray-300">랜덤 선택</div>

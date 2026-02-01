@@ -424,28 +424,94 @@ function showRealEstateOpportunity() {
     const marketTrend = upCount > downCount ? '상승세' : (upCount < downCount ? '하락세' : '보합');
     const trendColor = upCount > downCount ? 'text-emerald-400' : (upCount < downCount ? 'text-red-400' : 'text-gray-400');
 
-    // 대형 부동산 기회 체크
-    // 1. 현금 1억 이상 보유 경험 시 40% 확률
-    // 2. 현재 총 자산 1억 이상 시 35% 확률
+    // 대형 부동산 기회 자격 체크
     const hasLargeOpportunityByCashHistory = typeof maxCashEverHeld !== 'undefined' && maxCashEverHeld >= 10000;
     const hasLargeOpportunityByTotalAssets = getTotalAssets() >= 10000;
-
-    let showLargeOpportunity = false;
-    if (hasLargeOpportunityByCashHistory && Math.random() < 0.4) {
-        showLargeOpportunity = true;
-    } else if (hasLargeOpportunityByTotalAssets && Math.random() < 0.35) {
-        showLargeOpportunity = true;
-    }
+    const canShowLargeOpportunity = hasLargeOpportunityByCashHistory || hasLargeOpportunityByTotalAssets;
 
     let opportunity;
     let isLargeOpportunity = false;
 
-    if (showLargeOpportunity && typeof largeRealEstateOpportunities !== 'undefined') {
-        opportunity = largeRealEstateOpportunities[Math.floor(Math.random() * largeRealEstateOpportunities.length)];
-        isLargeOpportunity = true;
+    // 저장된 기회가 있으면 재사용 (자산 매도 후 모달 갱신 시)
+    if (currentRealEstateOpportunity) {
+        opportunity = currentRealEstateOpportunity;
+        isLargeOpportunity = currentRealEstateIsLarge;
+    } else if (canShowLargeOpportunity) {
+        // 자격 충족 시 선택 모달 표시
+        showRealEstateChoiceModal(priceChanges, marketTrend, trendColor, upCount, downCount);
+        return;
     } else {
         opportunity = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
     }
+
+    // 현재 기회 저장
+    currentRealEstateOpportunity = opportunity;
+    currentRealEstateIsLarge = isLargeOpportunity;
+
+    showRealEstateOpportunityUI(opportunity, isLargeOpportunity, priceChanges, marketTrend, trendColor, upCount, downCount);
+}
+
+// 큰기회/작은기회 선택 모달
+function showRealEstateChoiceModal(priceChanges, marketTrend, trendColor, upCount, downCount) {
+    const smallSample = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
+    const largeSample = largeRealEstateOpportunities[Math.floor(Math.random() * largeRealEstateOpportunities.length)];
+
+    showEventModal(
+        '🏠 부동산 기회!',
+        `<div class="space-y-4">
+            <div class="text-center text-gray-400 text-sm mb-2">어떤 규모의 매물을 확인하시겠습니까?</div>
+            <div class="grid grid-cols-2 gap-3">
+                <div class="p-3 bg-gray-700/50 rounded-lg text-center">
+                    <div class="text-2xl mb-1">🏠</div>
+                    <div class="font-bold text-sm">작은 기회</div>
+                    <div class="text-xs text-gray-400 mt-1">계약금 ₩${fmt(smallSample.downPayment)}만 수준</div>
+                    <div class="text-xs text-emerald-400">월 수익 ₩${fmt(smallSample.monthlyIncome)}만 수준</div>
+                </div>
+                <div class="p-3 bg-yellow-900/30 border border-yellow-600/30 rounded-lg text-center">
+                    <div class="text-2xl mb-1">🏢</div>
+                    <div class="font-bold text-sm text-yellow-400">큰 기회</div>
+                    <div class="text-xs text-gray-400 mt-1">계약금 ₩${fmt(largeSample.downPayment)}만 수준</div>
+                    <div class="text-xs text-emerald-400">월 수익 ₩${fmt(largeSample.monthlyIncome)}만 수준</div>
+                </div>
+            </div>
+        </div>`,
+        [
+            {
+                text: '🏠 작은 기회',
+                action: `selectRealEstateSize(false)`,
+            },
+            {
+                text: '🏢 큰 기회',
+                action: `selectRealEstateSize(true)`,
+                primary: true,
+                color: 'yellow'
+            }
+        ]
+    );
+
+    // 선택 시 사용할 데이터 임시 저장
+    window._reChoiceData = { priceChanges, marketTrend, trendColor, upCount, downCount };
+}
+
+function selectRealEstateSize(isLarge) {
+    hideEventModal();
+    const data = window._reChoiceData;
+
+    let opportunity;
+    if (isLarge && typeof largeRealEstateOpportunities !== 'undefined') {
+        opportunity = largeRealEstateOpportunities[Math.floor(Math.random() * largeRealEstateOpportunities.length)];
+    } else {
+        opportunity = realEstateOpportunities[Math.floor(Math.random() * realEstateOpportunities.length)];
+    }
+
+    currentRealEstateOpportunity = opportunity;
+    currentRealEstateIsLarge = isLarge;
+
+    showRealEstateOpportunityUI(opportunity, isLarge, data.priceChanges, data.marketTrend, data.trendColor, data.upCount, data.downCount);
+}
+
+// 실제 부동산 기회 UI 표시
+function showRealEstateOpportunityUI(opportunity, isLargeOpportunity, priceChanges, marketTrend, trendColor, upCount, downCount) {
 
     const content = document.getElementById('opportunityContent');
 
@@ -613,6 +679,10 @@ function sellToBuyerFromOpportunity(investmentIdx, offerPrice) {
     updateUI();
 }
 
+// 현재 표시 중인 부동산 기회 저장 (자산 매도 후 재사용)
+let currentRealEstateOpportunity = null;
+let currentRealEstateIsLarge = false;
+
 // 포트폴리오 자산 매도 (부동산 구매를 위해)
 function sellPortfolioForPurchase(assetType, neededAmount) {
     const shortage = neededAmount - gameState.assets.cash;
@@ -711,6 +781,8 @@ function buyRealEstateOpportunity(opportunity) {
         purchaseTurn: turn
     });
 
+    currentRealEstateOpportunity = null;  // 저장된 기회 초기화
+    currentRealEstateIsLarge = false;
     closeOpportunityModalOnly();
     showNotification(`${opportunity.name} 구매 완료! 월 임대수익: ₩${fmt(opportunity.monthlyIncome)}만`, 'success');
     nextTurn();
@@ -724,6 +796,8 @@ function closeOpportunityModalOnly() {
 
 // 모달 닫고 턴 진행
 function hideOpportunityModal() {
+    currentRealEstateOpportunity = null;  // 저장된 기회 초기화
+    currentRealEstateIsLarge = false;
     closeOpportunityModalOnly();
     nextTurn();
     updateUI();
