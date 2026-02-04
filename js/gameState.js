@@ -655,6 +655,7 @@ function setNumPlayers(n) {
     }
 
     if (typeof updateSetupPlayerTabs === 'function') updateSetupPlayerTabs();
+    if (typeof loadSetupPlayerData === 'function') loadSetupPlayerData();
     if (typeof drawBoard === 'function') drawBoard();
     if (typeof updatePlayerTabs === 'function') updatePlayerTabs();
 }
