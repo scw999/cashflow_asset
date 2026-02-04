@@ -1,0 +1,789 @@
+/* ==========================================
+   Cashflow Game Animations & Effects
+   ========================================== */
+
+/* ===== Keyframe Animations ===== */
+
+/* 3D Dice Roll Animation */
+@keyframes diceRoll3D {
+    0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+    20% { transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg); }
+    40% { transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg); }
+    60% { transform: rotateX(540deg) rotateY(270deg) rotateZ(135deg); }
+    80% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg); }
+    100% { transform: rotateX(720deg) rotateY(360deg) rotateZ(0deg); }
+}
+
+@keyframes diceBounce {
+    0%, 100% { transform: translateY(0) scale(1); }
+    50% { transform: translateY(-20px) scale(1.1); }
+}
+
+@keyframes diceShake {
+    0%, 100% { transform: rotate(0deg); }
+    25% { transform: rotate(-15deg); }
+    75% { transform: rotate(15deg); }
+}
+
+/* Card Flip Animation */
+@keyframes cardFlip {
+    0% { transform: perspective(1000px) rotateY(0deg); }
+    100% { transform: perspective(1000px) rotateY(180deg); }
+}
+
+@keyframes cardReveal {
+    0% { transform: perspective(1000px) rotateY(180deg); opacity: 0; }
+    100% { transform: perspective(1000px) rotateY(360deg); opacity: 1; }
+}
+
+/* Sparkle/Glitter Effect */
+@keyframes sparkle {
+    0%, 100% { opacity: 0; transform: scale(0) rotate(0deg); }
+    50% { opacity: 1; transform: scale(1) rotate(180deg); }
+}
+
+@keyframes glitter {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Money Bounce Animation */
+@keyframes moneyBounce {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    30% { transform: translateY(-30px) scale(1.2); }
+    50% { transform: translateY(-40px) scale(1.3); opacity: 1; }
+    100% { transform: translateY(-60px) scale(1); opacity: 0; }
+}
+
+@keyframes numberPop {
+    0% { transform: scale(1); }
+    50% { transform: scale(1.1); }
+    100% { transform: scale(1); }
+}
+
+/* Confetti Animation */
+@keyframes confettiFall {
+    0% { transform: translateY(-100vh) rotate(0deg); opacity: 1; }
+    100% { transform: translateY(100vh) rotate(720deg); opacity: 0; }
+}
+
+@keyframes confettiSway {
+    0%, 100% { transform: translateX(0); }
+    25% { transform: translateX(30px); }
+    75% { transform: translateX(-30px); }
+}
+
+/* Pulse Animation */
+@keyframes pulse {
+    0%, 100% { transform: scale(1); box-shadow: 0 0 0 0 rgba(251, 191, 36, 0.7); }
+    50% { transform: scale(1.05); box-shadow: 0 0 20px 10px rgba(251, 191, 36, 0); }
+}
+
+@keyframes pulseGlow {
+    0%, 100% { box-shadow: 0 0 5px rgba(251, 191, 36, 0.5); }
+    50% { box-shadow: 0 0 30px rgba(251, 191, 36, 0.8), 0 0 60px rgba(251, 191, 36, 0.4); }
+}
+
+/* Shake Animation */
+@keyframes shake {
+    0%, 100% { transform: translateX(0); }
+    10%, 30%, 50%, 70%, 90% { transform: translateX(-5px); }
+    20%, 40%, 60%, 80% { transform: translateX(5px); }
+}
+
+@keyframes shakeHard {
+    0%, 100% { transform: translate(0, 0) rotate(0deg); }
+    10% { transform: translate(-10px, -5px) rotate(-1deg); }
+    20% { transform: translate(10px, 5px) rotate(1deg); }
+    30% { transform: translate(-10px, 5px) rotate(0deg); }
+    40% { transform: translate(10px, -5px) rotate(1deg); }
+    50% { transform: translate(-5px, 5px) rotate(-1deg); }
+    60% { transform: translate(5px, -5px) rotate(0deg); }
+    70% { transform: translate(-5px, -5px) rotate(-1deg); }
+    80% { transform: translate(5px, 5px) rotate(1deg); }
+    90% { transform: translate(-5px, 0) rotate(0deg); }
+}
+
+/* Slide In Animation */
+@keyframes slideInUp {
+    0% { transform: translateY(100%); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInDown {
+    0% { transform: translateY(-100%); opacity: 0; }
+    100% { transform: translateY(0); opacity: 1; }
+}
+
+@keyframes slideInLeft {
+    0% { transform: translateX(-100%); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+@keyframes slideInRight {
+    0% { transform: translateX(100%); opacity: 0; }
+    100% { transform: translateX(0); opacity: 1; }
+}
+
+/* Fade Animations */
+@keyframes fadeIn {
+    0% { opacity: 0; }
+    100% { opacity: 1; }
+}
+
+@keyframes fadeInScale {
+    0% { opacity: 0; transform: scale(0.8); }
+    100% { opacity: 1; transform: scale(1); }
+}
+
+/* Float Animation */
+@keyframes float {
+    0%, 100% { transform: translateY(0); }
+    50% { transform: translateY(-10px); }
+}
+
+/* Progress Bar Animation */
+@keyframes progressFill {
+    0% { width: 0%; }
+}
+
+@keyframes progressPulse {
+    0%, 100% { opacity: 1; }
+    50% { opacity: 0.7; }
+}
+
+/* Rainbow/Gradient Animation */
+@keyframes rainbow {
+    0% { background-position: 0% 50%; }
+    50% { background-position: 100% 50%; }
+    100% { background-position: 0% 50%; }
+}
+
+/* Glow Animation */
+@keyframes glow {
+    0%, 100% { filter: drop-shadow(0 0 5px currentColor); }
+    50% { filter: drop-shadow(0 0 20px currentColor); }
+}
+
+/* ===== CSS Classes ===== */
+
+/* Dice Animations */
+.dice-rolling {
+    animation: diceRoll3D 0.8s ease-out, diceBounce 0.4s ease-in-out infinite;
+    transform-style: preserve-3d;
+}
+
+.dice-shake {
+    animation: diceShake 0.1s ease-in-out infinite;
+}
+
+.dice-result {
+    animation: diceBounce 0.3s ease-out;
+}
+
+/* Card Animations */
+.card-flip {
+    animation: cardFlip 0.6s ease-in-out forwards;
+    transform-style: preserve-3d;
+    backface-visibility: hidden;
+}
+
+.card-reveal {
+    animation: cardReveal 0.6s ease-in-out forwards;
+}
+
+.card-hover {
+    transition: all 0.3s ease;
+}
+
+.card-hover:hover {
+    transform: translateY(-5px) scale(1.02);
+    box-shadow: 0 20px 40px rgba(0, 0, 0, 0.3);
+}
+
+/* Sparkle Effect */
+.sparkle-container {
+    position: relative;
+    overflow: visible;
+}
+
+.sparkle {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    background: radial-gradient(circle, #fff 0%, transparent 70%);
+    border-radius: 50%;
+    pointer-events: none;
+    animation: sparkle 0.8s ease-in-out forwards;
+}
+
+.sparkle::before {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 100%;
+    height: 2px;
+    background: linear-gradient(90deg, transparent, #fff, transparent);
+    transform: translate(-50%, -50%);
+}
+
+.sparkle::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 2px;
+    height: 100%;
+    background: linear-gradient(180deg, transparent, #fff, transparent);
+    transform: translate(-50%, -50%);
+}
+
+/* Glitter Background */
+.glitter-bg {
+    background: linear-gradient(
+        90deg,
+        rgba(255, 215, 0, 0.3) 0%,
+        rgba(255, 255, 255, 0.8) 25%,
+        rgba(255, 215, 0, 0.3) 50%,
+        rgba(255, 255, 255, 0.8) 75%,
+        rgba(255, 215, 0, 0.3) 100%
+    );
+    background-size: 200% 100%;
+    animation: glitter 1.5s linear infinite;
+}
+
+/* Money Animation */
+.money-bounce {
+    animation: moneyBounce 1s ease-out forwards;
+    position: absolute;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #10b981;
+    pointer-events: none;
+    z-index: 100;
+}
+
+/* Money Out Animation (red, goes down) */
+@keyframes moneyDrop {
+    0% { transform: translateY(0) scale(1); opacity: 1; }
+    30% { transform: translateY(20px) scale(1.2); }
+    50% { transform: translateY(30px) scale(1.3); opacity: 1; }
+    100% { transform: translateY(60px) scale(1); opacity: 0; }
+}
+
+.money-drop {
+    animation: moneyDrop 1s ease-out forwards;
+    position: absolute;
+    font-size: 1.5rem;
+    font-weight: bold;
+    color: #ef4444;
+    pointer-events: none;
+    z-index: 100;
+}
+
+.number-pop {
+    animation: numberPop 0.5s ease-out;
+}
+
+.number-pop-red {
+    animation: numberPopRed 0.5s ease-out;
+}
+
+@keyframes numberPopRed {
+    0% { transform: scale(1); color: inherit; }
+    50% { transform: scale(1.15); color: #ef4444; }
+    100% { transform: scale(1); color: inherit; }
+}
+
+/* Confetti */
+.confetti-container {
+    position: fixed;
+    top: 0;
+    left: 0;
+    width: 100%;
+    height: 100%;
+    pointer-events: none;
+    z-index: 9999;
+    overflow: hidden;
+}
+
+.confetti {
+    position: absolute;
+    width: 10px;
+    height: 10px;
+    animation: confettiFall 3s linear forwards, confettiSway 1s ease-in-out infinite;
+}
+
+.confetti-square {
+    border-radius: 0;
+}
+
+.confetti-circle {
+    border-radius: 50%;
+}
+
+.confetti-triangle {
+    width: 0;
+    height: 0;
+    border-left: 5px solid transparent;
+    border-right: 5px solid transparent;
+    border-bottom: 10px solid currentColor;
+    background: transparent !important;
+}
+
+/* Pulse Effects */
+.pulse {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+.pulse-glow {
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.5);  /* 정적 글로우 */
+}
+
+/* Shake Effects */
+.shake {
+    animation: shake 0.5s ease-in-out;
+}
+
+.shake-hard {
+    animation: shakeHard 0.5s ease-in-out;
+}
+
+/* Slide Animations */
+.slide-in-up {
+    animation: slideInUp 0.5s ease-out;
+}
+
+.slide-in-down {
+    animation: slideInDown 0.5s ease-out;
+}
+
+.slide-in-left {
+    animation: slideInLeft 0.5s ease-out;
+}
+
+.slide-in-right {
+    animation: slideInRight 0.5s ease-out;
+}
+
+/* Fade Animations */
+.fade-in {
+    animation: fadeIn 0.3s ease-out;
+}
+
+.fade-in-scale {
+    animation: fadeInScale 0.3s ease-out;
+}
+
+/* Float Animation */
+.float {
+    animation: float 3s ease-in-out infinite;
+}
+
+/* Progress Bar Styles */
+.progress-animated {
+    animation: progressFill 1s ease-out forwards;
+}
+
+.progress-bar-container {
+    position: relative;
+    overflow: hidden;
+    border-radius: 9999px;
+}
+
+.progress-bar-shine {
+    display: none;  /* 번쩍임 비활성화 */
+}
+
+@keyframes progressShine {
+    0% { left: -100%; }
+    100% { left: 100%; }
+}
+
+/* Rainbow/Gradient Effects */
+.rainbow-bg {
+    background: linear-gradient(
+        90deg,
+        #ff0000, #ff7f00, #ffff00, #00ff00, #0000ff, #4b0082, #9400d3, #ff0000
+    );
+    background-size: 400% 100%;
+    animation: rainbow 3s linear infinite;
+}
+
+/* Glow Effects */
+.glow {
+    animation: glow 2s ease-in-out infinite;
+}
+
+.glow-green {
+    box-shadow: 0 0 15px rgba(16, 185, 129, 0.4);
+}
+
+.glow-gold {
+    box-shadow: 0 0 15px rgba(251, 191, 36, 0.4);
+}
+
+/* Board Space Hover Effects */
+.board-space-hover {
+    cursor: pointer;
+}
+
+.board-space-hover:hover {
+    filter: brightness(1.2);
+}
+
+/* Token Animations */
+.token-move {
+    transition: all 0.5s ease-out;
+}
+
+.token-bounce {
+    animation: diceBounce 0.5s ease-out;
+}
+
+/* Real Estate Card Styles */
+.real-estate-card {
+    position: relative;
+    border-radius: 16px;
+    overflow: hidden;
+    transition: all 0.3s ease;
+    background: linear-gradient(145deg, #1e293b 0%, #0f172a 100%);
+    border: 2px solid rgba(255, 255, 255, 0.1);
+}
+
+.real-estate-card::before {
+    content: '';
+    position: absolute;
+    top: 0;
+    left: 0;
+    right: 0;
+    height: 4px;
+    background: linear-gradient(90deg, #10b981, #3b82f6, #8b5cf6);
+}
+
+.real-estate-card:hover {
+    transform: translateY(-8px) scale(1.02);
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 0 30px rgba(59, 130, 246, 0.2);
+    border-color: rgba(59, 130, 246, 0.5);
+}
+
+.real-estate-card-premium {
+    background: linear-gradient(145deg, #2d1f0f 0%, #1a1207 100%);
+    border-color: rgba(251, 191, 36, 0.3);
+}
+
+.real-estate-card-premium::before {
+    background: linear-gradient(90deg, #fbbf24, #f97316, #ef4444);
+}
+
+.real-estate-card-premium:hover {
+    box-shadow: 0 25px 50px rgba(0, 0, 0, 0.4), 0 0 30px rgba(251, 191, 36, 0.3);
+    border-color: rgba(251, 191, 36, 0.5);
+}
+
+/* Economic Cycle Background */
+.cycle-recovery {
+    background: linear-gradient(180deg, rgba(16, 185, 129, 0.1) 0%, transparent 50%) !important;
+}
+
+.cycle-boom {
+    background: linear-gradient(180deg, rgba(251, 191, 36, 0.15) 0%, transparent 50%) !important;
+}
+
+.cycle-recession {
+    background: linear-gradient(180deg, rgba(239, 68, 68, 0.1) 0%, transparent 50%) !important;
+}
+
+.cycle-depression {
+    background: linear-gradient(180deg, rgba(107, 114, 128, 0.15) 0%, transparent 50%) !important;
+}
+
+.cycle-transition {
+    transition: background 1s ease-in-out;
+}
+
+/* Success/Failure Feedback */
+.success-flash {
+    animation: successFlash 0.5s ease-out;
+}
+
+@keyframes successFlash {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: rgba(16, 185, 129, 0.3); }
+}
+
+.failure-flash {
+    animation: failureFlash 0.5s ease-out;
+}
+
+@keyframes failureFlash {
+    0%, 100% { background-color: transparent; }
+    50% { background-color: rgba(239, 68, 68, 0.3); }
+}
+
+/* Avatar Styles */
+.player-avatar {
+    width: 48px;
+    height: 48px;
+    border-radius: 50%;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 24px;
+    background: linear-gradient(145deg, #374151 0%, #1f2937 100%);
+    border: 3px solid;
+    box-shadow: 0 4px 12px rgba(0, 0, 0, 0.3);
+    transition: all 0.3s ease;
+}
+
+.player-avatar:hover {
+    transform: scale(1.1);
+    box-shadow: 0 6px 20px rgba(0, 0, 0, 0.4);
+}
+
+.player-avatar-active {
+    animation: pulse 2s ease-in-out infinite;
+}
+
+/* Income/Expense Bar */
+.income-expense-bar {
+    position: relative;
+    height: 24px;
+    border-radius: 12px;
+    background: linear-gradient(90deg, #1f2937 0%, #374151 100%);
+    overflow: hidden;
+}
+
+.income-bar {
+    position: absolute;
+    left: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, #10b981 0%, #059669 100%);
+    border-radius: 0 12px 12px 0;
+    transition: width 0.5s ease-out;
+}
+
+.expense-bar {
+    position: absolute;
+    right: 50%;
+    height: 100%;
+    background: linear-gradient(90deg, #dc2626 0%, #ef4444 100%);
+    border-radius: 12px 0 0 12px;
+    transition: width 0.5s ease-out;
+}
+
+.income-expense-divider {
+    position: absolute;
+    left: 50%;
+    top: 0;
+    width: 2px;
+    height: 100%;
+    background: white;
+    transform: translateX(-50%);
+    z-index: 10;
+}
+
+/* Tooltip Styles */
+.tooltip {
+    position: relative;
+}
+
+.tooltip::after {
+    content: attr(data-tooltip);
+    position: absolute;
+    bottom: 100%;
+    left: 50%;
+    transform: translateX(-50%) translateY(-8px);
+    padding: 8px 12px;
+    background: rgba(0, 0, 0, 0.9);
+    color: white;
+    font-size: 12px;
+    border-radius: 8px;
+    white-space: nowrap;
+    opacity: 0;
+    visibility: hidden;
+    transition: all 0.2s ease;
+    z-index: 1000;
+}
+
+.tooltip:hover::after {
+    opacity: 1;
+    visibility: visible;
+    transform: translateX(-50%) translateY(0);
+}
+
+/* Notification Animations */
+.notification-enter {
+    animation: slideInRight 0.3s ease-out, fadeIn 0.3s ease-out;
+}
+
+.notification-exit {
+    animation: slideOutRight 0.3s ease-in forwards;
+}
+
+@keyframes slideOutRight {
+    0% { transform: translateX(0); opacity: 1; }
+    100% { transform: translateX(100%); opacity: 0; }
+}
+
+/* Modal Animations */
+.modal-enter {
+    animation: fadeInScale 0.3s ease-out;
+}
+
+.modal-exit {
+    animation: fadeOutScale 0.2s ease-in forwards;
+}
+
+@keyframes fadeOutScale {
+    0% { opacity: 1; transform: scale(1); }
+    100% { opacity: 0; transform: scale(0.9); }
+}
+
+/* Button Effects */
+.btn-shine {
+    position: relative;
+    overflow: hidden;
+}
+
+.btn-shine::after {
+    content: '';
+    position: absolute;
+    top: -50%;
+    left: -50%;
+    width: 200%;
+    height: 200%;
+    background: linear-gradient(
+        45deg,
+        transparent 30%,
+        rgba(255, 255, 255, 0.3) 50%,
+        transparent 70%
+    );
+    transform: translateX(-100%) rotate(45deg);
+    transition: none;
+}
+
+.btn-shine:hover::after {
+    animation: btnShine 0.6s ease-out;
+}
+
+@keyframes btnShine {
+    0% { transform: translateX(-100%) rotate(45deg); }
+    100% { transform: translateX(100%) rotate(45deg); }
+}
+
+/* Ripple Effect */
+.ripple {
+    position: relative;
+    overflow: hidden;
+}
+
+.ripple::after {
+    content: '';
+    position: absolute;
+    top: 50%;
+    left: 50%;
+    width: 0;
+    height: 0;
+    background: rgba(255, 255, 255, 0.3);
+    border-radius: 50%;
+    transform: translate(-50%, -50%);
+    opacity: 0;
+}
+
+.ripple:active::after {
+    animation: rippleEffect 0.6s ease-out;
+}
+
+@keyframes rippleEffect {
+    0% { width: 0; height: 0; opacity: 0.5; }
+    100% { width: 300px; height: 300px; opacity: 0; }
+}
+
+/* ===== 3D Dice Styles ===== */
+.dice-btn {
+    perspective: 300px;
+}
+
+.dice-3d-container {
+    width: 50px;
+    height: 50px;
+    margin: 0 auto 8px auto;
+    perspective: 300px;
+}
+
+.dice-3d {
+    width: 50px;
+    height: 50px;
+    position: relative;
+    transform-style: preserve-3d;
+    transform: rotateX(-20deg) rotateY(20deg);
+    transition: transform 0.1s ease-out;
+}
+
+.dice-face {
+    position: absolute;
+    width: 50px;
+    height: 50px;
+    display: flex;
+    align-items: center;
+    justify-content: center;
+    font-size: 32px;
+    background: #1a1a1a;
+    color: white;
+    border-radius: 4px;
+    border: 1px solid #333;
+    backface-visibility: hidden;
+}
+
+.dice-face-1 { transform: rotateY(0deg) translateZ(25px); }
+.dice-face-2 { transform: rotateY(180deg) translateZ(25px); }
+.dice-face-3 { transform: rotateY(-90deg) translateZ(25px); }
+.dice-face-4 { transform: rotateY(90deg) translateZ(25px); }
+.dice-face-5 { transform: rotateX(90deg) translateZ(25px); }
+.dice-face-6 { transform: rotateX(-90deg) translateZ(25px); }
+
+/* Dice rolling animation */
+@keyframes diceRoll3DNew {
+    0% { transform: rotateX(0deg) rotateY(0deg) rotateZ(0deg); }
+    25% { transform: rotateX(180deg) rotateY(90deg) rotateZ(45deg); }
+    50% { transform: rotateX(360deg) rotateY(180deg) rotateZ(90deg); }
+    75% { transform: rotateX(540deg) rotateY(270deg) rotateZ(135deg); }
+    100% { transform: rotateX(720deg) rotateY(360deg) rotateZ(180deg); }
+}
+
+.dice-3d.rolling {
+    animation: diceRoll3DNew 0.8s ease-out forwards;
+}
+
+/* Final dice face positions */
+.dice-3d.show-1 { transform: rotateX(0deg) rotateY(0deg); }
+.dice-3d.show-2 { transform: rotateX(0deg) rotateY(180deg); }
+.dice-3d.show-3 { transform: rotateX(0deg) rotateY(90deg); }
+.dice-3d.show-4 { transform: rotateX(0deg) rotateY(-90deg); }
+.dice-3d.show-5 { transform: rotateX(-90deg) rotateY(0deg); }
+.dice-3d.show-6 { transform: rotateX(90deg) rotateY(0deg); }
+
+/* ===== Custom Board Icons ===== */
+.icon-house { color: #3b82f6; }
+.icon-building { color: #8b5cf6; }
+.icon-coin { color: #fbbf24; }
+.icon-chart-up { color: #10b981; }
+.icon-chart-down { color: #ef4444; }
+
+/* ===== Board Design Improvements ===== */
+.track-path-outer {
+    fill: none;
+    stroke: rgba(59, 130, 246, 0.3);
+    stroke-width: 60;
+    stroke-linecap: round;
+}
+
+.track-path-inner {
+    fill: none;
+    stroke: rgba(251, 191, 36, 0.3);
+    stroke-width: 50;
+    stroke-linecap: round;
+}

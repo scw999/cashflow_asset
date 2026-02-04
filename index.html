@@ -1,0 +1,413 @@
+<!DOCTYPE html>
+<html lang="ko">
+
+<head>
+    <meta charset="UTF-8">
+    <meta name="viewport" content="width=device-width, initial-scale=1.0">
+    <title>캐시플로우 자산관리 게임</title>
+    <script src="https://cdn.tailwindcss.com"></script>
+    <script src="https://cdn.jsdelivr.net/npm/chart.js"></script>
+    <link rel="stylesheet" href="css/styles.css">
+    <link rel="stylesheet" href="css/animations.css">
+</head>
+
+<body class="text-white p-4 cycle-transition">
+    <div id="app" class="max-w-7xl mx-auto">
+        <!-- Header with Current Player Indicator -->
+        <header class="flex flex-col md:flex-row justify-between items-center mb-4 gap-3">
+            <h1 class="text-3xl font-bold bg-gradient-to-r from-emerald-400 via-blue-500 to-purple-500 bg-clip-text text-transparent">
+                💰 캐시플로우 자산관리</h1>
+
+            <!-- Current Player Display -->
+            <div id="currentPlayerDisplay" class="player-indicator card rounded-xl px-4 py-2 flex items-center gap-3">
+                <span class="text-2xl" id="currentPlayerEmoji">🐭</span>
+                <div>
+                    <div class="text-sm text-gray-400">현재 플레이어</div>
+                    <div class="font-bold" id="currentPlayerName">플레이어 1</div>
+                    <div class="text-xs text-gray-400" id="currentPlayerJob">직업 미선택</div>
+                </div>
+            </div>
+
+            <div class="flex gap-2 flex-wrap justify-center">
+                <button onclick="resetGame()" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition hover:scale-105">🔄 리셋</button>
+                <button onclick="saveGame()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition hover:scale-105">💾 저장</button>
+                <button onclick="loadGame()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition hover:scale-105">📂 불러오기</button>
+                <button onclick="showSetupModal()" class="px-4 py-2 bg-purple-600 hover:bg-purple-700 rounded-lg transition hover:scale-105">⚙️ 설정</button>
+            </div>
+        </header>
+
+        <!-- Player Tabs (for multiplayer) -->
+        <div id="playerTabs" class="flex gap-2 mb-4 overflow-x-auto pb-2 hidden"></div>
+
+        <!-- Financial Status Dashboard -->
+        <div class="grid grid-cols-2 md:grid-cols-5 gap-3 mb-6">
+            <div onclick="showDetailModal('cash')" class="card rounded-xl p-3 border-l-4 border-emerald-500 cursor-pointer hover:scale-105 transition">
+                <div class="text-xs text-gray-400">💵 현금</div>
+                <div id="dashCash" data-cash-display class="text-lg font-bold text-emerald-400">₩0</div>
+            </div>
+            <div onclick="showDetailModal('assets')" class="card rounded-xl p-3 border-l-4 border-blue-500 cursor-pointer hover:scale-105 transition">
+                <div class="text-xs text-gray-400">📊 총 자산 <span class="text-[10px]">▼</span></div>
+                <div id="dashAssets" class="text-lg font-bold text-blue-400">₩0</div>
+            </div>
+            <div onclick="showDetailModal('liabilities')" class="card rounded-xl p-3 border-l-4 border-orange-500 cursor-pointer hover:scale-105 transition">
+                <div class="text-xs text-gray-400">📉 총 부채 <span class="text-[10px]">▼</span></div>
+                <div id="dashDebt" class="text-lg font-bold text-orange-400">₩0</div>
+            </div>
+            <div class="card rounded-xl p-3 border-l-4 border-purple-500">
+                <div class="text-xs text-gray-400">💰 순자산</div>
+                <div id="dashNetWorth" class="text-lg font-bold text-purple-400">₩0</div>
+            </div>
+            <div onclick="showDetailModal('cashflow')" class="card rounded-xl p-3 border-l-4 border-yellow-500 cursor-pointer hover:scale-105 transition">
+                <div class="text-xs text-gray-400">💸 월 캐시플로우 <span class="text-[10px]">▼</span></div>
+                <div id="dashCashflow" class="text-lg font-bold text-yellow-400">₩0</div>
+            </div>
+            <div class="card rounded-xl p-3 border-l-4 border-cyan-500 cursor-pointer hover:bg-gray-700/50 transition" onclick="showInterestRateChart()">
+                <div class="text-xs text-gray-400">🏦 기준금리 <span class="text-[10px]">📈</span></div>
+                <div id="dashInterestRate" class="text-lg font-bold text-cyan-400">4.0%</div>
+            </div>
+            <div class="card rounded-xl p-3 border-l-4 border-orange-500 cursor-pointer hover:bg-gray-700/50 transition" onclick="showInterestRateChart()">
+                <div class="text-xs text-gray-400">📊 경기 사이클 <span class="text-[10px]">📈</span></div>
+                <div id="dashEconomicCycle" class="text-lg font-bold text-orange-400">🌱 회복기</div>
+            </div>
+        </div>
+
+        <!-- Detail Modal for Assets/Liabilities -->
+        <div id="detailModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+            <div class="card rounded-2xl p-6 w-full max-w-lg max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="detailModalTitle" class="text-xl font-bold">상세 정보</h2>
+                    <button onclick="hideDetailModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                <div id="detailModalContent"></div>
+            </div>
+        </div>
+
+        <!-- Asset Price Chart Modal -->
+        <div id="assetChartModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+            <div class="card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 id="assetChartTitle" class="text-xl font-bold">자산 가격 차트</h2>
+                    <button onclick="hideAssetChartModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                <div class="mb-4">
+                    <div class="flex justify-between items-center">
+                        <span id="assetCurrentPrice" class="text-2xl font-bold"></span>
+                        <span id="assetPriceChange" class="text-lg"></span>
+                    </div>
+                </div>
+                <canvas id="assetPriceChart" height="300"></canvas>
+                <div class="mt-4 text-sm text-gray-400 text-center">최근 30턴 가격 변동</div>
+            </div>
+        </div>
+
+        <!-- Event Modal -->
+        <div id="eventModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+            <div class="card rounded-2xl p-6 w-full max-w-lg">
+                <h2 id="eventTitle" class="text-xl font-bold mb-4">이벤트</h2>
+                <div id="eventContent" class="mb-4"></div>
+                <div id="eventActions" class="flex gap-2 justify-end"></div>
+            </div>
+        </div>
+
+        <!-- Opportunity Modal (부동산 기회) -->
+        <div id="opportunityModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+            <div class="card rounded-2xl p-6 w-full max-w-lg">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold text-yellow-400">🏠 부동산 기회!</h2>
+                    <button onclick="hideOpportunityModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+                </div>
+                <div id="opportunityContent"></div>
+            </div>
+        </div>
+
+        <div class="grid grid-cols-1 lg:grid-cols-3 gap-6">
+            <!-- Game Board -->
+            <div class="lg:col-span-2 card rounded-2xl p-6">
+                <div class="flex justify-between items-center mb-4">
+                    <h2 class="text-xl font-bold">🎮 게임판</h2>
+                    <div class="flex items-center gap-4">
+                        <span class="text-sm">턴: <span id="turnCount" class="font-bold text-yellow-400">1</span></span>
+                        <span id="myDreamDisplay" class="text-sm text-purple-400"></span>
+                    </div>
+                </div>
+                <div class="flex items-center justify-center gap-4 mb-4">
+                    <button onclick="rollDice()" id="diceBtn" class="dice-btn px-6 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-2xl shadow-lg hover:shadow-yellow-500/30 transition-all overflow-hidden">
+                        <div id="diceContainer" class="dice-3d-container">
+                            <div id="dice3d" class="dice-3d">
+                                <div class="dice-face dice-face-1">⚀</div>
+                                <div class="dice-face dice-face-2">⚁</div>
+                                <div class="dice-face dice-face-3">⚂</div>
+                                <div class="dice-face dice-face-4">⚃</div>
+                                <div class="dice-face dice-face-5">⚄</div>
+                                <div class="dice-face dice-face-6">⚅</div>
+                            </div>
+                        </div>
+                        <div class="text-black font-bold text-sm">주사위 굴리기</div>
+                    </button>
+                    <div id="diceResultDisplay" class="hidden">
+                        <div class="card rounded-xl px-4 py-3 text-center min-w-[100px]">
+                            <div id="diceResultValue" class="text-3xl font-bold text-yellow-400">-</div>
+                            <div id="diceResultText" class="text-xs text-gray-400">결과</div>
+                        </div>
+                    </div>
+                </div>
+                <svg id="gameBoard" viewBox="0 0 600 600" class="w-full max-w-2xl mx-auto"></svg>
+            </div>
+
+            <!-- Financial Statement -->
+            <div class="space-y-4">
+                <!-- Income Statement -->
+                <div class="card rounded-2xl p-4 glow-green">
+                    <h3 class="font-bold text-emerald-400 mb-3">📊 손익계산서</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between"><span>근로소득</span><span id="incSalary" class="text-emerald-400">₩0</span></div>
+                        <div class="flex justify-between"><span>패시브소득</span><span id="incPassive" class="text-emerald-400">₩0</span></div>
+                        <div class="border-t border-gray-600 my-2"></div>
+                        <div onclick="showDetailModal('expenses')" class="flex justify-between cursor-pointer hover:bg-gray-700 rounded p-1 -m-1">
+                            <span>총 지출 <span class="text-[10px] text-gray-500">▼</span></span>
+                            <span id="expTotal" class="text-red-400">₩0</span>
+                        </div>
+                        <div class="border-t border-gray-600 my-2"></div>
+                        <div onclick="showDetailModal('cashflow')" class="flex justify-between font-bold text-lg cursor-pointer hover:bg-gray-700 rounded p-1 -m-1">
+                            <span>월 캐시플로우 <span class="text-[10px] text-gray-500">▼</span></span>
+                            <span id="cashflow" class="text-yellow-400">₩0</span>
+                        </div>
+                    </div>
+                </div>
+
+                <!-- Balance Sheet -->
+                <div class="card rounded-2xl p-4">
+                    <h3 class="font-bold text-blue-400 mb-3">📈 대차대조표</h3>
+                    <div class="space-y-2 text-sm">
+                        <div class="flex justify-between"><span>총 자산</span><span id="totalAssets" class="text-blue-400">₩0</span></div>
+                        <div class="flex justify-between"><span>총 부채</span><span id="totalLiabilities" class="text-red-400">₩0</span></div>
+                        <div class="border-t border-gray-600 my-2"></div>
+                        <div class="flex justify-between font-bold"><span>순자산</span><span id="netWorth">₩0</span></div>
+                    </div>
+
+                    <!-- Asset/Liability Summary List -->
+                    <div class="mt-4 pt-4 border-t border-gray-600">
+                        <h4 class="text-xs text-gray-400 mb-2">자산 상세</h4>
+                        <div id="assetSummaryList" class="space-y-1 text-xs"></div>
+                        <h4 class="text-xs text-gray-400 mb-2 mt-3">부채 상세</h4>
+                        <div id="liabilitySummaryList" class="space-y-1 text-xs"></div>
+                    </div>
+                </div>
+
+                <!-- Escape/Victory Progress -->
+                <div class="card rounded-2xl p-4 glow-gold">
+                    <h3 id="progressTitle" class="font-bold text-yellow-400 mb-3">🏃 탈출 진행도</h3>
+                    <div class="w-full bg-gray-700 rounded-full h-4 overflow-hidden">
+                        <div id="escapeProgress" class="h-full bg-gradient-to-r from-emerald-500 to-yellow-400 transition-all" style="width: 0%"></div>
+                    </div>
+                    <p id="progressDesc" class="text-sm mt-2 text-gray-400">패시브 소득 ≥ 총 지출 시 탈출!</p>
+                </div>
+            </div>
+        </div>
+
+        <!-- Bottom Tabs -->
+        <div class="mt-6 card rounded-2xl overflow-hidden">
+            <div class="flex border-b border-gray-700">
+                <button onclick="showTab('market')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition active bg-gray-700" data-tab="market">🏪 투자시장</button>
+                <button onclick="showTab('simulation')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition" data-tab="simulation">📈 시뮬레이션</button>
+                <button onclick="showTab('portfolio')" class="tab-btn flex-1 py-3 hover:bg-gray-700 transition" data-tab="portfolio">💼 포트폴리오</button>
+            </div>
+            <div id="tabContent" class="p-4"></div>
+        </div>
+    </div>
+
+    <!-- Setup Modal -->
+    <div id="setupModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50">
+        <div class="card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto relative">
+            <!-- 닫기 버튼 -->
+            <button onclick="hideSetupModal()" class="absolute top-4 right-4 text-gray-400 hover:text-white text-2xl">&times;</button>
+
+            <h2 class="text-2xl font-bold mb-4">⚙️ 게임 설정</h2>
+
+            <!-- Player Count -->
+            <div class="mb-4">
+                <h3 class="font-bold mb-2">👥 플레이어 수</h3>
+                <div class="flex gap-2">
+                    <button onclick="setNumPlayers(1)" class="player-count-btn flex-1 py-3 bg-yellow-600 rounded-lg transition" data-count="1">1인</button>
+                    <button onclick="setNumPlayers(2)" class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-blue-600 rounded-lg transition" data-count="2">2인</button>
+                    <button onclick="setNumPlayers(3)" class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-red-600 rounded-lg transition" data-count="3">3인</button>
+                    <button onclick="setNumPlayers(4)" class="player-count-btn flex-1 py-3 bg-gray-700 hover:bg-green-600 rounded-lg transition" data-count="4">4인</button>
+                </div>
+            </div>
+
+            <!-- Player Selection Tabs -->
+            <div class="mb-4">
+                <h3 class="font-bold mb-2">🎮 플레이어 선택 (설정할 플레이어 선택)</h3>
+                <div id="setupPlayerTabs" class="flex gap-2 mb-3"></div>
+            </div>
+
+            <!-- Dream Selection -->
+            <div class="mb-4">
+                <h3 class="font-bold mb-2">🌟 나의 꿈 선택</h3>
+                <div id="dreamSelection" class="grid grid-cols-2 md:grid-cols-4 gap-2"></div>
+            </div>
+
+            <!-- Job Presets -->
+            <div class="mb-4">
+                <h3 class="font-bold mb-2">🎭 직업 프리셋 <span id="presetPlayerLabel" class="text-yellow-400">(플레이어 1)</span></h3>
+                <div class="grid grid-cols-3 md:grid-cols-5 gap-2" id="presetBtns"></div>
+                <div class="mt-2">
+                    <span class="text-sm text-gray-400">현재 선택된 직업: </span>
+                    <span id="selectedJobDisplay" class="text-yellow-400 font-bold">없음</span>
+                </div>
+            </div>
+
+            <!-- Custom Settings -->
+            <div class="grid grid-cols-1 md:grid-cols-2 gap-4">
+                <div>
+                    <h3 class="font-bold mb-2 text-emerald-400">💵 수입</h3>
+                    <div class="space-y-2">
+                        <div><label class="text-sm">월급</label><input type="number" id="inpSalary" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">임대수입</label><input type="number" id="inpRental" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">배당금</label><input type="number" id="inpDividend" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">기타수입</label><input type="number" id="inpOtherInc" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-2 text-red-400">💸 지출</h3>
+                    <div class="space-y-2">
+                        <div><label class="text-sm">주거비</label><input type="number" id="expHousing" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">생활비</label><input type="number" id="expLiving" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">대출이자</label><input type="number" id="expLoan" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">세금/보험</label><input type="number" id="expTax" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div class="pt-2 border-t border-gray-600">
+                            <label class="text-sm text-pink-400">👶 양육비 (자녀당)</label>
+                            <div id="childcareCostDisplay" class="w-full bg-gray-800 rounded p-2 text-pink-400 font-bold">₩30만</div>
+                        </div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-2 text-blue-400">🏠 자산</h3>
+                    <div class="space-y-2">
+                        <div><label class="text-sm">현금/예금</label><input type="number" id="astCash" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">부동산</label><input type="number" id="astRealEstate" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">주식/ETF</label><input type="number" id="astStocks" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">가상자산</label><input type="number" id="astCrypto" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                    </div>
+                </div>
+                <div>
+                    <h3 class="font-bold mb-2 text-orange-400">📉 부채</h3>
+                    <div class="space-y-2">
+                        <div><label class="text-sm">주택담보대출</label><input type="number" id="debtMortgage" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">신용대출</label><input type="number" id="debtCredit" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">학자금대출</label><input type="number" id="debtStudent" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                        <div><label class="text-sm">기타대출</label><input type="number" id="debtOther" class="w-full bg-gray-700 rounded p-2" value="0"></div>
+                    </div>
+                </div>
+            </div>
+
+            <div class="flex gap-2 mt-6">
+                <button onclick="applySettingsToPlayer()" class="flex-1 py-3 bg-blue-600 hover:bg-blue-700 rounded-lg font-bold">현재 플레이어에 적용</button>
+                <button onclick="applySettingsAndClose()" class="flex-1 py-3 bg-emerald-600 hover:bg-emerald-700 rounded-lg font-bold">게임 시작</button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Celebration Modal -->
+    <div id="celebrateModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="text-8xl celebrate mb-4">🎉</div>
+            <h2 class="text-4xl font-bold text-yellow-400 mb-2">쥐 레이스 탈출!</h2>
+            <p class="text-xl text-gray-300 mb-6">패시브 소득이 지출을 초과했습니다!</p>
+            <button onclick="enterFastTrack()" class="px-8 py-4 bg-gradient-to-r from-blue-500 to-purple-500 rounded-xl font-bold text-xl">패스트 트랙 진입 →</button>
+        </div>
+    </div>
+
+    <!-- Victory Modal -->
+    <div id="victoryModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-50 hidden">
+        <div class="text-center">
+            <div class="text-8xl celebrate mb-4">🏆</div>
+            <h2 class="text-4xl font-bold text-yellow-400 mb-2">축하합니다!</h2>
+            <p id="victoryMessage" class="text-xl text-gray-300 mb-6">꿈을 달성했습니다!</p>
+            <button onclick="hideVictoryModal()" class="px-8 py-4 bg-gradient-to-r from-yellow-500 to-orange-500 rounded-xl font-bold text-xl">계속 플레이</button>
+        </div>
+    </div>
+
+    <!-- Block Deal Modal (Fast Track) -->
+    <div id="blockDealModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-xl font-bold text-purple-400">📦 블록딜 (대량 매수)</h2>
+                <button onclick="hideBlockDealModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div class="mb-4 p-3 bg-purple-900/30 rounded-lg">
+                <div class="text-sm text-gray-400">보유 현금</div>
+                <div id="blockDealCash" class="text-xl font-bold text-emerald-400">₩0만</div>
+            </div>
+            <div id="blockDealContent"></div>
+        </div>
+    </div>
+
+    <!-- Universal Purchase Modal -->
+    <div id="purchaseModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
+        <div class="card rounded-2xl p-6 w-full max-w-md">
+            <div class="flex justify-between items-center mb-4">
+                <h2 id="purchaseModalTitle" class="text-xl font-bold text-yellow-400">구매</h2>
+                <button onclick="hidePurchaseModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+            <div id="purchaseModalContent" class="space-y-4">
+                <!-- Dynamic content -->
+            </div>
+            <div class="mt-4 p-3 bg-gray-800/50 rounded-lg space-y-2">
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">보유 현금</span>
+                    <span id="purchaseModalCash" class="text-emerald-400 font-bold">₩0만</span>
+                </div>
+                <div class="flex justify-between text-sm">
+                    <span class="text-gray-400">최대 구매 가능</span>
+                    <span id="purchaseModalMax" class="text-yellow-400 font-bold">0</span>
+                </div>
+            </div>
+            <div class="mt-4">
+                <label class="block text-sm text-gray-400 mb-2" id="purchaseModalLabel">수량 입력</label>
+                <div class="flex gap-2">
+                    <input type="number" id="purchaseModalInput"
+                        class="flex-1 bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white text-lg focus:border-yellow-400 focus:outline-none"
+                        min="0" step="1" placeholder="0">
+                    <button onclick="setPurchaseMax()"
+                        class="px-4 py-3 bg-yellow-600 hover:bg-yellow-500 rounded-lg font-bold transition">
+                        최대
+                    </button>
+                </div>
+            </div>
+            <div class="flex gap-3 mt-6">
+                <button onclick="confirmPurchase()" id="purchaseModalConfirm"
+                    class="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 rounded-xl font-bold transition">
+                    구매하기
+                </button>
+                <button onclick="hidePurchaseModal()"
+                    class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition">
+                    취소
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Scripts -->
+    <script src="js/config.js"></script>
+    <script src="js/gameState.js"></script>
+    <script src="js/board.js"></script>
+    <script src="js/market.js"></script>
+    <script src="js/charts.js"></script>
+    <script src="js/ui.js"></script>
+    <script src="js/storage.js"></script>
+    <script src="js/animations.js"></script>
+    <script src="js/main.js"></script>
+    <script>
+        // Fallback initialization if DOMContentLoaded fails
+        setTimeout(function() {
+            if (document.getElementById('setupPlayerTabs') &&
+                document.getElementById('setupPlayerTabs').innerHTML === '') {
+                console.log('Fallback init triggered');
+                try { if (typeof init === 'function') init(); } catch(e) { console.error(e); }
+            }
+        }, 100);
+    </script>
+</body>
+
+</html>
