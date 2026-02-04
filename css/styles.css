@@ -243,6 +243,15 @@ body {
 }
 
 /* Responsive Adjustments */
+
+/* 큰 태블릿 (1024px 이하) */
+@media (max-width: 1024px) {
+    .card {
+        padding: 1rem;
+    }
+}
+
+/* 태블릿 (768px 이하) */
 @media (max-width: 768px) {
     .card {
         padding: 0.75rem;
@@ -250,5 +259,199 @@ body {
 
     #gameBoard {
         max-height: 400px;
+    }
+
+    /* 모달 최적화 */
+    #purchaseModal .card,
+    #customAlertModal .card,
+    #customConfirmModal .card,
+    #customPromptModal .card,
+    #customSelectModal .card {
+        margin: 1rem;
+        max-height: 85vh;
+    }
+
+    /* 버튼 터치 영역 확대 */
+    button {
+        min-height: 44px;
+    }
+
+    /* 헤더 레이아웃 최적화 */
+    header {
+        gap: 0.75rem;
+    }
+
+    header h1 {
+        font-size: 1.5rem;
+    }
+
+    /* 대시보드 카드 패딩 조정 */
+    .grid-cols-2 > div {
+        padding: 0.5rem;
+    }
+
+    /* 탭 버튼 최적화 */
+    .tab-btn {
+        padding: 0.75rem 0.5rem;
+        font-size: 0.875rem;
+    }
+}
+
+/* 소형 모바일 (480px 이하) */
+@media (max-width: 480px) {
+    body {
+        padding: 0.5rem;
+    }
+
+    .card {
+        padding: 0.5rem;
+        border-radius: 0.75rem;
+    }
+
+    #gameBoard {
+        max-height: 300px;
+    }
+
+    /* 헤더 최적화 */
+    header h1 {
+        font-size: 1.25rem;
+    }
+
+    header button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    /* 대시보드 텍스트 크기 조정 */
+    .grid-cols-2 .text-lg,
+    .grid-cols-2 .text-xl {
+        font-size: 1rem;
+    }
+
+    .grid-cols-2 .text-xs {
+        font-size: 0.65rem;
+    }
+
+    /* 모달 전체화면에 가깝게 */
+    #purchaseModal .card,
+    #eventModal .card,
+    #opportunityModal .card,
+    #detailModal .card,
+    #customAlertModal .card,
+    #customConfirmModal .card,
+    #customPromptModal .card,
+    #customSelectModal .card {
+        margin: 0.5rem;
+        max-height: 90vh;
+        border-radius: 1rem;
+    }
+
+    /* 주사위 버튼 크기 조정 */
+    .dice-btn {
+        padding: 0.75rem 1rem;
+    }
+
+    .dice-btn .text-sm {
+        font-size: 0.75rem;
+    }
+
+    /* 투자시장 그리드 1열로 */
+    #tabContent .grid {
+        grid-template-columns: 1fr !important;
+    }
+
+    /* 탭 스크롤 가능하게 */
+    .flex.border-b {
+        overflow-x: auto;
+        -webkit-overflow-scrolling: touch;
+    }
+
+    .tab-btn {
+        white-space: nowrap;
+        flex-shrink: 0;
+    }
+
+    /* 플레이어 탭 최적화 */
+    #playerTabs {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    #playerTabs button {
+        padding: 0.5rem 0.75rem;
+        font-size: 0.75rem;
+    }
+
+    /* 손익계산서/대차대조표 텍스트 */
+    .glow-green .text-sm,
+    .rounded-2xl .text-sm {
+        font-size: 0.75rem;
+    }
+}
+
+/* 초소형 모바일 (360px 이하) */
+@media (max-width: 360px) {
+    body {
+        padding: 0.25rem;
+    }
+
+    header h1 {
+        font-size: 1rem;
+    }
+
+    .card {
+        padding: 0.4rem;
+    }
+
+    #gameBoard {
+        max-height: 260px;
+    }
+
+    /* 매우 작은 화면에서 텍스트 크기 */
+    .text-lg {
+        font-size: 0.9rem;
+    }
+
+    .text-xl {
+        font-size: 1rem;
+    }
+}
+
+/* 터치 디바이스 최적화 */
+@media (hover: none) and (pointer: coarse) {
+    /* 호버 효과 제거 (터치 디바이스에서 불필요) */
+    button:hover,
+    .card:hover,
+    .track-space:hover {
+        transform: none;
+    }
+
+    /* 터치 피드백 */
+    button:active {
+        transform: scale(0.98);
+        opacity: 0.9;
+    }
+
+    /* 스크롤 영역 개선 */
+    .overflow-y-auto {
+        -webkit-overflow-scrolling: touch;
+    }
+
+    /* 입력 필드 터치 영역 */
+    input[type="number"],
+    input[type="text"] {
+        font-size: 16px; /* iOS 줌 방지 */
+        min-height: 48px;
+    }
+}
+
+/* 가로 모드 모바일 */
+@media (max-height: 500px) and (orientation: landscape) {
+    #gameBoard {
+        max-height: 200px;
+    }
+
+    .fixed.inset-0 .card {
+        max-height: 80vh;
+        overflow-y: auto;
     }
 }

@@ -328,6 +328,74 @@
         </div>
     </div>
 
+    <!-- Custom Alert Modal (alert 대체) -->
+    <div id="customAlertModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] hidden">
+        <div class="card rounded-2xl p-6 w-full max-w-sm mx-4 modal-enter">
+            <div id="customAlertIcon" class="text-4xl text-center mb-3">ℹ️</div>
+            <h3 id="customAlertTitle" class="text-lg font-bold text-center mb-3">알림</h3>
+            <p id="customAlertMessage" class="text-gray-300 text-center mb-6 whitespace-pre-line"></p>
+            <button onclick="closeCustomAlert()"
+                class="w-full py-3 bg-gradient-to-r from-blue-500 to-blue-600 hover:from-blue-400 hover:to-blue-500 rounded-xl font-bold transition">
+                확인
+            </button>
+        </div>
+    </div>
+
+    <!-- Custom Confirm Modal (confirm 대체) -->
+    <div id="customConfirmModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] hidden">
+        <div class="card rounded-2xl p-6 w-full max-w-md mx-4 modal-enter">
+            <div id="customConfirmIcon" class="text-4xl text-center mb-3">❓</div>
+            <h3 id="customConfirmTitle" class="text-lg font-bold text-center mb-3">확인</h3>
+            <p id="customConfirmMessage" class="text-gray-300 text-center mb-6 whitespace-pre-line"></p>
+            <div class="flex gap-3">
+                <button onclick="handleCustomConfirm(true)"
+                    class="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 rounded-xl font-bold transition">
+                    확인
+                </button>
+                <button onclick="handleCustomConfirm(false)"
+                    class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition">
+                    취소
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Prompt Modal (prompt 대체) -->
+    <div id="customPromptModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] hidden">
+        <div class="card rounded-2xl p-6 w-full max-w-md mx-4 modal-enter">
+            <div id="customPromptIcon" class="text-4xl text-center mb-3">✏️</div>
+            <h3 id="customPromptTitle" class="text-lg font-bold text-center mb-3">입력</h3>
+            <p id="customPromptMessage" class="text-gray-300 text-center mb-4 whitespace-pre-line"></p>
+            <input type="text" id="customPromptInput"
+                class="w-full bg-gray-800 border border-gray-600 rounded-lg px-4 py-3 text-white text-lg focus:border-yellow-400 focus:outline-none mb-4"
+                placeholder="">
+            <div class="flex gap-3">
+                <button onclick="handleCustomPrompt(true)"
+                    class="flex-1 py-3 bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500 rounded-xl font-bold transition">
+                    확인
+                </button>
+                <button onclick="handleCustomPrompt(false)"
+                    class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition">
+                    취소
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Custom Select Modal (선택지 모달) -->
+    <div id="customSelectModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-[60] hidden">
+        <div class="card rounded-2xl p-6 w-full max-w-md mx-4 modal-enter">
+            <div id="customSelectIcon" class="text-4xl text-center mb-3">🔢</div>
+            <h3 id="customSelectTitle" class="text-lg font-bold text-center mb-3">선택</h3>
+            <p id="customSelectMessage" class="text-gray-300 text-center mb-4 whitespace-pre-line"></p>
+            <div id="customSelectOptions" class="space-y-2 mb-4"></div>
+            <button onclick="handleCustomSelect(null)"
+                class="w-full py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition">
+                취소
+            </button>
+        </div>
+    </div>
+
     <!-- Block Deal Modal (Fast Track) -->
     <div id="blockDealModal" class="fixed inset-0 bg-black/80 flex items-center justify-center z-50 hidden">
         <div class="card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">

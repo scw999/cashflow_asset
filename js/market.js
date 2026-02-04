@@ -525,15 +525,19 @@ function executeStableCoin(amount) {
     showTab('portfolio');
 }
 
-// Sell investment
-function sellInvestment(idx) {
+// Sell investment (비동기 버전)
+async function sellInvestment(idx) {
     const inv = gameState.investments[idx];
 
     // 스테이킹 언락 체크
     if (inv.isStaking) {
         // 아직 언락 시작 안한 경우
         if (!inv.isUnlocking) {
-            if (confirm(`${inv.name}의 스테이킹을 해제하시겠습니까?\n\n언락에 1턴이 소요됩니다.\n언락 후 매도 또는 계속 보유할 수 있습니다.`)) {
+            const confirmed = await showCustomConfirm(
+                `${inv.name}의 스테이킹을 해제하시겠습니까?\n\n언락에 1턴이 소요됩니다.\n언락 후 매도 또는 계속 보유할 수 있습니다.`,
+                { title: '⛓️ 스테이킹 해제', icon: '⛓️' }
+            );
+            if (confirmed) {
                 inv.isUnlocking = true;
                 inv.unlockTurn = turn;
                 showNotification(`${inv.baseName} 스테이킹 해제 시작 (1턴 후 완료)`, 'info');
@@ -545,12 +549,23 @@ function sellInvestment(idx) {
         // 언락 중인 경우
         const turnsSinceUnlock = turn - inv.unlockTurn;
         if (turnsSinceUnlock < 1) {
-            alert(`스테이킹 해제 중입니다.\n\n1턴 후에 매도 가능합니다.\n현재: ${turnsSinceUnlock}턴 경과`);
+            await showCustomAlert(
+                `스테이킹 해제 중입니다.\n\n1턴 후에 매도 가능합니다.\n현재: ${turnsSinceUnlock}턴 경과`,
+                { title: '⏳ 언락 진행 중', icon: '⏳', type: 'warning' }
+            );
             return;
         }
 
         // 언락 완료 - 매도 또는 계속 보유 선택
-        const choice = prompt(`${inv.name} 언락 완료!\n\n보유: ${inv.amount.toFixed(3)}개\n\n1. 전량 매도\n2. 일부 매도\n3. 계속 보유 (스테이킹 해제 상태)\n\n선택 (1, 2, 3):`, '1');
+        const choice = await showCustomSelect(
+            `${inv.name} 언락 완료!\n\n보유: ${inv.amount.toFixed(3)}개`,
+            [
+                { value: '1', text: '1. 전량 매도', primary: true },
+                { value: '2', text: '2. 일부 매도' },
+                { value: '3', text: '3. 계속 보유 (스테이킹 해제 상태)' }
+            ],
+            { title: '💎 언락 완료', icon: '💎' }
+        );
 
         if (choice === '3') {
             // 스테이킹 해제하고 일반 보유로 전환
@@ -565,17 +580,28 @@ function sellInvestment(idx) {
 
         if (choice === '2') {
             // 일부 매도
-            const amountToSell = parseFloat(prompt(`${inv.baseName} ${inv.amount.toFixed(3)}개 보유중\n몇 개를 매도하시겠습니까?`, inv.amount.toFixed(3)));
+            const amountStr = await showCustomPrompt(
+                `${inv.baseName} ${inv.amount.toFixed(3)}개 보유중\n몇 개를 매도하시겠습니까?`,
+                inv.amount.toFixed(3),
+                { title: '📉 매도 수량', icon: '📉', inputType: 'number' }
+            );
+            if (!amountStr) return;
+
+            const amountToSell = parseFloat(amountStr);
             if (!amountToSell || amountToSell <= 0) return;
             if (amountToSell > inv.amount) {
-                alert('보유 수량보다 많이 매도할 수 없습니다.');
+                await showCustomAlert('보유 수량보다 많이 매도할 수 없습니다.', { title: '⚠️ 수량 초과', icon: '⚠️', type: 'error' });
                 return;
             }
 
             const currentPrice = marketPrices[inv.baseName] || inv.pricePerUnit;
             const saleValue = Math.round(amountToSell * currentPrice * 100) / 100;
 
-            if (!confirm(`${inv.baseName} ${amountToSell.toFixed(3)}개를 ₩${fmt(saleValue)}만원에 매도하시겠습니까?`)) return;
+            const confirmSell = await showCustomConfirm(
+                `${inv.baseName} ${amountToSell.toFixed(3)}개를 ₩${fmt(saleValue)}만원에 매도하시겠습니까?`,
+                { title: '💰 매도 확인', icon: '💰' }
+            );
+            if (!confirmSell) return;
 
             gameState.assets.cash += saleValue;
             const soldCost = Math.round(inv.cost * amountToSell / inv.amount);
@@ -600,16 +626,24 @@ function sellInvestment(idx) {
             return;
         }
 
-        // 전량 매도 (choice === '1' 또는 기본)
+        if (choice !== '1') return;
+        // 전량 매도 (choice === '1')
         // 아래로 계속...
     }
 
     if (inv.shares && inv.shares > 1) {
         // Stock with multiple shares
-        const sharesToSell = parseInt(prompt(`${inv.name} ${inv.shares}주 보유중\n몇 주를 매도하시겠습니까?`, inv.shares));
+        const sharesStr = await showCustomPrompt(
+            `${inv.name} ${inv.shares}주 보유중\n몇 주를 매도하시겠습니까?`,
+            inv.shares.toString(),
+            { title: '📈 주식 매도', icon: '📈', inputType: 'number' }
+        );
+        if (!sharesStr) return;
+
+        const sharesToSell = parseInt(sharesStr);
         if (!sharesToSell || sharesToSell <= 0) return;
         if (sharesToSell > inv.shares) {
-            alert('보유 주식보다 많이 매도할 수 없습니다.');
+            await showCustomAlert('보유 주식보다 많이 매도할 수 없습니다.', { title: '⚠️ 수량 초과', icon: '⚠️', type: 'error' });
             return;
         }
 
@@ -617,7 +651,11 @@ function sellInvestment(idx) {
         const saleValue = Math.round(sharesToSell * currentPrice * 100) / 100;
         const proportionalDividend = inv.monthlyIncome > 0 ? Math.round(inv.monthlyIncome * sharesToSell / inv.shares) : 0;
 
-        if (!confirm(`${inv.name} ${sharesToSell}주를 ₩${fmt(saleValue)}만원에 매도하시겠습니까?`)) return;
+        const confirmSell = await showCustomConfirm(
+            `${inv.name} ${sharesToSell}주를 ₩${fmt(saleValue)}만원에 매도하시겠습니까?`,
+            { title: '💰 매도 확인', icon: '💰' }
+        );
+        if (!confirmSell) return;
 
         gameState.assets.cash += saleValue;
         const soldCost = Math.round(inv.cost * sharesToSell / inv.shares);
@@ -636,7 +674,14 @@ function sellInvestment(idx) {
         }
     } else if (inv.amount && inv.amount > 0) {
         // Crypto with amount
-        let amountToSell = parseFloat(prompt(`${inv.name} ${inv.amount.toFixed(4)}개 보유중\n몇 개를 매도하시겠습니까?\n(전량 매도: ${inv.amount.toFixed(4)})`, inv.amount.toFixed(4)));
+        const amountStr = await showCustomPrompt(
+            `${inv.name} ${inv.amount.toFixed(4)}개 보유중\n몇 개를 매도하시겠습니까?\n(전량 매도: ${inv.amount.toFixed(4)})`,
+            inv.amount.toFixed(4),
+            { title: '💎 암호화폐 매도', icon: '💎', inputType: 'number' }
+        );
+        if (!amountStr) return;
+
+        let amountToSell = parseFloat(amountStr);
         if (!amountToSell || amountToSell <= 0) return;
 
         // 부동소수점 오차 허용 (전량 매도 시 정확히 맞추기) - 0.002 이하 차이면 전량 매도
@@ -649,14 +694,18 @@ function sellInvestment(idx) {
         }
 
         if (amountToSell > inv.amount + 0.001) {
-            alert('보유 수량보다 많이 매도할 수 없습니다.');
+            await showCustomAlert('보유 수량보다 많이 매도할 수 없습니다.', { title: '⚠️ 수량 초과', icon: '⚠️', type: 'error' });
             return;
         }
 
         const currentPrice = marketPrices[inv.baseName || inv.name] || inv.pricePerUnit || (inv.cost / inv.amount);
         const saleValue = Math.round(amountToSell * currentPrice * 100) / 100;
 
-        if (!confirm(`${inv.name} ${amountToSell.toFixed(3)}개를 ₩${fmt(saleValue)}만원에 매도하시겠습니까?`)) return;
+        const confirmSell = await showCustomConfirm(
+            `${inv.name} ${amountToSell.toFixed(3)}개를 ₩${fmt(saleValue)}만원에 매도하시겠습니까?`,
+            { title: '💰 매도 확인', icon: '💰' }
+        );
+        if (!confirmSell) return;
 
         gameState.assets.cash += saleValue;
         const soldCost = Math.round(inv.cost * amountToSell / inv.amount);
@@ -689,7 +738,11 @@ function sellInvestment(idx) {
             currentValue = Math.round(inv.cost * appreciation);
         }
 
-        if (!confirm(`${inv.name}을(를) ₩${fmt(currentValue)}만원에 매도하시겠습니까?`)) return;
+        const confirmSell = await showCustomConfirm(
+            `${inv.name}을(를) ₩${fmt(currentValue)}만원에 매도하시겠습니까?`,
+            { title: '💰 매도 확인', icon: '💰' }
+        );
+        if (!confirmSell) return;
 
         gameState.assets.cash += currentValue;
 
