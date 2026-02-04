@@ -24,19 +24,13 @@ function init() {
     } catch (e) { console.error('updateUI error:', e); }
 
     try {
-        // Show tutorial on first visit, otherwise setup modal
-        if (typeof showTutorialIfFirstVisit === 'function') {
-            const hasSeenTutorial = localStorage.getItem('cashflowTutorialSeen');
-            if (!hasSeenTutorial) {
-                showHelpModal();
-                localStorage.setItem('cashflowTutorialSeen', 'true');
-            } else {
-                showSetupModal();
-            }
+        // Always show tutorial on game start
+        if (typeof showHelpModal === 'function') {
+            showHelpModal();
         } else {
             showSetupModal();
         }
-    } catch (e) { console.error('showSetupModal error:', e); }
+    } catch (e) { console.error('showHelpModal error:', e); }
 
     // Setup tab click handlers
     document.querySelectorAll('[data-tab]').forEach(tab => {
