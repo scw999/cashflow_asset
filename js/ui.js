@@ -418,20 +418,20 @@ function applySettingsToCurrentPlayer() {
 }
 
 // Apply settings and close modal
-function applySettingsAndClose() {
+async function applySettingsAndClose() {
     saveSetupPlayer();
 
     // Validate all players have jobs and dreams
     for (let i = 0; i < numPlayers; i++) {
         if (!players[i].job) {
-            alert(`플레이어 ${i + 1}의 직업을 선택해주세요.`);
+            await showCustomAlert(`플레이어 ${i + 1}의 직업을 선택해주세요.`, { title: '⚠️ 직업 선택 필요', icon: '🎭', type: 'warning' });
             setupPlayer = i;
             updateSetupPlayerTabs();
             loadSetupPlayerData();
             return;
         }
         if (!players[i].dream) {
-            alert(`플레이어 ${i + 1}의 꿈을 선택해주세요.`);
+            await showCustomAlert(`플레이어 ${i + 1}의 꿈을 선택해주세요.`, { title: '⚠️ 꿈 선택 필요', icon: '🌟', type: 'warning' });
             setupPlayer = i;
             updateSetupPlayerTabs();
             loadSetupPlayerData();
@@ -1025,7 +1025,7 @@ function hideBlockDealModal() {
 }
 
 // Buy block deal real estate
-function buyBlockDealRealEstate(name) {
+async function buyBlockDealRealEstate(name) {
     const price = realEstateMarketPrices[name];
     const char = realEstateCharacteristics[name] || { rentalYield: 0.04 };
     const monthlyIncome = Math.round(price * char.rentalYield / 12);
@@ -1035,9 +1035,11 @@ function buyBlockDealRealEstate(name) {
         return;
     }
 
-    if (!confirm(`${name}을(를) ₩${fmt(price)}만원에 구매하시겠습니까?\n\n예상 월 수익: ₩${fmt(monthlyIncome)}만`)) {
-        return;
-    }
+    const confirmed = await showCustomConfirm(
+        `${name}을(를) ₩${fmt(price)}만원에 구매하시겠습니까?\n\n예상 월 수익: ₩${fmt(monthlyIncome)}만`,
+        { title: '🏠 부동산 구매', icon: '🏠' }
+    );
+    if (!confirmed) return;
 
     gameState.assets.cash -= price;
     gameState.assets.realEstate += price;
@@ -1058,7 +1060,7 @@ function buyBlockDealRealEstate(name) {
 }
 
 // Buy block deal stock
-function buyBlockDealStock(name, shares) {
+async function buyBlockDealStock(name, shares) {
     const price = marketPrices[name];
     const totalCost = Math.round(price * shares * 100) / 100;
     const char = assetCharacteristics[name] || {};
@@ -1069,9 +1071,11 @@ function buyBlockDealStock(name, shares) {
         return;
     }
 
-    if (!confirm(`${name} ${shares}주를 ₩${fmt(totalCost)}만원에 구매하시겠습니까?${monthlyDividend > 0 ? `\n예상 월 배당: ₩${fmt(monthlyDividend)}만` : ''}`)) {
-        return;
-    }
+    const confirmed = await showCustomConfirm(
+        `${name} ${shares}주를 ₩${fmt(totalCost)}만원에 구매하시겠습니까?${monthlyDividend > 0 ? `\n예상 월 배당: ₩${fmt(monthlyDividend)}만` : ''}`,
+        { title: '📊 주식 구매', icon: '📊' }
+    );
+    if (!confirmed) return;
 
     gameState.assets.cash -= totalCost;
     gameState.assets.stocks += totalCost;
@@ -1183,4 +1187,171 @@ function confirmPurchase() {
 
     hidePurchaseModal();
 }
+
+// ==========================================
+// Custom Modal Functions (alert/confirm/prompt 대체)
+// ==========================================
+
+let customAlertCallback = null;
+let customConfirmCallback = null;
+let customPromptCallback = null;
+let customSelectCallback = null;
+
+// Custom Alert (alert 대체)
+function showCustomAlert(message, options = {}) {
+    return new Promise((resolve) => {
+        const {
+            title = '알림',
+            icon = 'ℹ️',
+            type = 'info'  // info, success, warning, error
+        } = options;
+
+        const icons = {
+            info: 'ℹ️',
+            success: '✅',
+            warning: '⚠️',
+            error: '❌'
+        };
+
+        document.getElementById('customAlertIcon').textContent = icons[type] || icon;
+        document.getElementById('customAlertTitle').textContent = title;
+        document.getElementById('customAlertMessage').textContent = message;
+        document.getElementById('customAlertModal').classList.remove('hidden');
+
+        customAlertCallback = resolve;
+    });
+}
+
+function closeCustomAlert() {
+    document.getElementById('customAlertModal').classList.add('hidden');
+    if (customAlertCallback) {
+        customAlertCallback();
+        customAlertCallback = null;
+    }
+}
+
+// Custom Confirm (confirm 대체)
+function showCustomConfirm(message, options = {}) {
+    return new Promise((resolve) => {
+        const {
+            title = '확인',
+            icon = '❓',
+            confirmText = '확인',
+            cancelText = '취소'
+        } = options;
+
+        document.getElementById('customConfirmIcon').textContent = icon;
+        document.getElementById('customConfirmTitle').textContent = title;
+        document.getElementById('customConfirmMessage').textContent = message;
+
+        const modal = document.getElementById('customConfirmModal');
+        const buttons = modal.querySelectorAll('button');
+        buttons[0].textContent = confirmText;
+        buttons[1].textContent = cancelText;
+
+        modal.classList.remove('hidden');
+        customConfirmCallback = resolve;
+    });
+}
+
+function handleCustomConfirm(result) {
+    document.getElementById('customConfirmModal').classList.add('hidden');
+    if (customConfirmCallback) {
+        customConfirmCallback(result);
+        customConfirmCallback = null;
+    }
+}
+
+// Custom Prompt (prompt 대체)
+function showCustomPrompt(message, defaultValue = '', options = {}) {
+    return new Promise((resolve) => {
+        const {
+            title = '입력',
+            icon = '✏️',
+            placeholder = '',
+            inputType = 'text'
+        } = options;
+
+        document.getElementById('customPromptIcon').textContent = icon;
+        document.getElementById('customPromptTitle').textContent = title;
+        document.getElementById('customPromptMessage').textContent = message;
+
+        const input = document.getElementById('customPromptInput');
+        input.type = inputType;
+        input.value = defaultValue;
+        input.placeholder = placeholder;
+
+        document.getElementById('customPromptModal').classList.remove('hidden');
+        customPromptCallback = resolve;
+
+        // Focus input
+        setTimeout(() => input.focus(), 100);
+    });
+}
+
+function handleCustomPrompt(confirmed) {
+    const input = document.getElementById('customPromptInput');
+    document.getElementById('customPromptModal').classList.add('hidden');
+
+    if (customPromptCallback) {
+        if (confirmed && input.value.trim() !== '') {
+            customPromptCallback(input.value);
+        } else {
+            customPromptCallback(null);
+        }
+        customPromptCallback = null;
+    }
+}
+
+// Custom Select (선택지 모달)
+function showCustomSelect(message, choices, options = {}) {
+    return new Promise((resolve) => {
+        const {
+            title = '선택',
+            icon = '🔢'
+        } = options;
+
+        document.getElementById('customSelectIcon').textContent = icon;
+        document.getElementById('customSelectTitle').textContent = title;
+        document.getElementById('customSelectMessage').textContent = message;
+
+        const optionsContainer = document.getElementById('customSelectOptions');
+        optionsContainer.innerHTML = choices.map((choice, idx) => `
+            <button onclick="handleCustomSelect('${choice.value || idx + 1}')"
+                class="w-full py-3 ${choice.primary ? 'bg-gradient-to-r from-emerald-500 to-green-600 hover:from-emerald-400 hover:to-green-500' : 'bg-gray-700 hover:bg-gray-600'} rounded-xl font-bold transition text-left px-4">
+                ${choice.text || choice}
+            </button>
+        `).join('');
+
+        document.getElementById('customSelectModal').classList.remove('hidden');
+        customSelectCallback = resolve;
+    });
+}
+
+function handleCustomSelect(value) {
+    document.getElementById('customSelectModal').classList.add('hidden');
+    if (customSelectCallback) {
+        customSelectCallback(value);
+        customSelectCallback = null;
+    }
+}
+
+// Enter 키 이벤트 처리
+document.addEventListener('keydown', function(e) {
+    if (e.key === 'Enter') {
+        if (!document.getElementById('customAlertModal').classList.contains('hidden')) {
+            closeCustomAlert();
+        } else if (!document.getElementById('customPromptModal').classList.contains('hidden')) {
+            handleCustomPrompt(true);
+        }
+    } else if (e.key === 'Escape') {
+        if (!document.getElementById('customConfirmModal').classList.contains('hidden')) {
+            handleCustomConfirm(false);
+        } else if (!document.getElementById('customPromptModal').classList.contains('hidden')) {
+            handleCustomPrompt(false);
+        } else if (!document.getElementById('customSelectModal').classList.contains('hidden')) {
+            handleCustomSelect(null);
+        }
+    }
+});
 

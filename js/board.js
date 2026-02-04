@@ -141,7 +141,7 @@ function drawBoard() {
 // Show space information
 function showSpaceInfo(idx, isFast) {
     const space = isFast ? fastTrackSpaces[idx] : ratRaceSpaces[idx];
-    let info = `${space.name}\n타입: ${space.type}`;
+    let info = `타입: ${space.type}`;
 
     if (space.cost) {
         info += `\n비용: ₩${fmt(space.cost)}만`;
@@ -151,7 +151,7 @@ function showSpaceInfo(idx, isFast) {
         info += '\n\n이 칸에 도착하면 투자 기회를 얻습니다!';
     }
 
-    alert(info);
+    showCustomAlert(info, { title: space.name, icon: getSpaceIcon(space.name), type: 'info' });
 }
 
 // Dice rolling
@@ -161,7 +161,7 @@ function rollDice() {
     // Check if player needs to skip turn
     if (player.skipTurns > 0) {
         player.skipTurns--;
-        alert(`해고로 인해 ${player.skipTurns + 1}턴을 쉬어야 합니다.`);
+        showCustomAlert(`해고로 인해 ${player.skipTurns + 1}턴을 쉬어야 합니다.`, { title: '😢 턴 스킵', icon: '😢', type: 'warning' });
         nextTurn();
         updateUI();
         return;
@@ -318,7 +318,7 @@ function handleEvent() {
                 gameState.liabilities.credit += shortage;
                 gameState.expenses.loan += Math.round(shortage * 0.08 / 12);
                 gameState.assets.cash = 0;
-                alert(`현금 부족! ₩${fmt(shortage)}만원 신용대출 발생`);
+                showCustomAlert(`현금 부족! ₩${fmt(shortage)}만원 신용대출 발생`, { title: '💳 신용대출', icon: '💳', type: 'warning' });
             }
             break;
 
@@ -348,9 +348,9 @@ function handleEvent() {
             if (gameState.assets.cash >= currentEvent.cost) {
                 gameState.assets.cash -= currentEvent.cost;
                 player.doubleDice = 3;
-                alert('기부 완료! 3턴간 주사위 2개를 굴립니다.');
+                showCustomAlert('기부 완료! 3턴간 주사위 2개를 굴립니다.', { title: '❤️ 기부 완료', icon: '❤️', type: 'success' });
             } else {
-                alert('현금이 부족하여 기부할 수 없습니다.');
+                showCustomAlert('현금이 부족하여 기부할 수 없습니다.', { title: '❤️ 기부 불가', icon: '❤️', type: 'error' });
             }
             break;
 
@@ -362,10 +362,8 @@ function handleEvent() {
             if (checkDreamAchieved(currentEvent.space)) {
                 purchaseDream(currentEvent.space);
             } else if (currentEvent.space.cost > 0 && gameState.assets.cash >= currentEvent.space.cost) {
-                if (confirm(`${currentEvent.space.name}을 ₩${fmt(currentEvent.space.cost)}만원에 구매하시겠습니까?`)) {
-                    gameState.assets.cash -= currentEvent.space.cost;
-                    alert(`${currentEvent.space.name}을 구매했습니다!`);
-                }
+                handleDreamPurchase(currentEvent.space);
+                return; // 비동기 처리로 인해 여기서 리턴
             } else if (currentEvent.space.cost === 0) {
                 // 꿈달성! 칸
                 if (player.dream === 'freedom') {
@@ -757,7 +755,7 @@ function sellPortfolioForPurchase(assetType, neededAmount) {
 // Buy real estate from opportunity
 function buyRealEstateOpportunity(opportunity) {
     if (gameState.assets.cash < opportunity.downPayment) {
-        alert('계약금이 부족합니다!');
+        showCustomAlert('계약금이 부족합니다!', { title: '💰 자금 부족', icon: '💰', type: 'error' });
         return;
     }
 
@@ -801,4 +799,25 @@ function hideOpportunityModal() {
     closeOpportunityModalOnly();
     nextTurn();
     updateUI();
+}
+
+// 꿈 구매 처리 (비동기)
+async function handleDreamPurchase(space) {
+    const confirmed = await showCustomConfirm(
+        `${space.name}을 ₩${fmt(space.cost)}만원에 구매하시겠습니까?`,
+        { title: '🌟 꿈 구매', icon: '🌟' }
+    );
+
+    if (confirmed) {
+        gameState.assets.cash -= space.cost;
+        await showCustomAlert(`${space.name}을 구매했습니다!`, { title: '🎉 구매 완료', icon: '🎉', type: 'success' });
+    }
+
+    document.getElementById('eventCard').classList.add('hidden');
+    const priceChanges = updateMarketPrices();
+    showPriceChangesNotification(priceChanges);
+    nextTurn();
+    updateUI();
+    checkEscape();
+    currentEvent = null;
 }

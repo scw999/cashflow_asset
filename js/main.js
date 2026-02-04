@@ -847,7 +847,7 @@ function showUrgentSaleOpportunityWithData(opportunity, discountedCost, discount
 
 function buyUrgentSaleProperty(opportunity, discountedCost, discountedDownPayment) {
     if (gameState.assets.cash < discountedDownPayment) {
-        alert('계약금이 부족합니다!');
+        showCustomAlert('계약금이 부족합니다!', { title: '💰 자금 부족', icon: '💰', type: 'error' });
         return;
     }
 
@@ -1119,7 +1119,7 @@ function completeAuctionPurchase() {
     const { opportunity, discountedCost, discountedDownPayment } = auctionData;
 
     if (gameState.assets.cash < discountedDownPayment) {
-        alert('보증금이 부족합니다!');
+        showCustomAlert('보증금이 부족합니다!', { title: '💰 자금 부족', icon: '💰', type: 'error' });
         return;
     }
 

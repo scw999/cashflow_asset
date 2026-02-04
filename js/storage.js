@@ -142,10 +142,12 @@ function loadGame() {
 }
 
 // Reset game
-function resetGame() {
-    if (!confirm('정말로 게임을 초기화하시겠습니까? 모든 진행 상황이 삭제됩니다.')) {
-        return;
-    }
+async function resetGame() {
+    const confirmed = await showCustomConfirm(
+        '정말로 게임을 초기화하시겠습니까? 모든 진행 상황이 삭제됩니다.',
+        { title: '🔄 게임 초기화', icon: '🔄' }
+    );
+    if (!confirmed) return;
 
     // Reset market prices
     marketPrices = { ...basePrices };
@@ -179,10 +181,12 @@ function resetGame() {
 }
 
 // Delete saved game
-function deleteSave() {
-    if (!confirm('저장된 게임을 삭제하시겠습니까?')) {
-        return;
-    }
+async function deleteSave() {
+    const confirmed = await showCustomConfirm(
+        '저장된 게임을 삭제하시겠습니까?',
+        { title: '🗑️ 저장 삭제', icon: '🗑️' }
+    );
+    if (!confirmed) return;
 
     localStorage.removeItem('cashflowGame');
     showNotification('저장된 게임이 삭제되었습니다.', 'info');
