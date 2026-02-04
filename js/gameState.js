@@ -621,13 +621,26 @@ function processStakingRewards() {
 
 // Set number of players
 function setNumPlayers(n) {
+    const previousNumPlayers = numPlayers;
     numPlayers = n;
-    players = [];
-    for (let i = 0; i < n; i++) {
-        players.push(createPlayer());
+
+    // Preserve existing player data
+    if (n > players.length) {
+        // Add new players if increasing count
+        for (let i = players.length; i < n; i++) {
+            players.push(createPlayer());
+        }
+    } else if (n < players.length) {
+        // Remove excess players if decreasing count
+        players.length = n;
     }
+
+    // Keep setupPlayer within valid range
+    if (setupPlayer >= n) {
+        setupPlayer = n - 1;
+    }
+
     currentPlayer = 0;
-    setupPlayer = 0;
 
     // Update UI
     document.querySelectorAll('.player-count-btn').forEach(btn => {
