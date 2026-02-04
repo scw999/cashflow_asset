@@ -1184,3 +1184,25 @@ function confirmPurchase() {
     hidePurchaseModal();
 }
 
+// ==========================================
+// 도움말 모달
+// ==========================================
+
+function showHelpModal() {
+    document.getElementById('helpModal').classList.remove('hidden');
+}
+
+function hideHelpModal() {
+    document.getElementById('helpModal').classList.add('hidden');
+}
+
+// 첫 방문 여부 체크
+function hasSeenTutorial() {
+    return localStorage.getItem('cashflowTutorialSeen') === 'true';
+}
+
+// 튜토리얼 본 것으로 표시
+function markTutorialSeen() {
+    localStorage.setItem('cashflowTutorialSeen', 'true');
+}
+

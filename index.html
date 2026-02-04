@@ -29,6 +29,7 @@
             </div>
 
             <div class="flex gap-2 flex-wrap justify-center">
+                <button onclick="showHelpModal()" class="px-4 py-2 bg-cyan-600 hover:bg-cyan-700 rounded-lg transition hover:scale-105">❓ 도움말</button>
                 <button onclick="resetGame()" class="px-4 py-2 bg-red-600 hover:bg-red-700 rounded-lg transition hover:scale-105">🔄 리셋</button>
                 <button onclick="saveGame()" class="px-4 py-2 bg-emerald-600 hover:bg-emerald-700 rounded-lg transition hover:scale-105">💾 저장</button>
                 <button onclick="loadGame()" class="px-4 py-2 bg-blue-600 hover:bg-blue-700 rounded-lg transition hover:scale-105">📂 불러오기</button>
@@ -383,6 +384,77 @@
                 <button onclick="hidePurchaseModal()"
                     class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition">
                     취소
+                </button>
+            </div>
+        </div>
+    </div>
+
+    <!-- Help/Tutorial Modal -->
+    <div id="helpModal" class="fixed inset-0 bg-black/90 flex items-center justify-center z-[60] hidden">
+        <div class="card rounded-2xl p-6 w-full max-w-2xl max-h-[90vh] overflow-y-auto">
+            <div class="flex justify-between items-center mb-4">
+                <h2 class="text-2xl font-bold">📖 게임 안내</h2>
+                <button onclick="hideHelpModal()" class="text-gray-400 hover:text-white text-2xl">&times;</button>
+            </div>
+
+            <!-- 게임 목표 -->
+            <div class="mb-6 p-4 bg-gradient-to-r from-emerald-900/50 to-blue-900/50 rounded-xl border border-emerald-500/30">
+                <h3 class="text-lg font-bold text-emerald-400 mb-2">🎯 게임 목표</h3>
+                <p class="text-gray-300 mb-2"><strong class="text-yellow-400">패시브 소득</strong>(임대수입, 배당금 등)이 <strong class="text-red-400">총 지출</strong>보다 많아지면 <span class="text-emerald-400 font-bold">"쥐 레이스 탈출"</span>에 성공합니다!</p>
+                <p class="text-sm text-gray-400">탈출 후에는 <span class="text-purple-400">패스트트랙</span>에서 더 큰 투자 기회를 만나게 됩니다.</p>
+            </div>
+
+            <!-- 시작 방법 -->
+            <div class="mb-6 p-4 bg-gray-800/50 rounded-xl">
+                <h3 class="text-lg font-bold text-yellow-400 mb-3">🚀 시작하기</h3>
+                <ol class="space-y-2 text-gray-300">
+                    <li class="flex gap-2">
+                        <span class="bg-yellow-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">1</span>
+                        <span><strong>꿈 선택</strong> - 달성하고 싶은 목표를 선택하세요</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="bg-yellow-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">2</span>
+                        <span><strong>직업 선택</strong> - 시작 조건이 다른 직업 중 하나를 선택하세요 (캐시플로우 확인!)</span>
+                    </li>
+                    <li class="flex gap-2">
+                        <span class="bg-yellow-600 text-white w-6 h-6 rounded-full flex items-center justify-center text-sm font-bold flex-shrink-0">3</span>
+                        <span><strong>게임 시작</strong> - '게임 시작' 버튼을 눌러 시작!</span>
+                    </li>
+                </ol>
+            </div>
+
+            <!-- 게임 진행 -->
+            <div class="mb-6 p-4 bg-gray-800/50 rounded-xl">
+                <h3 class="text-lg font-bold text-blue-400 mb-3">🎲 게임 진행</h3>
+                <ul class="space-y-2 text-gray-300 text-sm">
+                    <li>• <strong class="text-white">주사위 굴리기</strong> → 나온 숫자만큼 이동</li>
+                    <li>• <strong class="text-emerald-400">💰 월급날</strong> - 캐시플로우만큼 현금 획득</li>
+                    <li>• <strong class="text-blue-400">🏠 부동산</strong> - 매물 구매 기회 (월 임대수익 발생)</li>
+                    <li>• <strong class="text-purple-400">📊 주식/ETF</strong> - 주식 매수 기회</li>
+                    <li>• <strong class="text-orange-400">💎 가상자산</strong> - 암호화폐 투자 기회</li>
+                    <li>• <strong class="text-red-400">🛒 충동지출</strong> - 강제 지출 발생</li>
+                    <li>• <strong class="text-pink-400">👶 아기탄생</strong> - 양육비 지출 증가</li>
+                    <li>• <strong class="text-green-400">📈 시장상승</strong> / <strong class="text-red-400">📉 시장하락</strong> - 자산 가격 변동</li>
+                </ul>
+            </div>
+
+            <!-- 투자 팁 -->
+            <div class="mb-6 p-4 bg-purple-900/30 rounded-xl border border-purple-500/30">
+                <h3 class="text-lg font-bold text-purple-400 mb-2">💡 투자 팁</h3>
+                <ul class="space-y-1 text-gray-300 text-sm">
+                    <li>• 부동산은 <strong class="text-yellow-400">계약금</strong>만 있으면 구매 가능 (나머지는 대출)</li>
+                    <li>• <strong class="text-emerald-400">ROI</strong>가 높은 자산을 찾으세요</li>
+                    <li>• 경기 사이클에 따라 자산 가격이 변동합니다</li>
+                    <li>• 배당주/ETF는 <strong class="text-emerald-400">월 배당금</strong>을 지급합니다</li>
+                </ul>
+            </div>
+
+            <div class="flex gap-3">
+                <button onclick="hideHelpModal(); showSetupModal();" class="flex-1 py-3 bg-gradient-to-r from-yellow-500 to-orange-500 hover:from-yellow-400 hover:to-orange-400 rounded-xl font-bold transition">
+                    ⚙️ 꿈 & 직업 선택하기
+                </button>
+                <button onclick="hideHelpModal()" class="flex-1 py-3 bg-gray-700 hover:bg-gray-600 rounded-xl font-bold transition">
+                    닫기
                 </button>
             </div>
         </div>

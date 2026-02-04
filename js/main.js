@@ -24,8 +24,18 @@ function init() {
     } catch (e) { console.error('updateUI error:', e); }
 
     try {
-        // Show setup modal on start
-        showSetupModal();
+        // Show tutorial on first visit, otherwise setup modal
+        if (typeof showTutorialIfFirstVisit === 'function') {
+            const hasSeenTutorial = localStorage.getItem('cashflowTutorialSeen');
+            if (!hasSeenTutorial) {
+                showHelpModal();
+                localStorage.setItem('cashflowTutorialSeen', 'true');
+            } else {
+                showSetupModal();
+            }
+        } else {
+            showSetupModal();
+        }
     } catch (e) { console.error('showSetupModal error:', e); }
 
     // Setup tab click handlers
